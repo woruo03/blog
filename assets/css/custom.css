@@ -36,11 +36,37 @@ html.dark .toc a.active {
   }
 }
 
-/* 2. 文章标题、正文及底部加宽：从 65ch (~650px) 扩展至 56rem (~896px) */
+/* 2. 正常阅读模式（未开启 ZenMode）：文章标题、正文及底部为 56rem (~896px)，右侧大纲随行 */
 @media (min-width: 1024px) {
+  body:not(.zen-mode-enable) #single_header,
+  body:not(.zen-mode-enable) .article-content,
+  body:not(.zen-mode-enable) article footer {
+    max-width: 56rem !important;
+  }
+}
+
+/* 3. 专注模式 (ZenMode)：折叠右侧大纲，正文、标题与底部全宽舒展 */
+body.zen-mode-enable {
+  /* 隐藏右侧大纲容器及列占位 */
+  #toc-column,
+  .toc,
+  .toc-right,
+  .toc-inside {
+    display: none !important;
+  }
+
+  /* 正文外层容器充满整个全局可用宽度 */
+  #content-column {
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* 标题、正文内容区与文末全宽舒展 */
   #single_header,
   .article-content,
   article footer {
-    max-width: 56rem !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 }
