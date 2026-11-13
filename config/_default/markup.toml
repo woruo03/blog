@@ -1,0 +1,37 @@
+# ============================================================
+# Markdown 渲染配置（严格遵循 Blowfish 官方要求）
+# ============================================================
+
+# 代码高亮（由 Blowfish Tailwind CSS 接管样式）
+[highlight]
+anchorLineNos = false
+codeFences = true
+guessSyntax = true
+lineNos = false
+noClasses = false
+
+# 自动目录
+[tableOfContents]
+endLevel = 4
+ordered = false
+startLevel = 2
+
+# Goldmark 渲染引擎
+[goldmark]
+[goldmark.parser]
+wrapStandAloneImageWithinParagraph = false
+[goldmark.parser.attribute]
+block = true
+
+[goldmark.renderer]
+unsafe = true # 必须为 true，Blowfish 组件依赖 HTML 渲染
+
+[goldmark.extensions]
+strikethrough = true
+table = true
+taskList = true
+[goldmark.extensions.passthrough]
+enable = true
+[goldmark.extensions.passthrough.delimiters]
+block = [['\[', '\]'], ['$$', '$$']]
+inline = [['\(', '\)']]

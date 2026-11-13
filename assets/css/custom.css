@@ -1,0 +1,46 @@
+/* ============================================================
+   Blowfish 自定义样式 — 智能大纲 (smartTOC) 当前阅读章节高亮
+   ============================================================ */
+
+#TableOfContents a.active,
+.toc a.active {
+  color: #0284c7 !important; /* Sky 600 天空蓝高亮 */
+  font-weight: 600 !important;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+html.dark #TableOfContents a.active,
+html.dark .toc a.active {
+  color: #38bdf8 !important; /* 暗色模式 Sky 400 天空蓝高亮 */
+}
+
+/* ============================================================
+   全局容器与文章宽度加宽优化 (充分利用宽屏显示器)
+   ============================================================ */
+
+/* 1. 全局容器自适应扩展：从 1280px 扩展到 1440px，精简过大内边距 */
+@media (min-width: 1024px) {
+  body {
+    max-width: 1440px !important;
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+  }
+}
+
+@media (min-width: 1440px) {
+  body {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+}
+
+/* 2. 文章标题、正文及底部加宽：从 65ch (~650px) 扩展至 56rem (~896px) */
+@media (min-width: 1024px) {
+  #single_header,
+  .article-content,
+  article footer {
+    max-width: 56rem !important;
+  }
+}

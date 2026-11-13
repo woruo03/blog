@@ -1,0 +1,47 @@
+# ============================================================
+# Blowfish 主题参数
+# ============================================================
+
+# ---- 外观 ----
+colorScheme = "ocean"
+defaultAppearance = "dark"
+autoSwitchAppearance = true
+
+# ---- 全局功能 ----
+enableSearch = true
+enableCodeCopy = true
+smartTOC = true
+smartTOCHideUnfocusedChildren = false
+mainSections = ["posts"]
+description = "woruo03 的技术学习与折腾日常"
+robots = "index, follow"
+
+# ---- 首页布局 ----
+[homepage]
+layout = "profile"
+showRecent = true
+showRecentItems = 8
+cardView = true
+cardViewScreenWidth = false
+
+# ---- 文章页 ----
+[article]
+showDate = true
+showDateUpdated = true
+showReadingTime = true
+showWordCount = true
+showTableOfContents = true
+showZenMode = true
+showTaxonomies = true
+showBreadcrumbs = true
+showPagination = true
+showComments = true
+showHero = false
+showHeadingAnchors = true
+
+# ---- 列表页 ----
+[list]
+showBreadcrumbs = true
+showTableOfContents = false
+groupByYear = true
+cardView = true

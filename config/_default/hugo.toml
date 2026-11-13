@@ -1,0 +1,35 @@
+# ============================================================
+# blog.woruo03.com — Hugo 核心配置
+# ============================================================
+
+baseURL = "https://blog.woruo03.com/"
+defaultContentLanguage = "zh-cn"
+theme = "blowfish"
+
+# 中文与文本特性
+hasCJKLanguage = true
+enableEmoji = true
+enableRobotsTXT = true
+summaryLength = 40
+
+# 分页配置 (现代 Hugo 规范)
+[pagination]
+  pagerSize = 10
+
+# 输出格式（JSON 用于 Blowfish Fuse.js 搜索索引）
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+  section = ["HTML", "RSS"]
+  taxonomy = ["HTML"]
+  term = ["HTML"]
+
+# 分类体系
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  author = "authors"
+  series = "series"
+
+# 语义化文章链接
+[permalinks]
+  posts = "/posts/:slugorfilename/"
