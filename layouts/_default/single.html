@@ -27,7 +27,7 @@
       {{ end }}
       <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
         <span>{{ .Title | emojify }}</span>
-        {{ if (.Params.showZenMode | default (.Site.Params.article.showZenMode | default false)) }}
+        {{ if or .Params.showZenMode (and site.Params.article.showZenMode (ne .Params.showZenMode false)) }}
           <span class="inline-block ms-3 align-middle">
             {{ partial "meta/zen-mode.html" . }}
           </span>

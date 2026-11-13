@@ -5,6 +5,7 @@ showDate: false
 showReadingTime: false
 showWordCount: false
 showTableOfContents: false
+showZenMode: false
 showComments: false
 showPagination: false
 ---
