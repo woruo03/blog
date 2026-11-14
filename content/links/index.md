@@ -17,7 +17,6 @@ showPagination: false
 - 博客名称
 - 博客链接
 - 简短介绍
-- 博客头像/Logo 链接
 
 ---
 

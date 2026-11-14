@@ -23,10 +23,15 @@ showTableOfContents: true
 Markdown 支持 6 级标题，本博客会自动在右侧大纲（TOC）中索引 2 级到 4 级标题：
 
 # 一级标题 (H1)
+
 ## 二级标题 (H2)
+
 ### 三级标题 (H3)
+
 #### 四级标题 (H4)
+
 ##### 五级标题 (H5)
+
 ###### 六级标题 (H6)
 
 ---
@@ -34,10 +39,10 @@ Markdown 支持 6 级标题，本博客会自动在右侧大纲（TOC）中索�
 ## 2. 文本基本排版
 
 - **粗体强调**：`**这里是粗体**` 显示为 **这里是粗体**
-- *斜体强调*：`*这里是斜体*` 显示为 *这里是斜体*
-- ***粗斜体***：`***粗斜体混合***` 显示为 ***粗斜体混合***
+- _斜体强调_：`*这里是斜体*` 显示为 _这里是斜体_
+- _**粗斜体**_：`***粗斜体混合***` 显示为 _**粗斜体混合**_
 - ~~删除线~~：`~~这段内容已过时~~` 显示为 ~~这段内容已过时~~
-- `行内代码`：`\`int a = 10;\`` 显示为 `int a = 10;`
+- `行内代码`：`\`int a = 10;\``显示为`int a = 10;`
 - <mark>文本高亮</mark>：`<mark>关键要点高亮</mark>` 显示为 <mark>关键要点高亮</mark>
 - 键盘快捷键：`<kbd>Ctrl</kbd> + <kbd>C</kbd>` 显示为 <kbd>Ctrl</kbd> + <kbd>C</kbd>
 - 上标与下标：X<sup>2</sup> 与 H<sub>2</sub>O （使用 `<sup>` 和 `<sub>` 标签）
@@ -47,23 +52,26 @@ Markdown 支持 6 级标题，本博客会自动在右侧大纲（TOC）中索�
 ## 3. 列表形式
 
 ### 3.1 无序列表
+
 - 操作系统
-  - Linux
-    - Ubuntu / Debian
-    - Fedora / Arch
-  - macOS
+    - Linux
+        - Ubuntu / Debian
+        - Fedora / Arch
+    - macOS
 - 编程语言
-  - C / C++
-  - Python
-  - Rust
+    - C / C++
+    - Python
+    - Rust
 
 ### 3.2 有序列表
+
 1. 打开终端
 2. 克隆博客仓库
 3. 运行 `hugo server -D`
 4. 在浏览器预览效果
 
 ### 3.3 交互式任务清单 (Task Lists)
+
 - [x] 安装 Hugo Extended 引擎
 - [x] 配置 Blowfish 模块化配置
 - [x] 开启优雅的右侧大纲目录（TOC）
@@ -76,27 +84,31 @@ Markdown 支持 6 级标题，本博客会自动在右侧大纲（TOC）中索�
 
 Markdown 表格支持冒号 `:` 定义内容对齐方式：
 
-| 命令名称 (左对齐) | 常用参数 (居中) | 默认端口/作用 (右对齐) | 说明 |
-| :--- | :---: | ---: | :--- |
-| `hugo server` | `-D` (含草稿) | `http://localhost:1313` | 本地实时热更新预览 |
-| `hugo` | `--gc --minify` | 输出至 `public/` | 生产环境全量编译打包 |
-| `git status` | 无 | 显示工作区状态 | 检查修改或新增的文件 |
-| `git push` | `-u origin main` | GitHub / Remote | 推送代码触发自动部署 |
+| 命令名称 (左对齐) | 常用参数 (居中)  |  默认端口/作用 (右对齐) | 说明                 |
+| :---------------- | :--------------: | ----------------------: | :------------------- |
+| `hugo server`     |  `-D` (含草稿)   | `http://localhost:1313` | 本地实时热更新预览   |
+| `hugo`            | `--gc --minify`  |        输出至 `public/` | 生产环境全量编译打包 |
+| `git status`      |        无        |          显示工作区状态 | 检查修改或新增的文件 |
+| `git push`        | `-u origin main` |         GitHub / Remote | 推送代码触发自动部署 |
 
 ---
 
 ## 5. 引用与折叠块
 
 ### 5.1 标准引用
+
 > “好记性不如烂笔头，记录是思维深化的最好方式。”
 >
 > —— 无名技术人
 
 ### 5.2 嵌套引用
+
 > 第一层引用内容
-> >> 第二层嵌套引用内容
+>
+> > > 第二层嵌套引用内容
 
 ### 5.3 原生折叠内容块 (Details / Summary)
+
 <details>
 <summary>👉 点击展开查看隐藏的代码解析或长文本</summary>
 
@@ -107,6 +119,7 @@ Markdown 表格支持冒号 `:` 定义内容对齐方式：
 uname -a
 dmesg | head -n 10
 ```
+
 </details>
 
 ---
@@ -131,6 +144,7 @@ Blowfish 主题原生深度集成 GitHub 风格 Admonition 提示框，支持标
 > **危险 (Caution)**：执行 `rm -rf` 等破坏性命令时必须反复确认路径，避免误删重要数据。
 
 ### 可折叠的提示框
+
 带有 `+` 或 `-` 的标识可以让提示框支持折叠收起：
 
 > [!NOTE]+ 可折叠提示框（默认展开）
@@ -146,6 +160,7 @@ Blowfish 主题原生深度集成 GitHub 风格 Admonition 提示框，支持标
 所有代码块右上角均自带**一键复制**按钮：
 
 ### 7.1 C 语言示例
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -158,6 +173,7 @@ int main(void) {
 ```
 
 ### 7.2 Python 示例
+
 ```python
 def fibonacci(n: int) -> list[int]:
     """生成前 n 个斐波那契数"""
@@ -173,6 +189,7 @@ if __name__ == "__main__":
 ```
 
 ### 7.3 Bash 脚本示例
+
 ```bash
 #!/usr/bin/env bash
 # 查看系统基本资源状态
@@ -183,6 +200,7 @@ free -h
 ```
 
 ### 7.4 配置文件 (TOML / JSON)
+
 ```toml
 # config/_default/params.toml 示例
 colorScheme = "ocean"
@@ -197,11 +215,13 @@ enableSearch = true
 通过引入 `{{</* katex */>}}`，页面即可自动解析数学公式。
 
 ### 8.1 行内公式
+
 欧拉恒等式 \(e^{i\pi} + 1 = 0\) 被誉为数学界最优雅的方程。
 
 二次方程求根公式为 \(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}\)。
 
 ### 8.2 块级居中公式
+
 高斯正态分布密度函数：
 
 $$
@@ -232,22 +252,22 @@ $$
 ### 9.1 流程图 (Flowchart)
 {{< mermaid >}}
 graph TD
-    A["本地写文章 (Markdown)"] --> B["hugo server -D 本地实时预览"]
-    B -->|检查排版满意| C["git commit -m '新文章'"]
-    C --> D["git push 推送到 GitHub"]
-    D --> E["Cloudflare Pages 自动构建"]
-    E --> F["全球 CDN 访问 blog.woruo03.com"]
+A["本地写文章 (Markdown)"] --> B["hugo server -D 本地实时预览"]
+B -->|检查排版满意| C["git commit -m '新文章'"]
+C --> D["git push 推送到 GitHub"]
+D --> E["Cloudflare Pages 自动构建"]
+E --> F["全球 CDN 访问 blog.woruo03.com"]
 {{< /mermaid >}}
 
 ### 9.2 时序图 (Sequence Diagram)
 {{< mermaid >}}
 sequenceDiagram
-    autonumber
-    actor User as 读者
-    participant Browser as 浏览器
-    participant CF as Cloudflare Pages
-    participant Giscus as Giscus 评论服务
-    
+autonumber
+actor User as 读者
+participant Browser as 浏览器
+participant CF as Cloudflare Pages
+participant Giscus as Giscus 评论服务
+
     User->>Browser: 打开博文页面
     Browser->>CF: 请求静态资源 (HTML/CSS/JS)
     CF-->>Browser: 返回极速缓存页面
@@ -271,17 +291,21 @@ stateDiagram-v2
 Blowfish 提供了一系列优雅的前端组件，丰富你的文章表达：
 
 ### 10.1 徽章组件 (Badge)
+
 你可以使用徽章标记版本或分类：
+
 - 状态徽章：{{< badge >}}Stable v1.0{{< /badge >}}
 - 分类标签：{{< badge >}}Linux 笔记{{< /badge >}} {{< badge >}}嵌入式{{< /badge >}}
 
 ### 10.2 自定义提示框 (Alert Shortcode)
+
 除了 GitHub 风格外，主题自带的标准 Alert：
 {{< alert icon="fire" >}}
 这是一个使用 alert 短代码（`icon="fire"`）创建的高亮警示框，带有火焰图标。
 {{< /alert >}}
 
 ### 10.3 按钮链接 (Button)
+
 为文章中的外部下载或跳转创建醒目的按钮：
 
 {{< button href="https://github.com/woruo03/blog" target="_blank" >}}
@@ -301,4 +325,5 @@ Blowfish 提供了一系列优雅的前端组件，丰富你的文章表达：
 当你需要写新文章时，可以随时将本篇文章的内容作为“小抄”，直接复制对应的代码片段或短代码使用。祝你写作愉快 🎉
 
 [^1]: 这里是第一条脚注的详细补充说明，适合放置参考资料或延伸文献链接。
+
 [^2]: 脚注会自动按顺序编号并生成返回正文的双向跳转链接。

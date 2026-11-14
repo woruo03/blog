@@ -4,16 +4,16 @@
 
 #TableOfContents a.active,
 .toc a.active {
-  color: #0284c7 !important; /* Sky 600 天空蓝高亮 */
-  font-weight: 600 !important;
-  text-decoration-line: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+    color: #0284c7 !important; /* Sky 600 天空蓝高亮 */
+    font-weight: 600 !important;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
 }
 
 html.dark #TableOfContents a.active,
 html.dark .toc a.active {
-  color: #38bdf8 !important; /* 暗色模式 Sky 400 天空蓝高亮 */
+    color: #38bdf8 !important; /* 暗色模式 Sky 400 天空蓝高亮 */
 }
 
 /* ============================================================
@@ -22,51 +22,103 @@ html.dark .toc a.active {
 
 /* 1. 全局容器自适应扩展：从 1280px 扩展到 1440px，精简过大内边距 */
 @media (min-width: 1024px) {
-  body {
-    max-width: 1440px !important;
-    padding-left: 2.5rem !important;
-    padding-right: 2.5rem !important;
-  }
+    body {
+        max-width: 1440px !important;
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
 }
 
 @media (min-width: 1440px) {
-  body {
-    padding-left: 3rem !important;
-    padding-right: 3rem !important;
-  }
+    body {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
 }
 
 /* 2. 正常阅读模式（未开启 ZenMode）：文章标题、正文及底部为 56rem (~896px)，右侧大纲随行 */
 @media (min-width: 1024px) {
-  body:not(.zen-mode-enable) #single_header,
-  body:not(.zen-mode-enable) .article-content,
-  body:not(.zen-mode-enable) article footer {
-    max-width: 56rem !important;
-  }
+    body:not(.zen-mode-enable) #single_header,
+    body:not(.zen-mode-enable) .article-content,
+    body:not(.zen-mode-enable) article footer {
+        max-width: 56rem !important;
+    }
 }
 
 /* 3. 专注模式 (ZenMode)：折叠右侧大纲，正文、标题与底部全宽舒展 */
 body.zen-mode-enable {
-  /* 隐藏右侧大纲容器及列占位 */
-  #toc-column,
-  .toc,
-  .toc-right,
-  .toc-inside {
-    display: none !important;
-  }
+    /* 隐藏右侧大纲容器及列占位 */
+    #toc-column,
+    .toc,
+    .toc-right,
+    .toc-inside {
+        display: none !important;
+    }
 
-  /* 正文外层容器充满整个全局可用宽度 */
-  #content-column {
-    max-width: 100% !important;
-    width: 100% !important;
-    flex: 1 1 100% !important;
-  }
+    /* 正文外层容器充满整个全局可用宽度 */
+    #content-column {
+        max-width: 100% !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
 
-  /* 标题、正文内容区与文末全宽舒展 */
-  #single_header,
-  .article-content,
-  article footer {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
+    /* 标题、正文内容区与文末全宽舒展 */
+    #single_header,
+    .article-content,
+    article footer {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+/* ============================================================
+   固定磨砂顶栏 (fixed-fill-blur) 自适应对齐优化
+   解决脱离文档流后的宽度内缩与左右错位问题，严格与 body 保持一致
+   ============================================================ */
+
+/* 1. 顶部占位高度与实际导航栏 (~60px) 精确匹配，消除异常的大面积空旷留白 */
+header .header-spacer,
+header div[class*="min-h-"] {
+    min-height: 3.75rem !important; /* 60px */
+    height: 3.75rem !important;
+}
+
+/* 2. 顶栏容器内边距与最大宽度与全局 body 容器完全同步 */
+header .header-container,
+header .fixed > div.relative {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+@media (min-width: 640px) {
+    header .header-container,
+    header .fixed > div.relative {
+        padding-left: 3.5rem !important;
+        padding-right: 3.5rem !important;
+    }
+}
+
+@media (min-width: 768px) {
+    header .header-container,
+    header .fixed > div.relative {
+        padding-left: 6rem !important;
+        padding-right: 6rem !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    header .header-container,
+    header .fixed > div.relative {
+        max-width: 1440px !important;
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+}
+
+@media (min-width: 1440px) {
+    header .header-container,
+    header .fixed > div.relative {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
 }

@@ -11,13 +11,13 @@ title = "woruo03's Blog"
   displayName = "ZH"
   isoCode = "zh-cn"
   dateFormat = "2006年1月2日"
-  description = "woruo03 的技术学习与折腾日常"
+  description = "woruo03 的技术学习"
 
 [params.author]
   name = "woruo03"
   image = "img/avatar.png"
   headline = "记录学习与折腾日常"
-  bio = "一名正在探索计算机与 Linux 世界的初学者，记录日常学习笔记与踩坑心得。"
+  bio = "一名正在探索计算机与 Linux 世界的初学者，记录日常学习笔记。"
   links = [
     { github = "https://github.com/woruo03" },
     { email = "mailto:woruo03@gmail.com" },

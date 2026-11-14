@@ -14,22 +14,22 @@ summaryLength = 40
 
 # 分页配置 (现代 Hugo 规范)
 [pagination]
-  pagerSize = 10
+pagerSize = 10
 
 # 输出格式（JSON 用于 Blowfish Fuse.js 搜索索引）
 [outputs]
-  home = ["HTML", "RSS", "JSON"]
-  section = ["HTML", "RSS"]
-  taxonomy = ["HTML"]
-  term = ["HTML"]
+home = ["HTML", "RSS", "JSON"]
+section = ["HTML", "RSS"]
+taxonomy = ["HTML"]
+term = ["HTML"]
 
 # 分类体系
 [taxonomies]
-  tag = "tags"
-  category = "categories"
-  author = "authors"
-  series = "series"
+tag = "tags"
+category = "categories"
+author = "authors"
+series = "series"
 
 # 语义化文章链接
 [permalinks]
-  posts = "/posts/:slugorfilename/"
+posts = "/posts/:slugorfilename/"
