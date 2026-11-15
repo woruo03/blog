@@ -122,3 +122,19 @@ header .fixed > div.relative {
         padding-right: 3rem !important;
     }
 }
+
+/* ============================================================
+   打字机组件防抖与排版优化 (消除 CLS 高度跳变，内联文本与光标自适应)
+   ============================================================ */
+.typeit-quote {
+    display: block !important;
+    min-height: 4.5rem; /* 约 72px，容纳 1~2 行标题字体，保持空间占位防止 CLS 抖动 */
+    line-height: 1.4 !important;
+}
+
+@media (max-width: 640px) {
+    .typeit-quote {
+        min-height: 5.5rem; /* 移动端窄屏容纳 2~3 行折行 */
+    }
+}
+

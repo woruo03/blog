@@ -10,13 +10,11 @@ showComments: false
 showPagination: false
 ---
 
-{{< typeit tag=h2 speed=50 lifeLike=true loop=true breakLines=false >}}
+{{< typeit tag=h2 speed=50 deleteSpeed=25 pause=2500 lifeLike=true loop=true breakLines=false class="typeit-quote" >}}
 “所谓奇迹，就是因为不会发生，才叫奇迹啊。”
-“梦总有一天要醒来，无法醒来的梦，终有一天会变成悲伤”
-“即便如此，我还是想说，能遇见你真是太好了”
 “我也很喜欢这座小镇。但是，没有什么是一成不变的。快乐的事也好，开心的事也好，全部都不可能一成不变。”
-“我作为父亲的使命，已经完成了。”
-“已经结束了……我努力过了吧？”
+“梦总有一天要醒来，无法醒来的梦，终有一天会变成悲伤。”
+“即便如此，我还是想说，能遇见你真是太好了。”
 “没有回忆也是可以的，只要有现在就够了。因为很快，连现在也会变成回忆。”
 “如果忘记了悲伤，也就等于忘记了曾经快乐过的证明。”
 “人们总是在不断遗忘中活下去的。”

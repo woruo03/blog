@@ -1,0 +1,72 @@
+{{- $rawContent := split (trim .Inner "\r\n") "\n" -}}
+{{- $content := slice -}}
+{{- range $rawContent -}}
+  {{- $line := trim . "\r\n " -}}
+  {{- if ne $line "" -}}
+    {{- $content = $content | append $line -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $initialString := .Get "initialString" | default "" -}}
+{{- $speed := .Get "speed" | default 50 -}}
+{{- $deleteSpeed := .Get "deleteSpeed" | default 25 -}}
+{{- $lifeLike := .Get "lifeLike" | default true -}}
+{{- $startDelay := .Get "startDelay" | default 200 -}}
+{{- $breakLines := .Get "breakLines" | default false -}}
+{{- $waitUntilVisible := .Get "waitUntilVisible" | default true -}}
+{{- $loop := .Get "loop" | default true -}}
+{{- $pause := .Get "pause" | default (.Get "nextStringDelay" | default 2500) -}}
+{{- $delayBetween := .Get "delayBetween" | default 200 -}}
+{{- $randomLines := .Get "randomLines" | default false -}}
+{{- $classList := slice -}}
+{{- with .Get "class" -}}
+  {{- $classList = $classList | append . -}}
+{{- end -}}
+{{- $tag := .Get "tag" | default "div" -}}
+
+{{ $id := delimit (slice "typeit" (partial "functions/uid.html" .)) "-" }}
+
+{{- $attrs := printf `id="%v"` $id -}}
+{{- with $classList -}}
+  {{- $attrs = delimit $classList " " | printf `%v class="%v"` $attrs -}}
+{{- end -}}
+
+{{ printf `<%v %v>%s</%v>` $tag $attrs $initialString $tag | safeHTML }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var strings = {{ $content }};
+      {{ if $randomLines }}
+      for (var i = strings.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        [strings[i], strings[j]] = [strings[j], strings[i]];
+      }
+      {{ end }}
+      var instance = new TypeIt("#{{ $id }}", {
+        speed: {{ $speed }},
+        deleteSpeed: {{ $deleteSpeed }},
+        lifeLike: {{ $lifeLike }},
+        startDelay: {{ $startDelay }},
+        breakLines: {{ $breakLines }},
+        waitUntilVisible: {{ $waitUntilVisible }},
+        loop: {{ $loop }},
+        loopDelay: [{{ $delayBetween }}, {{ $pause }}]
+      });
+
+      var breakLines = {{ $breakLines }};
+      strings.forEach(function (str, idx) {
+        instance.type(str);
+        if (idx < strings.length - 1) {
+          if (breakLines) {
+            instance.break();
+          } else {
+            instance.pause({{ $pause }});
+            instance.delete([...str].length);
+            instance.pause({{ $delayBetween }});
+          }
+        }
+      });
+
+      instance.go();
+    });
+</script>

@@ -10,7 +10,7 @@ showComments: false
 showPagination: false
 ---
 
-## 🔗 友情链接
+### 🔗 申请与交换说明
 
 欢迎技术同好交换友链！欢迎通过邮件或文章评论留言，请附上：
 

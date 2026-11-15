@@ -1,22 +1,46 @@
-{{/* Giscus 评论系统 — https://giscus.app */}} {{/* 仓库上线并开启 Discussions
-后，将获取到的 data-repo-id 和 data-category-id 填入此处即可 */}}
+{{/* Giscus 评论系统 — 响应式日夜模式无缝切换 */}}
 <section class="pt-6">
     <div class="giscus"></div>
-    <script
-        src="https://giscus.app/client.js"
-        data-repo="woruo03/blog"
-        data-repo-id="R_kgDOVs3knQ"
-        data-category="General"
-        data-category-id="DIC_kwDOVs3knc4DLB4b"
-        data-mapping="pathname"
-        data-strict="1"
-        data-reactions-enabled="1"
-        data-emit-metadata="0"
-        data-input-position="bottom"
-        data-theme="transparent_dark"
-        data-lang="zh-CN"
-        data-loading="lazy"
-        crossorigin="anonymous"
-        async
-    ></script>
+    <script>
+      (function() {
+        const isDark = document.documentElement.classList.contains("dark");
+        const theme = isDark ? "transparent_dark" : "light";
+        const script = document.createElement("script");
+        script.src = "https://giscus.app/client.js";
+        script.setAttribute("data-repo", "woruo03/blog");
+        script.setAttribute("data-repo-id", "R_kgDOVs3knQ");
+        script.setAttribute("data-category", "General");
+        script.setAttribute("data-category-id", "DIC_kwDOVs3knc4DLB4b");
+        script.setAttribute("data-mapping", "pathname");
+        script.setAttribute("data-strict", "1");
+        script.setAttribute("data-reactions-enabled", "1");
+        script.setAttribute("data-emit-metadata", "0");
+        script.setAttribute("data-input-position", "bottom");
+        script.setAttribute("data-theme", theme);
+        script.setAttribute("data-lang", "zh-CN");
+        script.setAttribute("data-loading", "lazy");
+        script.crossOrigin = "anonymous";
+        script.async = true;
+        document.querySelector("div.giscus").appendChild(script);
+
+        function syncGiscusTheme() {
+          const isDarkNow = document.documentElement.classList.contains("dark");
+          const targetTheme = isDarkNow ? "transparent_dark" : "light";
+          const iframe = document.querySelector("iframe.giscus-frame");
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              { giscus: { setConfig: { theme: targetTheme } } },
+              "https://giscus.app"
+            );
+          }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+          const btn = document.getElementById("appearance-switcher");
+          const btnMobile = document.getElementById("appearance-switcher-mobile");
+          if (btn) btn.addEventListener("click", () => setTimeout(syncGiscusTheme, 50));
+          if (btnMobile) btnMobile.addEventListener("click", () => setTimeout(syncGiscusTheme, 50));
+        });
+      })();
+    </script>
 </section>
