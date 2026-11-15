@@ -1,7 +1,21 @@
 /* ============================================================
-   Blowfish 自定义样式 — 智能大纲 (smartTOC) 当前阅读章节高亮
+   Blowfish 自定义样式 — 智能大纲 (smartTOC) 随屏吸顶悬浮与高亮
    ============================================================ */
 
+/* 1. 桌面端大纲随屏吸顶悬浮 (解决未预编译 lg:top-20 导致 sticky 失效退化问题) */
+@media (min-width: 1024px) {
+    .toc {
+        position: sticky !important;
+        top: 5rem !important; /* 80px，紧随 60px 磨砂顶栏下方，留出 20px 舒适留白 */
+    }
+}
+
+/* 2. 校准标题锚点偏移量：精确适配 60px 磨砂顶栏 + 20px 留白 (补偿标题自身高度后约为 -6.5rem) */
+.anchor {
+    top: -6.5rem !important; /* -104px */
+}
+
+/* 3. 当前阅读章节 Sky 蓝高亮强调 */
 #TableOfContents a.active,
 .toc a.active {
     color: #0284c7 !important; /* Sky 600 天空蓝高亮 */
@@ -46,29 +60,24 @@ html.dark .toc a.active {
 }
 
 /* 3. 专注模式 (ZenMode)：折叠右侧大纲，正文、标题与底部全宽舒展 */
-body.zen-mode-enable {
-    /* 隐藏右侧大纲容器及列占位 */
-    #toc-column,
-    .toc,
-    .toc-right,
-    .toc-inside {
-        display: none !important;
-    }
+body.zen-mode-enable #toc-column,
+body.zen-mode-enable .toc,
+body.zen-mode-enable .toc-right,
+body.zen-mode-enable .toc-inside {
+    display: none !important;
+}
 
-    /* 正文外层容器充满整个全局可用宽度 */
-    #content-column {
-        max-width: 100% !important;
-        width: 100% !important;
-        flex: 1 1 100% !important;
-    }
+body.zen-mode-enable #content-column {
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+}
 
-    /* 标题、正文内容区与文末全宽舒展 */
-    #single_header,
-    .article-content,
-    article footer {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
+body.zen-mode-enable #single_header,
+body.zen-mode-enable .article-content,
+body.zen-mode-enable article footer {
+    max-width: 100% !important;
+    width: 100% !important;
 }
 
 /* ============================================================
@@ -137,4 +146,3 @@ header .fixed > div.relative {
         min-height: 5.5rem; /* 移动端窄屏容纳 2~3 行折行 */
     }
 }
-
