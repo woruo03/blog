@@ -36,14 +36,14 @@
 <script>
   (function () {
     function initTypeIt() {
-      var strings = {{ $content }};
+      const strings = {{ $content }};
       {{ if $randomLines }}
-      for (var i = strings.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
+      for (let i = strings.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
         [strings[i], strings[j]] = [strings[j], strings[i]];
       }
       {{ end }}
-      var instance = new TypeIt("#{{ $id }}", {
+      const instance = new TypeIt("#{{ $id }}", {
         speed: {{ $speed }},
         deleteSpeed: {{ $deleteSpeed }},
         lifeLike: {{ $lifeLike }},
@@ -54,7 +54,7 @@
         loopDelay: [{{ $delayBetween }}, {{ $pause }}]
       });
 
-      var breakLines = {{ $breakLines }};
+      const breakLines = {{ $breakLines }};
       strings.forEach(function (str, idx) {
         instance.type(str);
         if (idx < strings.length - 1) {

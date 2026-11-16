@@ -9,7 +9,7 @@
         {{ i18n "article.table_of_contents" }}
     </summary>
     <div
-        class="min-w-[220px] py-2 border-dotted border-s -ms-5 ps-5 dark:border-neutral-600"
+        class="min-w-[220px] py-2 border-dotted border-neutral-300 border-s -ms-5 ps-5 dark:border-neutral-600"
     >
         {{ replace (.TableOfContents | emojify) `id="TableOfContents"` (printf
         `id="TableOfContents" aria-label="%s"` (i18n
@@ -49,7 +49,7 @@
       let targetAnchorId = null
       let jumpTimeout = null
 
-      function getActiveAnchorId(anchors) {
+      function getActiveAnchorId(anchors, tocIds) {
         if (isJumpingToAnchor && targetAnchorId) {
           return targetAnchorId
         }
@@ -58,15 +58,8 @@
           document.documentElement.scrollHeight > window.innerHeight + 1
         if (!canScroll) {
           const fromHash = decodeURIComponent(window.location.hash.substring(1))
-          const known = [...document.querySelectorAll('#TableOfContents a[href^="#"]')]
-            .map(link => decodeURIComponent(link.getAttribute('href').substring(1)))
-          if (fromHash && known.includes(fromHash)) return fromHash
+          if (fromHash && tocIds.has(fromHash)) return fromHash
         }
-
-        const tocLinks = [...document.querySelectorAll('#TableOfContents a[href^="#"]')]
-        const tocIds = new Set(
-          tocLinks.map(link => decodeURIComponent(link.getAttribute('href').substring(1)))
-        )
 
         // 如果已滚动到底部（留 50px 容差），直接激活最后一项目录项
         const isAtBottom =
@@ -83,7 +76,6 @@
           const anchor = anchors[i]
           const id = decodeURIComponent(anchor.id)
           if (!tocIds.has(id)) continue
-          // 取真实的标题 DOM 元素 (anchor.parentElement) 的视口 top
           const headingEl = anchor.parentElement || anchor
           const headingTop = headingEl.getBoundingClientRect().top
           if (headingTop <= SCROLL_FOCUS_THRESHOLD) {
@@ -93,8 +85,8 @@
         return anchors.find(anchor => tocIds.has(decodeURIComponent(anchor.id)))?.id || ''
       }
 
-      function updateTOC({ toc, anchors, links, collapseInactive }) {
-        const activeId = getActiveAnchorId(anchors)
+      function updateTOC({ toc, anchors, links, tocIds, collapseInactive }) {
+        const activeId = getActiveAnchorId(anchors, tocIds)
         if (!activeId) return
 
         const activeDecoded = decodeURIComponent(activeId)
@@ -136,6 +128,9 @@
         const collapseInactive = {{ if site.Params.smartTOCHideUnfocusedChildren }}true{{ else }}false{{ end }}
         const anchors = [...document.querySelectorAll(ANCHOR_SELECTOR)]
         const links = [...toc.querySelectorAll(TOC_LINK_SELECTOR)]
+        const tocIds = new Set(
+          links.map(link => decodeURIComponent((link.getAttribute('href') || '').substring(1)))
+        )
 
         if (collapseInactive) {
           toc.querySelectorAll(NESTED_LIST_SELECTOR).forEach(ul => ul.style.display = 'none')
@@ -172,10 +167,21 @@
           toc,
           anchors,
           links,
+          tocIds,
           collapseInactive
         }
 
-        window.addEventListener('scroll', () => updateTOC(config), { passive: true })
+        // 采用 requestAnimationFrame 帧率调度，避免高频滚动触发强制重排 (Layout Thrashing)
+        let rafId = null
+        const onScroll = () => {
+          if (rafId) return
+          rafId = requestAnimationFrame(() => {
+            updateTOC(config)
+            rafId = null
+          })
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true })
         window.addEventListener('hashchange', () => updateTOC(config), { passive: true })
 
         updateTOC(config)

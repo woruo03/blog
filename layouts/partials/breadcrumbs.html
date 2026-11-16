@@ -1,0 +1,87 @@
+{{ $isSingle := eq .Kind "page" }}
+{{ $taxData := dict }}
+{{ if $isSingle }}
+  {{ range $tax := slice "tags" "categories" "series" }}
+    {{ with $.GetTerms $tax }}
+      {{ $list := slice }}
+      {{ range . }}
+        {{ $list = $list | append (dict "title" .LinkTitle "url" .RelPermalink) }}
+      {{ end }}
+      {{ $taxData = merge $taxData (dict $tax $list) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{/* 仅获取直接父级 (非首页) */}}
+{{ $parentCrumb := false }}
+{{ if and .Parent (not .Parent.IsHome) }}
+  {{ $parentCrumb = dict "title" (.Parent.Title | default .Parent.Section) "url" .Parent.RelPermalink }}
+{{ end }}
+
+{{ if or $parentCrumb $isSingle }}
+<nav aria-label="{{ i18n "article.breadcrumbs" | default "面包屑导航" }}" class="print:hidden">
+  <ol
+    id="breadcrumbs-trail"
+    class="flex flex-wrap items-center text-sm text-neutral-500 dark:text-neutral-400"
+    {{ if $isSingle }}data-taxonomies="{{ $taxData | jsonify }}"{{ end }}>
+    {{ if $parentCrumb }}
+      <li class="inline-flex items-center">
+        <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="{{ $parentCrumb.url }}">
+          {{ $parentCrumb.title }}
+        </a>
+        <span class="px-1.5 text-primary-500 select-none">/</span>
+      </li>
+    {{ end }}
+  </ol>
+</nav>
+{{ end }}
+
+{{ if $isSingle }}
+<script>
+  (function () {
+    const trail = document.getElementById("breadcrumbs-trail");
+    if (!trail || !trail.dataset.taxonomies) return;
+
+    let referrerPath = "";
+    if (document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer);
+        if (refUrl.origin === window.location.origin) {
+          referrerPath = decodeURIComponent(refUrl.pathname);
+          sessionStorage.setItem("blog_breadcrumb_ref", referrerPath);
+        }
+      } catch (e) {}
+    }
+    if (!referrerPath) {
+      referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
+    }
+    if (!referrerPath) return;
+
+    let taxData = {};
+    try {
+      taxData = JSON.parse(trail.dataset.taxonomies || "{}");
+    } catch (e) {
+      return;
+    }
+
+    const cleanPath = referrerPath.replace(/\/+$/, "") + "/";
+    const match = cleanPath.match(/^\/(tags|categories|series)\/([^\/]+)\//);
+    if (!match) return;
+
+    const [, tax, slug] = match;
+    const target = (taxData[tax] || []).find(t => {
+      const tSlug = decodeURIComponent(t.url).replace(new RegExp(`^\\/${tax}\\/|\\/$`, "g"), "");
+      return tSlug.toLowerCase() === slug.toLowerCase();
+    });
+
+    if (target) {
+      trail.innerHTML = `
+        <li class="inline-flex items-center">
+          <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="${target.url}">${target.title}</a>
+          <span class="px-1.5 text-primary-500 select-none">/</span>
+        </li>
+      `;
+    }
+  })();
+</script>
+{{ end }}

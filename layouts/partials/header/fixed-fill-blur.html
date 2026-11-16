@@ -8,11 +8,9 @@
         {{ partial "header/basic.html" . }}
     </div>
 </div>
-{{ $backgroundBlur := resources.Get "js/background-blur.js" }} {{
-$backgroundBlur = $backgroundBlur | resources.Minify | resources.Fingerprint
-(site.Params.fingerprintAlgorithm | default "sha512") }}
+{{ $backgroundBlur := resources.Get "js/background-blur.js" }}
+{{ $backgroundBlur = $backgroundBlur | resources.Minify | resources.Fingerprint (site.Params.fingerprintAlgorithm | default "sha512") }}
 <script
-    type="text/javascript"
     src="{{ $backgroundBlur.RelPermalink }}"
     integrity="{{ $backgroundBlur.Data.Integrity }}"
     data-blur-id="menu-blur"

@@ -11,6 +11,7 @@ autoSwitchAppearance = true
 enableSearch = true
 enableCodeCopy = true
 enableStyledScrollbar = true
+enableStructuredBreadcrumbs = true
 smartTOC = true
 smartTOCHideUnfocusedChildren = false
 mainSections = ["posts"]
@@ -56,3 +57,11 @@ robots = "index, follow"
   groupByYear = true
   cardView = true
   featureImageHover = true
+
+# ---- 页脚配置 ----
+[footer]
+  showMenu = false
+  showCopyright = true
+  showThemeAttribution = true
+  showAppearanceSwitcher = false # 顶栏已集成日夜模式切换，避免页脚冗余
+  showScrollToTop = true

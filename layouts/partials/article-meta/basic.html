@@ -12,12 +12,7 @@
   {{ $meta := newScratch }}
 
   {{/* Gather partials for this context */}}
-  {{ $shouldShowDate := false }}
-  {{ if .Params.showDate | default (site.Params.article.showDate | default true) }}
-    {{ $shouldShowDate = true }}
-  {{ else }}
-    {{ $shouldShowDate = false }}
-  {{ end }}
+  {{ $shouldShowDate := .Params.showDate | default (site.Params.article.showDate | default true) }}
 
   {{ if (.Params.showDateOnlyInArticle | default (site.Params.article.showDateOnlyInArticle | default false)) }}
     {{ if (ne $scope "single") }}
@@ -75,20 +70,14 @@
   </div>
 
   {{ if .Params.showAuthorsBadges | default (site.Params.article.showAuthorsBadges | default false) }}
-    <div class="flex flex-row flex-wrap items-center">
-      {{ range $taxonomy, $terms := site.Taxonomies }}
-        {{ if (eq $taxonomy "authors") }}
-          {{ if (gt (len ($context.GetTerms $taxonomy)) 0) }}
-            {{ range $i, $a := $context.GetTerms $taxonomy }}
-              {{ if not (eq $i 0) }}
-                ,&nbsp;
-              {{ end }}
-              <a href="{{ $a.RelPermalink }}" class="relative">{{ $a.LinkTitle }}</a>
-            {{ end }}
-          {{ end }}
+    {{ with $context.GetTerms "authors" }}
+      <div class="flex flex-row flex-wrap items-center">
+        {{ range $i, $a := . }}
+          {{ if not (eq $i 0) }},&nbsp;{{ end }}
+          <a href="{{ $a.RelPermalink }}" class="relative">{{ $a.LinkTitle }}</a>
         {{ end }}
-      {{ end }}
-    </div>
+      </div>
+    {{ end }}
   {{ end }}
 
   {{/* Output taxonomies */}}

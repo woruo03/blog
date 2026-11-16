@@ -2,11 +2,19 @@
    Blowfish 自定义样式 — 智能大纲 (smartTOC) 随屏吸顶悬浮与高亮
    ============================================================ */
 
-/* 1. 桌面端大纲随屏吸顶悬浮 (解决未预编译 lg:top-20 导致 sticky 失效退化问题) */
+/* 1. 桌面端大纲随屏吸顶悬浮与垂直滚动约束 (解决未预编译 lg:top-20 导致 sticky 失效及长篇大纲底部溢出无法滚动问题) */
 @media (min-width: 1024px) {
     .toc {
         position: sticky !important;
         top: 5rem !important; /* 80px，紧随 60px 磨砂顶栏下方，留出 20px 舒适留白 */
+        max-height: calc(100vh - 6.5rem) !important;
+        max-height: calc(100dvh - 6.5rem) !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .toc .toc-right {
+        max-height: 100% !important;
     }
 }
 
