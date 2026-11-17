@@ -8,6 +8,8 @@ showTableOfContents: false
 showZenMode: false
 showComments: false
 showPagination: false
+showViews: false
+showLikes: false
 ---
 
 {{< typeit tag=h2 speed=50 deleteSpeed=25 pause=2500 lifeLike=true loop=true breakLines=false class="typeit-quote" >}}

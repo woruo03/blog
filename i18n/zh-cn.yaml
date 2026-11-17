@@ -1,19 +1,23 @@
 article:
-  breadcrumbs: "面包屑导航"
-  zen_mode_title:
-    enable: "开启专注阅读 (折叠大纲并加宽正文)"
-    disable: "退出专注阅读"
+    breadcrumbs: "面包屑导航"
+    views: "浏览量"
+    likes: "点赞数"
+    like: "点赞"
+    liked: "已赞"
+    zen_mode_title:
+        enable: "开启专注阅读 (折叠大纲并加宽正文)"
+        disable: "退出专注阅读"
 
 error:
-  404_home: "返回首页"
+    404_home: "返回首页"
 
 nav:
-  home: "首页"
-  close_menu: "关闭菜单"
-  footer_menu: "页脚菜单"
-  main_menu: "主导航菜单"
-  mobile_menu: "移动端导航"
-  toggle_submenu: "切换子菜单"
+    home: "首页"
+    close_menu: "关闭菜单"
+    footer_menu: "页脚菜单"
+    main_menu: "主导航菜单"
+    mobile_menu: "移动端导航"
+    toggle_submenu: "切换子菜单"
 
 sharing:
-  mastodon: "通过 Mastodon 分享"
+    mastodon: "通过 Mastodon 分享"

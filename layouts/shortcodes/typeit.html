@@ -35,6 +35,20 @@
 
 <script>
   (function () {
+    "use strict";
+
+    function run() {
+      if (typeof TypeIt === "undefined") {
+        if (document.readyState === "complete") {
+          setTimeout(run, 100);
+          return;
+        }
+        window.addEventListener("load", run, { once: true });
+        return;
+      }
+      initTypeIt();
+    }
+
     function initTypeIt() {
       const strings = {{ $content }};
       {{ if $randomLines }}
@@ -71,8 +85,10 @@
       instance.go();
     }
 
-    document.readyState === "loading"
-      ? document.addEventListener("DOMContentLoaded", initTypeIt)
-      : initTypeIt();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", run);
+    } else {
+      run();
+    }
   })();
 </script>

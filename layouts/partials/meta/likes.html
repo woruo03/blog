@@ -1,0 +1,54 @@
+{{/* layouts/partials/meta/likes.html */}}
+{{ $context := . }}
+{{ $scope := default nil }}
+{{ if (reflect.IsMap .) }}
+  {{ $context = .context }}
+  {{ $scope = cond (not .scope) nil .scope }}
+{{ end }}
+
+{{ with $context }}
+  {{ $id := partial "functions/post-stats-id.html" . }}
+  {{ if $id }}
+    {{ if eq $scope "single" }}
+      {{/* 单篇文章：可点击点赞的一体化交互组件 */}}
+      <span>
+        <button
+          id="button_likes"
+          type="button"
+          data-post-id="{{ $id }}"
+          aria-label="{{ i18n "article.like" | default "点赞" }}"
+          aria-pressed="false"
+          title="{{ i18n "article.like" | default "点赞" }}"
+          class="article-meta-stat group gap-1 text-neutral-500 hover:text-red-500 dark:text-neutral-400 dark:hover:text-red-400 transition-colors cursor-pointer select-none focus:outline-none">
+          <span id="button_likes_icon" class="icon icon-heart transition-transform duration-200 group-hover:scale-125" aria-hidden="true">
+            <span id="button_likes_heart" class="hidden">{{ partial "icon.html" "heart" }}</span>
+            <span id="button_likes_empty_heart">{{ partial "icon.html" "heart-empty" }}</span>
+          </span>
+          <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
+          <span
+            id="likes_{{ $id }}"
+            class="animate-pulse inline-block text-transparent min-w-[1ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
+            title="{{ i18n "article.likes" | default "点赞数" }}"
+            aria-busy="true"
+            >0</span
+          >
+        </button>
+      </span>
+    {{ else }}
+      {{/* 列表卡片：静态只读展示 */}}
+      <span>
+        <span class="article-meta-stat gap-1 text-neutral-500 dark:text-neutral-400">
+          <span class="icon icon-heart icon-heart-static text-red-500" aria-hidden="true">{{ partial "icon.html" "heart" }}</span>
+          <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
+          <span
+            id="likes_{{ $id }}"
+            class="animate-pulse inline-block text-transparent min-w-[1ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
+            title="{{ i18n "article.likes" | default "点赞数" }}"
+            aria-busy="true"
+            >0</span
+          >
+        </span>
+      </span>
+    {{ end }}
+  {{ end }}
+{{ end }}

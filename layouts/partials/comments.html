@@ -1,29 +1,39 @@
-{{/* Giscus 评论系统 — 现代 MutationObserver 响应式日夜模式无缝切换 */}}
+{{/* Giscus 评论系统 — 现代 IntersectionObserver 按需加载与 MutationObserver 日夜换肤 */}}
 <section class="pt-6">
     <div class="giscus"></div>
     <script>
         (function () {
+            "use strict";
+
+            const container = document.querySelector("div.giscus");
+            if (!container) return;
+
             const getTheme = () =>
                 document.documentElement.classList.contains("dark")
                     ? "transparent_dark"
                     : "light";
-            const script = document.createElement("script");
-            script.src = "https://giscus.app/client.js";
-            script.setAttribute("data-repo", "woruo03/blog");
-            script.setAttribute("data-repo-id", "R_kgDOVs3knQ");
-            script.setAttribute("data-category", "General");
-            script.setAttribute("data-category-id", "DIC_kwDOVs3knc4DLB4b");
-            script.setAttribute("data-mapping", "pathname");
-            script.setAttribute("data-strict", "1");
-            script.setAttribute("data-reactions-enabled", "1");
-            script.setAttribute("data-emit-metadata", "0");
-            script.setAttribute("data-input-position", "bottom");
-            script.setAttribute("data-theme", getTheme());
-            script.setAttribute("data-lang", "zh-CN");
-            script.setAttribute("data-loading", "lazy");
-            script.crossOrigin = "anonymous";
-            script.async = true;
-            document.querySelector("div.giscus").appendChild(script);
+
+            function loadGiscus() {
+                if (container.dataset.loaded === "true") return;
+                container.dataset.loaded = "true";
+
+                const script = document.createElement("script");
+                script.src = "https://giscus.app/client.js";
+                script.setAttribute("data-repo", "woruo03/blog");
+                script.setAttribute("data-repo-id", "R_kgDOVs3knQ");
+                script.setAttribute("data-category", "General");
+                script.setAttribute("data-category-id", "DIC_kwDOVs3knc4DLB4b");
+                script.setAttribute("data-mapping", "pathname");
+                script.setAttribute("data-strict", "1");
+                script.setAttribute("data-reactions-enabled", "1");
+                script.setAttribute("data-emit-metadata", "0");
+                script.setAttribute("data-input-position", "bottom");
+                script.setAttribute("data-theme", getTheme());
+                script.setAttribute("data-lang", "zh-CN");
+                script.crossOrigin = "anonymous";
+                script.async = true;
+                container.appendChild(script);
+            }
 
             function syncGiscusTheme() {
                 const iframe = document.querySelector("iframe.giscus-frame");
@@ -35,9 +45,27 @@
                 }
             }
 
-            // 使用 MutationObserver 响应式监听 <html> class 变化，涵盖所有切换触发方式
-            const observer = new MutationObserver(() => syncGiscusTheme());
-            observer.observe(document.documentElement, {
+            // 1. 采用 IntersectionObserver 在读者距文末 400px 时才拉取第三方脚本与 iframe
+            if ("IntersectionObserver" in window) {
+                const observer = new IntersectionObserver(
+                    (entries, obs) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                obs.disconnect();
+                                loadGiscus();
+                            }
+                        });
+                    },
+                    { rootMargin: "400px 0px" },
+                );
+                observer.observe(container);
+            } else {
+                loadGiscus();
+            }
+
+            // 2. 响应式监听 <html> class 变化以同步日夜模式主题
+            const themeObserver = new MutationObserver(() => syncGiscusTheme());
+            themeObserver.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ["class"],
             });

@@ -20,48 +20,52 @@ robots = "index, follow"
 
 # ---- 顶栏配置 ----
 [header]
-  layout = "fixed-fill-blur"
-  highlightCurrentMenuArea = true
+layout = "fixed-fill-blur"
+highlightCurrentMenuArea = true
 
 # ---- 首页布局 ----
 [homepage]
-  layout = "profile"
-  showRecent = true
-  showRecentItems = 8
-  cardView = true
-  cardViewScreenWidth = false
+layout = "profile"
+showRecent = true
+showRecentItems = 8
+cardView = true
+cardViewScreenWidth = false
 
 # ---- 文章页 ----
 [article]
-  showDate = true
-  showDateUpdated = true
-  showReadingTime = true
-  showReadingProgress = false
-  showWordCount = true
-  showTableOfContents = true
-  showZenMode = true
-  showTaxonomies = true
-  showCategoriesInSecondaryColor = true
-  showRelatedContent = true
-  relatedContentLimit = 3
-  showBreadcrumbs = true
-  showPagination = true
-  showComments = true
-  showHero = false
-  showHeadingAnchors = true
+showDate = true
+showDateUpdated = true
+showReadingTime = true
+showReadingProgress = false
+showWordCount = true
+showViews = true
+showLikes = true
+showTableOfContents = true
+showZenMode = true
+showTaxonomies = true
+showCategoriesInSecondaryColor = true
+showRelatedContent = true
+relatedContentLimit = 3
+showBreadcrumbs = true
+showPagination = true
+showComments = true
+showHero = false
+showHeadingAnchors = true
 
 # ---- 列表页 ----
 [list]
-  showBreadcrumbs = true
-  showTableOfContents = false
-  groupByYear = true
-  cardView = true
-  featureImageHover = true
+showBreadcrumbs = true
+showTableOfContents = false
+groupByYear = true
+cardView = true
+featureImageHover = true
+showViews = false
+showLikes = false
 
 # ---- 页脚配置 ----
 [footer]
-  showMenu = false
-  showCopyright = true
-  showThemeAttribution = true
-  showAppearanceSwitcher = false # 顶栏已集成日夜模式切换，避免页脚冗余
-  showScrollToTop = true
+showMenu = false
+showCopyright = true
+showThemeAttribution = true
+showAppearanceSwitcher = true # 控制全站日夜主题切换按钮（Blowfish 原生挂载于顶栏，页脚无冗余按钮）
+showScrollToTop = true

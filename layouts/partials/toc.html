@@ -45,79 +45,117 @@
       const TOC_LINK_SELECTOR = 'a[href^="#"]'
       const NESTED_LIST_SELECTOR = 'li ul'
       const ACTIVE_CLASS = 'active'
+
       let isJumpingToAnchor = false
       let targetAnchorId = null
       let jumpTimeout = null
+      let currentActiveId = null
+      let prevActiveLink = null
 
-      function getActiveAnchorId(anchors, tocIds) {
+      function safeDecode(str) {
+        if (!str) return ''
+        try {
+          return decodeURIComponent(str)
+        } catch (_) {
+          return str
+        }
+      }
+
+      function getActiveAnchorId(validAnchors) {
         if (isJumpingToAnchor && targetAnchorId) {
           return targetAnchorId
         }
 
+        if (validAnchors.length === 0) return ''
+
         const canScroll =
           document.documentElement.scrollHeight > window.innerHeight + 1
         if (!canScroll) {
-          const fromHash = decodeURIComponent(window.location.hash.substring(1))
-          if (fromHash && tocIds.has(fromHash)) return fromHash
+          const fromHash = safeDecode(window.location.hash.substring(1))
+          if (fromHash && validAnchors.some(a => safeDecode(a.id) === fromHash)) {
+            return fromHash
+          }
         }
 
-        // 如果已滚动到底部（留 50px 容差），直接激活最后一项目录项
+        // 1. 倒序查找最后一个越过顶栏 110px 焦点线的标题实体作为基础候选
+        let candidateIndex = -1
+        for (let i = validAnchors.length - 1; i >= 0; i--) {
+          const headingEl = validAnchors[i].parentElement || validAnchors[i]
+          if (headingEl.getBoundingClientRect().top <= SCROLL_FOCUS_THRESHOLD) {
+            candidateIndex = i
+            break
+          }
+        }
+
+        // 若尚未到达第一个标题（在文章头部），默认选中首个目录项
+        if (candidateIndex === -1) {
+          candidateIndex = 0
+        }
+
+        // 2. 严谨的物理触底推进算法：
+        // 仅当整页确实触底时，若当前候选章节已完全滚出顶栏（top <= 0），且下一章节已在视口中，才自然推进到下一章
+        // 若当前章节标题依然在视口内（top > 0），则证明用户正在阅读此节，坚决不向前跃迁！
         const isAtBottom =
-          window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50
+          window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 20
+
         if (isAtBottom) {
-          for (let i = anchors.length - 1; i >= 0; i--) {
-            const id = decodeURIComponent(anchors[i].id)
-            if (tocIds.has(id)) return anchors[i].id
+          while (candidateIndex < validAnchors.length - 1) {
+            const curEl = validAnchors[candidateIndex].parentElement || validAnchors[candidateIndex]
+            if (curEl.getBoundingClientRect().top > 0) {
+              break
+            }
+            const nextEl = validAnchors[candidateIndex + 1].parentElement || validAnchors[candidateIndex + 1]
+            if (nextEl.getBoundingClientRect().top < window.innerHeight) {
+              candidateIndex++
+            } else {
+              break
+            }
           }
         }
 
-        // 倒序检查哪个标题实体已经越过了顶栏下方的焦点线 (SCROLL_FOCUS_THRESHOLD)
-        for (let i = anchors.length - 1; i >= 0; i--) {
-          const anchor = anchors[i]
-          const id = decodeURIComponent(anchor.id)
-          if (!tocIds.has(id)) continue
-          const headingEl = anchor.parentElement || anchor
-          const headingTop = headingEl.getBoundingClientRect().top
-          if (headingTop <= SCROLL_FOCUS_THRESHOLD) {
-            return anchor.id
-          }
-        }
-        return anchors.find(anchor => tocIds.has(decodeURIComponent(anchor.id)))?.id || ''
+        return validAnchors[candidateIndex].id
       }
 
-      function updateTOC({ toc, anchors, links, tocIds, collapseInactive }) {
-        const activeId = getActiveAnchorId(anchors, tocIds)
+      function updateTOC({ toc, validAnchors, linkMap, collapseInactive }) {
+        const activeId = getActiveAnchorId(validAnchors)
         if (!activeId) return
 
-        const activeDecoded = decodeURIComponent(activeId)
+        // 状态守卫：仅当激活章节真正改变时才触发 DOM 变更与居中滚动，彻底杜绝 60fps 重排风暴
+        if (activeId === currentActiveId) return
+        currentActiveId = activeId
 
-        links.forEach(link => {
-          const linkTarget = decodeURIComponent((link.getAttribute('href') || '').substring(1))
-          const isActive = linkTarget === activeDecoded
-          link.classList.toggle(ACTIVE_CLASS, isActive)
-          link.setAttribute('aria-current', isActive ? 'true' : 'false')
+        const activeDecoded = safeDecode(activeId)
+        const nextActiveLink = linkMap.get(activeDecoded)
 
+        // O(1) 增量更新：仅操作旧项与新项，彻底免除遍历 50+ 目录链接造成的 DOM 重绘与字符串解码开销
+        if (prevActiveLink && prevActiveLink !== nextActiveLink) {
+          prevActiveLink.classList.remove(ACTIVE_CLASS)
+          prevActiveLink.setAttribute('aria-current', 'false')
           if (collapseInactive) {
-            const ul = link.closest('li')?.querySelector('ul')
-            if (ul) ul.style.display = isActive ? '' : 'none'
-          }
-        })
-
-        const activeLink =
-          toc.querySelector(`a[href="#${CSS.escape(activeId)}"]`) ||
-          links.find(link => decodeURIComponent((link.getAttribute('href') || '').substring(1)) === activeDecoded)
-
-        if (collapseInactive) {
-          let el = activeLink
-          while (el && el !== toc) {
-            if (el.tagName === 'UL') el.style.display = ''
-            if (el.tagName === 'LI') el.querySelector('ul')?.style.setProperty('display', '')
-            el = el.parentElement
+            const ul = prevActiveLink.closest('li')?.querySelector('ul')
+            if (ul) ul.style.display = 'none'
           }
         }
 
-        if (activeLink && !isJumpingToAnchor) {
-          activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        if (nextActiveLink) {
+          nextActiveLink.classList.add(ACTIVE_CLASS)
+          nextActiveLink.setAttribute('aria-current', 'true')
+
+          if (collapseInactive) {
+            let el = nextActiveLink
+            while (el && el !== toc) {
+              if (el.tagName === 'UL') el.style.display = ''
+              if (el.tagName === 'LI') el.querySelector('ul')?.style.setProperty('display', '')
+              el = el.parentElement
+            }
+          }
+
+          // 使用 behavior: 'auto' 保证大纲跟随不与主窗口滚动产生帧竞争
+          if (!isJumpingToAnchor) {
+            nextActiveLink.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+          }
+
+          prevActiveLink = nextActiveLink
         }
       }
 
@@ -126,11 +164,22 @@
         if (!toc) return
 
         const collapseInactive = {{ if site.Params.smartTOCHideUnfocusedChildren }}true{{ else }}false{{ end }}
-        const anchors = [...document.querySelectorAll(ANCHOR_SELECTOR)]
+        const allAnchors = [...document.querySelectorAll(ANCHOR_SELECTOR)]
         const links = [...toc.querySelectorAll(TOC_LINK_SELECTOR)]
-        const tocIds = new Set(
-          links.map(link => decodeURIComponent((link.getAttribute('href') || '').substring(1)))
-        )
+
+        // 构建 O(1) 索引映射表，在初始化阶段完成全部 URL 解码与节点预存
+        const linkMap = new Map()
+        const tocIds = new Set()
+        links.forEach(link => {
+          const targetId = safeDecode((link.getAttribute('href') || '').replace(/^#/, ''))
+          if (targetId) {
+            linkMap.set(targetId, link)
+            tocIds.add(targetId)
+          }
+        })
+
+        // 在初始化阶段完成有效标题过滤，避免在滚动帧中高频重复创建数组
+        const validAnchors = allAnchors.filter(anchor => tocIds.has(safeDecode(anchor.id)))
 
         if (collapseInactive) {
           toc.querySelectorAll(NESTED_LIST_SELECTOR).forEach(ul => ul.style.display = 'none')
@@ -140,7 +189,7 @@
           link.addEventListener('click', () => {
             const href = link.getAttribute('href')
             if (href && href.startsWith('#')) {
-              targetAnchorId = decodeURIComponent(href.substring(1))
+              targetAnchorId = safeDecode(href.substring(1))
               isJumpingToAnchor = true
               updateTOC(config)
 
@@ -165,9 +214,8 @@
 
         const config = {
           toc,
-          anchors,
-          links,
-          tocIds,
+          validAnchors,
+          linkMap,
           collapseInactive
         }
 
@@ -182,7 +230,10 @@
         }
 
         window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('hashchange', () => updateTOC(config), { passive: true })
+        window.addEventListener('hashchange', () => {
+          currentActiveId = null // hash 变更时强制刷新
+          updateTOC(config)
+        }, { passive: true })
 
         updateTOC(config)
       }

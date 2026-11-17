@@ -8,6 +8,8 @@ showTableOfContents: false
 showZenMode: false
 showComments: false
 showPagination: false
+showViews: false
+showLikes: false
 ---
 
 ### 🔗 申请与交换说明

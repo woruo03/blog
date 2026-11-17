@@ -39,16 +39,34 @@
     {{ $meta.Add "partials" (slice (partial "meta/reading-time.html" .)) }}
   {{ end }}
 
-  {{ if and (not .Params.externalURL) (.Params.showViews | default (site.Params.article.showViews | default false)) }}
+  {{/* 判定当前内容是否属于博客主文章板块 (posts) */}}
+  {{ $isArticle := or (in (site.Params.mainSections | default (slice "posts")) .Type) (in (site.Params.mainSections | default (slice "posts")) .Section) }}
+
+  {{/* 仅在满足范围条件时计算并挂载浏览量与点赞 */}}
+  {{ $showViews := false }}
+  {{ $showLikes := false }}
+
+  {{ if eq $scope "single" }}
+    {{ if $isArticle }}
+      {{ $showViews = .Params.showViews | default (site.Params.article.showViews | default false) }}
+      {{ $showLikes = .Params.showLikes | default (site.Params.article.showLikes | default false) }}
+    {{ else }}
+      {{/* 关于、友链等独立页面默认不展示，除非 Front Matter 显式启用 */}}
+      {{ $showViews = .Params.showViews | default false }}
+      {{ $showLikes = .Params.showLikes | default false }}
+    {{ end }}
+  {{ else }}
+    {{/* 列表与首页卡片：遵循 article 配置展示只读统计 */}}
+    {{ $showViews = .Params.showViews | default (site.Params.article.showViews | default false) }}
+    {{ $showLikes = .Params.showLikes | default (site.Params.article.showLikes | default false) }}
+  {{ end }}
+
+  {{ if and (not .Params.externalURL) $showViews }}
     {{ $meta.Add "partials" (slice (partial "meta/views.html" .)) }}
   {{ end }}
 
-  {{ if and (not .Params.externalURL) (.Params.showLikes | default (site.Params.article.showLikes | default false)) }}
-    {{ $meta.Add "partials" (slice (partial "meta/likes.html" .)) }}
-  {{ end }}
-
-  {{ if and (eq $scope "single") (not .Params.externalURL) (.Params.showLikes | default (site.Params.article.showLikes | default false)) }}
-    {{ $meta.Add "partials" (slice (partial "meta/likes_button.html" .)) }}
+  {{ if and (not .Params.externalURL) $showLikes }}
+    {{ $meta.Add "partials" (slice (partial "meta/likes.html" (dict "context" . "scope" $scope))) }}
   {{ end }}
 
   {{ if and (eq $scope "single") (.Params.showEdit | default (site.Params.article.showEdit | default false)) }}

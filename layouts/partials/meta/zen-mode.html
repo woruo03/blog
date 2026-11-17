@@ -1,28 +1,23 @@
-<span
+<button
+  type="button"
   id="zen-mode-button"
-  role="button"
-  tabindex="0"
   aria-pressed="false"
-  class="inline-flex items-center text-neutral-400 hover:text-primary-500 dark:text-neutral-500 dark:hover:text-primary-400 cursor-pointer transition-colors align-middle text-2xl select-none focus:outline-dotted focus:outline-2 focus:outline-primary-500"
+  class="inline-flex items-center text-neutral-400 hover:text-primary-500 dark:text-neutral-500 dark:hover:text-primary-400 cursor-pointer transition-colors align-middle text-2xl select-none focus:outline-dotted focus:outline-2 focus:outline-primary-500 bg-transparent border-0 p-0"
   title="{{ i18n "article.zen_mode_title.enable" }}"
   data-title-i18n-disable="{{ i18n "article.zen_mode_title.enable" }}"
   data-title-i18n-enable="{{ i18n "article.zen_mode_title.disable" }}"
   aria-label="{{ i18n "article.zen_mode_title.enable" }}">
   <span class="inline-block">{{ partial "icon.html" "expand" }}</span>
-</span>
+</button>
 
 <script>
   (function () {
+    "use strict";
+
     const btn = document.getElementById("zen-mode-button");
     if (!btn) return;
 
-    btn.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        btn.click();
-      }
-    });
-
+    // 原生 <button> 已内建 Enter 与 Space 触发，只需响应式同步无障碍状态
     const observer = new MutationObserver(function () {
       const isZen = document.body.classList.contains("zen-mode-enable");
       btn.setAttribute("aria-pressed", isZen ? "true" : "false");

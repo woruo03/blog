@@ -1,0 +1,17 @@
+{{/* layouts/partials/meta/views.html */}}
+{{ $id := partial "functions/post-stats-id.html" . }}
+{{ if $id }}
+<span>
+  <span class="article-meta-stat gap-1 text-neutral-500 dark:text-neutral-400">
+    <span class="icon opacity-80" aria-hidden="true">{{ partial "icon.html" "eye" }}</span>
+    <span class="sr-only">{{ i18n "article.views" | default "浏览量" }}: </span>
+    <span
+      id="views_{{ $id }}"
+      class="animate-pulse inline-block text-transparent min-w-[1ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
+      title="{{ i18n "article.views" | default "浏览量" }}"
+      aria-busy="true"
+      >0</span
+    >
+  </span>
+</span>
+{{ end }}

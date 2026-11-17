@@ -39,6 +39,17 @@
 {{ if $isSingle }}
 <script>
   (function () {
+    "use strict";
+
+    function safeDecode(str) {
+      if (!str) return "";
+      try {
+        return decodeURIComponent(str);
+      } catch (_) {
+        return str;
+      }
+    }
+
     const trail = document.getElementById("breadcrumbs-trail");
     if (!trail || !trail.dataset.taxonomies) return;
 
@@ -47,12 +58,13 @@
       try {
         const refUrl = new URL(document.referrer);
         if (refUrl.origin === window.location.origin) {
-          referrerPath = decodeURIComponent(refUrl.pathname);
+          referrerPath = safeDecode(refUrl.pathname);
           sessionStorage.setItem("blog_breadcrumb_ref", referrerPath);
+        } else {
+          sessionStorage.removeItem("blog_breadcrumb_ref");
         }
-      } catch (e) {}
-    }
-    if (!referrerPath) {
+      } catch (_) {}
+    } else {
       referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
     }
     if (!referrerPath) return;
@@ -60,7 +72,7 @@
     let taxData = {};
     try {
       taxData = JSON.parse(trail.dataset.taxonomies || "{}");
-    } catch (e) {
+    } catch (_) {
       return;
     }
 
@@ -69,18 +81,26 @@
     if (!match) return;
 
     const [, tax, slug] = match;
-    const target = (taxData[tax] || []).find(t => {
-      const tSlug = decodeURIComponent(t.url).replace(new RegExp(`^\\/${tax}\\/|\\/$`, "g"), "");
+    const target = (taxData[tax] || []).find((t) => {
+      const tSlug = safeDecode(t.url).replace(new RegExp(`^\\/${tax}\\/|\\/$`, "g"), "");
       return tSlug.toLowerCase() === slug.toLowerCase();
     });
 
     if (target) {
-      trail.innerHTML = `
-        <li class="inline-flex items-center">
-          <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="${target.url}">${target.title}</a>
-          <span class="px-1.5 text-primary-500 select-none">/</span>
-        </li>
-      `;
+      const li = document.createElement("li");
+      li.className = "inline-flex items-center";
+
+      const a = document.createElement("a");
+      a.className = "hover:underline decoration-neutral-300 dark:underline-neutral-600";
+      a.href = target.url;
+      a.textContent = target.title;
+
+      const span = document.createElement("span");
+      span.className = "px-1.5 text-primary-500 select-none";
+      span.textContent = "/";
+
+      li.append(a, span);
+      trail.replaceChildren(li);
     }
   })();
 </script>
