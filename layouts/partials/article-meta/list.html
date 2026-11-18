@@ -1,0 +1,38 @@
+{{/* layouts/partials/article-meta/list.html */}}
+{{/* 列表页文章元数据：统一规范化浏览量与点赞组件调用 */}}
+{{ $context := . }}
+{{ $scope := default nil }}
+
+{{ if (reflect.IsMap . ) }}
+  {{ $context = .context }}
+  {{ $scope = cond (not .scope) nil .scope }}
+{{ end }}
+
+{{ with $context }}
+  {{ $meta := newScratch }}
+
+  {{/* 判定当前内容是否属于博客主文章板块 (posts) */}}
+  {{ $isArticle := or (in (site.Params.mainSections | default (slice "posts")) .Type) (in (site.Params.mainSections | default (slice "posts")) .Section) }}
+
+  {{ $showViews := false }}
+  {{ $showLikes := false }}
+
+  {{ if $isArticle }}
+    {{ $showViews = cond (isset .Params "showviews") .Params.showViews (site.Params.list.showViews | default false) }}
+    {{ $showLikes = cond (isset .Params "showlikes") .Params.showLikes (site.Params.list.showLikes | default false) }}
+  {{ end }}
+
+  {{ if and (not .Params.externalURL) $showViews }}
+    {{ $meta.Add "partials" (slice (partial "meta/views.html" .)) }}
+  {{ end }}
+
+  {{ if and (not .Params.externalURL) $showLikes }}
+    {{ $meta.Add "partials" (slice (partial "meta/likes.html" (dict "context" . "scope" $scope))) }}
+  {{ end }}
+
+  <div class="flex flex-row flex-wrap items-center">
+    {{ with ($meta.Get "partials") }}
+      {{ delimit . "<span class=\"px-2 text-primary-500\">&middot;</span>" | safeHTML }}
+    {{ end }}
+  </div>
+{{ end }}

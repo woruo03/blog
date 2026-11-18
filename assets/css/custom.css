@@ -201,7 +201,7 @@ html.dark #button_likes.liked {
     color: #f87171 !important; /* Tailwind red-400，暗色模式高辨识度 */
 }
 
-/* 2. 点赞按钮悬浮微交互 */
+/* 2. 点赞按钮悬浮与键盘无障碍交互 */
 #button_likes:hover #button_likes_icon,
 #button_likes:hover {
     color: #dc2626 !important; /* 浅色模式悬浮加深至 red-600 */
@@ -210,4 +210,11 @@ html.dark #button_likes.liked {
 html.dark #button_likes:hover #button_likes_icon,
 html.dark #button_likes:hover {
     color: #fca5a5 !important; /* 暗色模式悬浮提亮至 red-300 */
+}
+
+@media (forced-colors: active) {
+    #button_likes:focus-visible {
+        outline: 2px solid Highlight !important;
+        outline-offset: 2px !important;
+    }
 }

@@ -130,7 +130,7 @@
         // O(1) 增量更新：仅操作旧项与新项，彻底免除遍历 50+ 目录链接造成的 DOM 重绘与字符串解码开销
         if (prevActiveLink && prevActiveLink !== nextActiveLink) {
           prevActiveLink.classList.remove(ACTIVE_CLASS)
-          prevActiveLink.setAttribute('aria-current', 'false')
+          prevActiveLink.removeAttribute('aria-current')
           if (collapseInactive) {
             const ul = prevActiveLink.closest('li')?.querySelector('ul')
             if (ul) ul.style.display = 'none'
@@ -139,7 +139,7 @@
 
         if (nextActiveLink) {
           nextActiveLink.classList.add(ACTIVE_CLASS)
-          nextActiveLink.setAttribute('aria-current', 'true')
+          nextActiveLink.setAttribute('aria-current', 'location')
 
           if (collapseInactive) {
             let el = nextActiveLink

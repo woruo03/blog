@@ -48,17 +48,23 @@
 
   {{ if eq $scope "single" }}
     {{ if $isArticle }}
-      {{ $showViews = .Params.showViews | default (site.Params.article.showViews | default false) }}
-      {{ $showLikes = .Params.showLikes | default (site.Params.article.showLikes | default false) }}
+      {{ $showViews = cond (isset .Params "showviews") .Params.showViews (site.Params.article.showViews | default false) }}
+      {{ $showLikes = cond (isset .Params "showlikes") .Params.showLikes (site.Params.article.showLikes | default false) }}
     {{ else }}
       {{/* 关于、友链等独立页面默认不展示，除非 Front Matter 显式启用 */}}
       {{ $showViews = .Params.showViews | default false }}
       {{ $showLikes = .Params.showLikes | default false }}
     {{ end }}
   {{ else }}
-    {{/* 列表与首页卡片：遵循 article 配置展示只读统计 */}}
-    {{ $showViews = .Params.showViews | default (site.Params.article.showViews | default false) }}
-    {{ $showLikes = .Params.showLikes | default (site.Params.article.showLikes | default false) }}
+    {{ if $isArticle }}
+      {{/* 列表与首页卡片：文章板块遵循 article 配置展示只读统计，支持单篇 Front Matter 独立覆盖 */}}
+      {{ $showViews = cond (isset .Params "showviews") .Params.showViews (site.Params.article.showViews | default false) }}
+      {{ $showLikes = cond (isset .Params "showlikes") .Params.showLikes (site.Params.article.showLikes | default false) }}
+    {{ else }}
+      {{/* 非文章卡片默认不展示统计 */}}
+      {{ $showViews = .Params.showViews | default false }}
+      {{ $showLikes = .Params.showLikes | default false }}
+    {{ end }}
   {{ end }}
 
   {{ if and (not .Params.externalURL) $showViews }}

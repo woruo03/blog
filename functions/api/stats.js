@@ -5,21 +5,27 @@
 const BOT_UA_REGEX =
     /bot|spider|crawl|slurp|curl|wget|python|java|httpclient|axios|scrapy|postman|insomnia|go-http|headless/i;
 
-function isAllowedOrigin(origin) {
+function isAllowedOrigin(origin, env = {}) {
     if (!origin) return true;
     try {
         const u = new URL(origin);
         if (u.hostname === "blog.woruo03.com") return true;
-        if (u.hostname.endsWith(".pages.dev")) return true;
         if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
+        // 精确匹配本项目的 Pages 域名及分支预览环境（*.blog.pages.dev）
+        if (u.hostname === "blog.pages.dev" || u.hostname.endsWith(".blog.pages.dev")) return true;
+        // 若配置了自定义环境变量 ALLOWED_ORIGINS，则按逗号分隔扩展校验
+        if (env?.ALLOWED_ORIGINS) {
+            const extra = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
+            if (extra.includes(u.origin) || extra.includes(u.hostname)) return true;
+        }
     } catch (_) {}
     return false;
 }
 
-function getCorsHeaders(request) {
+function getCorsHeaders(request, env = {}) {
     const origin = request.headers.get("origin") || "";
     const allowOrigin =
-        isAllowedOrigin(origin) && origin ? origin : "https://blog.woruo03.com";
+        isAllowedOrigin(origin, env) && origin ? origin : "https://blog.woruo03.com";
     return {
         "Access-Control-Allow-Origin": allowOrigin,
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -46,8 +52,12 @@ function isBotRequest(request) {
 }
 
 async function getClientHash(request, vid, secret = "woruo03-salt") {
-    const ip = request.headers.get("cf-connecting-ip") || "127.0.0.1";
-    const raw = `${ip}:${vid || ""}:${secret}`;
+    const salt =
+        (typeof secret === "string" && secret.trim()) || "woruo03-salt";
+    const cleanVid = (typeof vid === "string" && vid.trim()) || "anonymous";
+    // 解绑动态变化的客户端公网 IP，以设备端持久化匿名指纹 vid 作为核心身份
+    // 确保读者在 4G/5G、Wi-Fi、VPN 或 IPv6 隐私扩展地址轮换时，点赞状态稳定不丢失，且杜绝切网络重复刷赞
+    const raw = `client:${cleanVid}:${salt}`;
     const buf = await crypto.subtle.digest(
         "SHA-256",
         new TextEncoder().encode(raw),
@@ -59,10 +69,12 @@ async function getClientHash(request, vid, secret = "woruo03-salt") {
 }
 
 async function getIpHash(request, secret = "woruo03-salt") {
+    const salt =
+        (typeof secret === "string" && secret.trim()) || "woruo03-salt";
     const ip = request.headers.get("cf-connecting-ip") || "127.0.0.1";
     const buf = await crypto.subtle.digest(
         "SHA-256",
-        new TextEncoder().encode(`ip:${ip}:${secret}`),
+        new TextEncoder().encode(`ip:${ip}:${salt}`),
     );
     return Array.from(new Uint8Array(buf))
         .map((b) => b.toString(16).padStart(2, "0"))
@@ -73,38 +85,28 @@ async function getIpHash(request, secret = "woruo03-salt") {
 async function checkRateLimit(db, ipHash, limit = 30, windowSeconds = 60) {
     const now = Math.floor(Date.now() / 1000);
     try {
+        // 单条原子 SQL：消除 SELECT → 判断 → UPDATE 的 TOCTOU 竞态窗口
         const row = await db
             .prepare(
-                "SELECT request_count, window_start FROM stats_rate_limits WHERE ip_hash = ?",
-            )
-            .bind(ipHash)
-            .first();
-
-        if (!row || now - row.window_start >= windowSeconds) {
-            await db
-                .prepare(
-                    `
+                `
                 INSERT INTO stats_rate_limits (ip_hash, request_count, window_start)
                 VALUES (?1, 1, ?2)
-                ON CONFLICT(ip_hash) DO UPDATE SET request_count = 1, window_start = excluded.window_start;
+                ON CONFLICT(ip_hash) DO UPDATE SET
+                    request_count = CASE
+                        WHEN ?2 - stats_rate_limits.window_start >= ?3 THEN 1
+                        ELSE stats_rate_limits.request_count + 1
+                    END,
+                    window_start = CASE
+                        WHEN ?2 - stats_rate_limits.window_start >= ?3 THEN ?2
+                        ELSE stats_rate_limits.window_start
+                    END
+                RETURNING request_count;
             `,
-                )
-                .bind(ipHash, now)
-                .run();
-            return true;
-        }
-
-        if (row.request_count >= limit) {
-            return false;
-        }
-
-        await db
-            .prepare(
-                "UPDATE stats_rate_limits SET request_count = request_count + 1 WHERE ip_hash = ?",
             )
-            .bind(ipHash)
-            .run();
-        return true;
+            .bind(ipHash, now, windowSeconds)
+            .first();
+
+        return !row || row.request_count <= limit;
     } catch (_) {
         return true;
     }
@@ -121,23 +123,27 @@ async function ensureDbSchema(db) {
               likes INTEGER NOT NULL DEFAULT 0,
               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE INDEX IF NOT EXISTS idx_stats_updated_at ON stats(updated_at);
             CREATE TABLE IF NOT EXISTS stats_views_log (
               post_id TEXT NOT NULL,
               client_hash TEXT NOT NULL,
               viewed_at INTEGER NOT NULL,
               PRIMARY KEY (post_id, client_hash)
             );
+            CREATE INDEX IF NOT EXISTS idx_views_log_time ON stats_views_log(viewed_at);
             CREATE TABLE IF NOT EXISTS stats_likes_log (
               post_id TEXT NOT NULL,
               client_hash TEXT NOT NULL,
               liked_at INTEGER NOT NULL,
               PRIMARY KEY (post_id, client_hash)
             );
+            CREATE INDEX IF NOT EXISTS idx_likes_log_time ON stats_likes_log(liked_at);
             CREATE TABLE IF NOT EXISTS stats_rate_limits (
               ip_hash TEXT PRIMARY KEY,
               request_count INTEGER NOT NULL DEFAULT 1,
               window_start INTEGER NOT NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON stats_rate_limits(window_start);
         `);
         isDbInitialized = true;
     } catch (_) {
@@ -149,7 +155,7 @@ export async function onRequestOptions(context) {
     return new Response(null, {
         status: 204,
         headers: {
-            ...getCorsHeaders(context.request),
+            ...getCorsHeaders(context.request, context.env),
             "Access-Control-Max-Age": "86400",
         },
     });
@@ -157,7 +163,7 @@ export async function onRequestOptions(context) {
 
 export async function onRequestGet(context) {
     const { request, env } = context;
-    const corsHeaders = getCorsHeaders(request);
+    const corsHeaders = getCorsHeaders(request, env);
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const ids = url.searchParams.get("ids");
@@ -223,7 +229,8 @@ export async function onRequestGet(context) {
                 headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
-                    "Cache-Control": "public, max-age=30, s-maxage=60",
+                    "Cache-Control":
+                        "public, max-age=30, s-maxage=60, stale-while-revalidate=120",
                 },
             });
         } catch (err) {
@@ -255,26 +262,28 @@ export async function onRequestGet(context) {
         }
 
         try {
-            const row = await env.DB.prepare(
+            const statsPromise = env.DB.prepare(
                 "SELECT views, likes FROM stats WHERE id = ?",
             )
                 .bind(id)
                 .first();
 
-            let userLiked = false;
-            if (vid) {
-                const clientHash = await getClientHash(
-                    request,
-                    vid,
-                    env.STATS_SECRET,
-                );
-                const likeRecord = await env.DB.prepare(
-                    "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                )
-                    .bind(id, clientHash)
-                    .first();
-                userLiked = !!likeRecord;
-            }
+            const likePromise = vid
+                ? getClientHash(request, vid, env.STATS_SECRET).then(
+                      (clientHash) =>
+                          env.DB.prepare(
+                              "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
+                          )
+                              .bind(id, clientHash)
+                              .first(),
+                  )
+                : Promise.resolve(null);
+
+            const [row, likeRecord] = await Promise.all([
+                statsPromise,
+                likePromise,
+            ]);
+            const userLiked = !!likeRecord;
 
             return new Response(
                 JSON.stringify({
@@ -321,7 +330,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
     const { request, env } = context;
-    const corsHeaders = getCorsHeaders(request);
+    const corsHeaders = getCorsHeaders(request, env);
 
     // 1. Fetch Metadata 与 Origin 跨站防护
     const secFetchSite = request.headers.get("sec-fetch-site");
@@ -339,7 +348,7 @@ export async function onRequestPost(context) {
     }
 
     const origin = request.headers.get("origin");
-    if (origin && !isAllowedOrigin(origin)) {
+    if (origin && !isAllowedOrigin(origin, env)) {
         return new Response(
             JSON.stringify({ error: "Disallowed request origin" }),
             {
@@ -488,18 +497,50 @@ export async function onRequestPost(context) {
 
     try {
         if (action === "view") {
-            // 浏览量：24小时去重与冷却判定
-            const existingView = await env.DB.prepare(
-                "SELECT viewed_at FROM stats_views_log WHERE post_id = ? AND client_hash = ?",
+            // 浏览量：原子级 24 小时去重与冷却（杜绝多标签页并发双重自增）
+            const viewLogPromise = env.DB.prepare(
+                `
+                INSERT INTO stats_views_log (post_id, client_hash, viewed_at)
+                VALUES (?1, ?2, ?3)
+                ON CONFLICT(post_id, client_hash) DO UPDATE SET viewed_at = excluded.viewed_at
+                WHERE excluded.viewed_at - stats_views_log.viewed_at >= 86400;
+            `,
+            )
+                .bind(id, clientHash, now)
+                .run();
+
+            // 同步并行检查该客户端是否已点赞（省去 1 次独立数据库往返等待）
+            const likePromise = env.DB.prepare(
+                "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
             )
                 .bind(id, clientHash)
                 .first();
 
+            const [viewLogRes, likeRecord] = await Promise.all([
+                viewLogPromise,
+                likePromise,
+            ]);
+
+            const rowsChanged = viewLogRes?.meta?.changes || 0;
             let views = 0;
             let likes = 0;
 
-            if (existingView && now - existingView.viewed_at < 86400) {
-                // 24小时内同一读者：命中冷却，不累加 views
+            if (rowsChanged > 0) {
+                // 首次阅读或已满 24 小时冷却：自增浏览量
+                const row = await env.DB.prepare(
+                    `
+                    INSERT INTO stats (id, views, likes)
+                    VALUES (?1, 1, 0)
+                    ON CONFLICT(id) DO UPDATE SET views = views + 1, updated_at = CURRENT_TIMESTAMP
+                    RETURNING views, likes;
+                `,
+                )
+                    .bind(id)
+                    .first();
+                views = row?.views || 1;
+                likes = row?.likes || 0;
+            } else {
+                // 24小时冷却期内：不触碰 stats 写锁，只读返回当前统计
                 const row = await env.DB.prepare(
                     "SELECT views, likes FROM stats WHERE id = ?",
                 )
@@ -507,36 +548,7 @@ export async function onRequestPost(context) {
                     .first();
                 views = row?.views || 0;
                 likes = row?.likes || 0;
-            } else {
-                // 首次访问或已超24小时冷却：批量写入日志并自增
-                const results = await env.DB.batch([
-                    env.DB.prepare(
-                        `
-                        INSERT INTO stats_views_log (post_id, client_hash, viewed_at)
-                        VALUES (?1, ?2, ?3)
-                        ON CONFLICT(post_id, client_hash) DO UPDATE SET viewed_at = excluded.viewed_at;
-                    `,
-                    ).bind(id, clientHash, now),
-                    env.DB.prepare(
-                        `
-                        INSERT INTO stats (id, views, likes)
-                        VALUES (?1, 1, 0)
-                        ON CONFLICT(id) DO UPDATE SET views = views + 1, updated_at = CURRENT_TIMESTAMP
-                        RETURNING views, likes;
-                    `,
-                    ).bind(id),
-                ]);
-                const updated = results[1]?.results?.[0];
-                views = updated?.views || 1;
-                likes = updated?.likes || 0;
             }
-
-            // 同步检查该客户端是否已点赞
-            const likeRecord = await env.DB.prepare(
-                "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-            )
-                .bind(id, clientHash)
-                .first();
 
             return new Response(
                 JSON.stringify({
@@ -554,7 +566,7 @@ export async function onRequestPost(context) {
                 },
             );
         } else if (action === "like") {
-            // 点赞：单用户唯一性检查
+            // 点赞：单用户唯一性检查与原子入库（杜绝并发多次自增）
             const existingLike = await env.DB.prepare(
                 "SELECT liked_at FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
             )
@@ -562,7 +574,7 @@ export async function onRequestPost(context) {
                 .first();
 
             if (existingLike) {
-                // 已点赞：阻止重复自增
+                // 已点赞：阻止重复自增，幂等返回当前状态
                 const row = await env.DB.prepare(
                     "SELECT views, likes FROM stats WHERE id = ?",
                 )
@@ -586,55 +598,102 @@ export async function onRequestPost(context) {
                 );
             }
 
-            // 首次点赞：事务记录日志并自增
-            const results = await env.DB.batch([
-                env.DB.prepare(
-                    `
-                    INSERT INTO stats_likes_log (post_id, client_hash, liked_at)
-                    VALUES (?1, ?2, ?3)
-                    ON CONFLICT(post_id, client_hash) DO UPDATE SET liked_at = excluded.liked_at;
-                `,
-                ).bind(id, clientHash, now),
-                env.DB.prepare(
-                    `
-                    INSERT INTO stats (id, views, likes)
-                    VALUES (?1, 0, 1)
-                    ON CONFLICT(id) DO UPDATE SET likes = likes + 1, updated_at = CURRENT_TIMESTAMP
-                    RETURNING views, likes;
-                `,
-                ).bind(id),
-            ]);
-            const updated = results[1]?.results?.[0];
-            return new Response(
-                JSON.stringify({
-                    id,
-                    views: updated?.views || 0,
-                    likes: updated?.likes || 0,
-                    userLiked: true,
-                }),
-                {
-                    headers: {
-                        ...corsHeaders,
-                        "Content-Type": "application/json; charset=utf-8",
-                        "Cache-Control": "no-store",
+            // 首次点赞：严格主键约束原子入库并自增
+            try {
+                const results = await env.DB.batch([
+                    env.DB.prepare(
+                        "INSERT INTO stats_likes_log (post_id, client_hash, liked_at) VALUES (?1, ?2, ?3)",
+                    ).bind(id, clientHash, now),
+                    env.DB.prepare(
+                        `
+                        INSERT INTO stats (id, views, likes)
+                        VALUES (?1, 0, 1)
+                        ON CONFLICT(id) DO UPDATE SET likes = likes + 1, updated_at = CURRENT_TIMESTAMP
+                        RETURNING views, likes;
+                    `,
+                    ).bind(id),
+                ]);
+                const updated = results[1]?.results?.[0];
+                return new Response(
+                    JSON.stringify({
+                        id,
+                        views: updated?.views || 0,
+                        likes: updated?.likes || 0,
+                        userLiked: true,
+                    }),
+                    {
+                        headers: {
+                            ...corsHeaders,
+                            "Content-Type": "application/json; charset=utf-8",
+                            "Cache-Control": "no-store",
+                        },
                     },
-                },
-            );
-        } else if (action === "unlike") {
-            // 取消点赞：验证确实曾点过赞
-            const existingLike = await env.DB.prepare(
-                "SELECT liked_at FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-            )
-                .bind(id, clientHash)
-                .first();
-
-            if (!existingLike) {
-                // 未曾点赞：无法取消
+                );
+            } catch (_) {
+                // 若并发请求命中 UNIQUE 主键冲突，幂等读取最新计数值返回
                 const row = await env.DB.prepare(
                     "SELECT views, likes FROM stats WHERE id = ?",
                 )
                     .bind(id)
                     .first();
+                return new Response(
+                    JSON.stringify({
+                        id,
+                        views: row?.views || 0,
+                        likes: row?.likes || 0,
+                        userLiked: true,
+                        duplicate: true,
+                    }),
+                    {
+                        headers: {
+                            ...corsHeaders,
+                            "Content-Type": "application/json; charset=utf-8",
+                            "Cache-Control": "no-store",
+                        },
+                    },
+                );
+            }
+        } else if (action === "unlike") {
+            // 取消点赞：单事务原子化批处理（条件扣减 + 删除日志，杜绝数据残缺并减半网络往返）
+            const results = await env.DB.batch([
+                env.DB.prepare(
+                    `
+                    UPDATE stats SET likes = MAX(likes - 1, 0), updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?1 AND EXISTS (SELECT 1 FROM stats_likes_log WHERE post_id = ?1 AND client_hash = ?2)
+                    RETURNING views, likes;
+                `,
+                ).bind(id, clientHash),
+                env.DB.prepare(
+                    "DELETE FROM stats_likes_log WHERE post_id = ?1 AND client_hash = ?2",
+                ).bind(id, clientHash),
+            ]);
+
+            const updatedRow = results[0]?.results?.[0];
+
+            if (updatedRow) {
+                return new Response(
+                    JSON.stringify({
+                        id,
+                        views: updatedRow.views || 0,
+                        likes: updatedRow.likes || 0,
+                        userLiked: false,
+                    }),
+                    {
+                        headers: {
+                            ...corsHeaders,
+                            "Content-Type": "application/json; charset=utf-8",
+                            "Cache-Control": "no-store",
+                        },
+                    },
+                );
+            } else {
+                // 未曾点赞或已被并发删除：绝不扣减数据，幂等返回当前统计
+                const row = await env.DB.prepare(
+                    "SELECT views, likes FROM stats WHERE id = ?",
+                )
+                    .bind(id)
+                    .first();
+
                 return new Response(
                     JSON.stringify({
                         id,
@@ -651,37 +710,6 @@ export async function onRequestPost(context) {
                     },
                 );
             }
-
-            // 存在点赞记录：删除日志并安全扣减
-            const results = await env.DB.batch([
-                env.DB.prepare(
-                    "DELETE FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                ).bind(id, clientHash),
-                env.DB.prepare(
-                    `
-                    INSERT INTO stats (id, views, likes)
-                    VALUES (?1, 0, 0)
-                    ON CONFLICT(id) DO UPDATE SET likes = MAX(likes - 1, 0), updated_at = CURRENT_TIMESTAMP
-                    RETURNING views, likes;
-                `,
-                ).bind(id),
-            ]);
-            const updated = results[1]?.results?.[0];
-            return new Response(
-                JSON.stringify({
-                    id,
-                    views: updated?.views || 0,
-                    likes: updated?.likes || 0,
-                    userLiked: false,
-                }),
-                {
-                    headers: {
-                        ...corsHeaders,
-                        "Content-Type": "application/json; charset=utf-8",
-                        "Cache-Control": "no-store",
-                    },
-                },
-            );
         } else {
             return new Response(JSON.stringify({ error: "Invalid action" }), {
                 status: 400,
