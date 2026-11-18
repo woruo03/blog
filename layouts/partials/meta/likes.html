@@ -30,13 +30,14 @@
           <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
           <span
             id="likes_{{ $id }}"
-            class="animate-pulse inline-block text-transparent min-w-[1ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
+            class="animate-pulse inline-block text-transparent min-w-[2ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none tabular-nums"
             title="{{ i18n "article.likes" | default "点赞数" }}"
             aria-busy="true"
             >0</span
           >
-          <span id="likes_live_{{ $id }}" class="sr-only" aria-live="polite" aria-atomic="true"></span>
         </button>
+        {{/* 动态读屏活动区移出 button 外部，完全遵循 WAI-ARIA 规范 */}}
+        <span id="likes_live_{{ $id }}" class="sr-only" aria-live="polite" aria-atomic="true"></span>
       </span>
     {{ else }}
       {{/* 列表卡片：静态只读展示 */}}
@@ -46,7 +47,7 @@
           <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
           <span
             id="likes_{{ $id }}"
-            class="animate-pulse inline-block text-transparent min-w-[1ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
+            class="animate-pulse inline-block text-transparent min-w-[2ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none tabular-nums"
             title="{{ i18n "article.likes" | default "点赞数" }}"
             aria-busy="true"
             >0</span

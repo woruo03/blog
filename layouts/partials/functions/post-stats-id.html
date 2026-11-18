@@ -5,6 +5,6 @@ $id := "" }} {{ with $page }} {{ if eq .Kind "taxonomy" }} {{ $id = printf
 "taxonomy_%s" .Page.Data.Plural }} {{ else if eq .Kind "term" }} {{ $id = printf
 "term_%s" .Page.Data.Term }} {{ else if .File }} {{ $path := .File.Path }} {{
 range .AllTranslations }} {{ $path = replace $path (printf ".%s.md" .Lang) ".md"
-}} {{ end }} {{ $id = replace (replace $path "\\" "/") "/" "-" }} {{ else if .RelPermalink }} {{
-$id = replace (strings.Trim .RelPermalink "/") "/" "-" }} {{ end }} {{ end }} {{
-return $id }}
+}} {{ end }} {{ $id = replace (replace $path "\\" "/") "/" "-" }} {{ else if
+.RelPermalink }} {{ $id = replace (strings.Trim .RelPermalink "/") "/" "-" }} {{
+end }} {{ end }} {{ return $id }}

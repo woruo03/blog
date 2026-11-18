@@ -94,7 +94,9 @@
             const selector =
                 typeof CSS !== "undefined" && CSS.escape
                     ? "span[id='" + CSS.escape(prefix + id) + "']"
-                    : "span[id='" + (prefix + id).replace(/['"\\]/g, "\\$&") + "']";
+                    : "span[id='" +
+                      (prefix + id).replace(/['"\\]/g, "\\$&") +
+                      "']";
             return document.querySelectorAll(selector);
         }
 
@@ -126,12 +128,15 @@
             if (typeof count !== "number") return;
             if (count >= maxRenderedViews) {
                 maxRenderedViews = count;
-                viewsNodes.forEach((el) => unpulse(el, formatNum(maxRenderedViews)));
+                viewsNodes.forEach((el) =>
+                    unpulse(el, formatNum(maxRenderedViews)),
+                );
             }
         }
 
         const titleLike = likeBtn?.getAttribute("data-title-like") || "点赞";
-        const titleLiked = likeBtn?.getAttribute("data-title-liked") || "已赞 (再次点击取消)";
+        const titleLiked =
+            likeBtn?.getAttribute("data-title-liked") || "已赞 (再次点击取消)";
 
         function renderLikeUI(liked, liveMsg) {
             if (!likeBtn) return;
@@ -166,18 +171,24 @@
 
                 if (typeof data.likes === "number" && !hasLikedSettled) {
                     confirmedLikes = data.likes;
+                    if (typeof data.userLiked === "boolean") {
+                        initialLiked = data.userLiked;
+                    }
                     if (!hasUserInteracted) {
-                        if (typeof data.userLiked === "boolean") {
-                            initialLiked = data.userLiked;
-                            isLiked = data.userLiked;
-                            renderLikeUI(isLiked);
-                            if (isLiked) setStorage(storageKeyLike, "true");
-                            else removeStorage(storageKeyLike);
-                        }
+                        isLiked = initialLiked;
+                        renderLikeUI(isLiked);
+                        if (isLiked) setStorage(storageKeyLike, "true");
+                        else removeStorage(storageKeyLike);
                         currentLikes = confirmedLikes;
                     } else {
                         // 首屏响应到达前用户已点击：基于真实历史基准立刻平滑校准乐观计数
-                        const diff = isLiked ? (initialLiked ? 0 : 1) : (initialLiked ? -1 : 0);
+                        const diff = isLiked
+                            ? initialLiked
+                                ? 0
+                                : 1
+                            : initialLiked
+                              ? -1
+                              : 0;
                         currentLikes = Math.max(0, confirmedLikes + diff);
                     }
                     likesNodes.forEach((el) =>
@@ -207,8 +218,7 @@
                 return false;
             }
 
-            const shouldRecord =
-                !isLocal && !isBot && !isViewInCooldown();
+            const shouldRecord = !isLocal && !isBot && !isViewInCooldown();
             if (!shouldRecord) return;
 
             let reported = false;
@@ -244,7 +254,11 @@
                     .then((data) => {
                         if (!data) return;
                         updateViews(data.views);
-                        if (typeof data.likes === "number" && !hasUserInteracted && !hasLikedSettled) {
+                        if (
+                            typeof data.likes === "number" &&
+                            !hasUserInteracted &&
+                            !hasLikedSettled
+                        ) {
                             confirmedLikes = data.likes;
                             if (typeof data.userLiked === "boolean") {
                                 initialLiked = data.userLiked;
@@ -334,20 +348,33 @@
                             hasLikedSettled = true;
                             if (res && typeof res.likes === "number") {
                                 confirmedLikes = res.likes;
-                                const serverLiked = typeof res.userLiked === "boolean" ? res.userLiked : targetLiked;
+                                const serverLiked =
+                                    typeof res.userLiked === "boolean"
+                                        ? res.userLiked
+                                        : targetLiked;
                                 initialLiked = serverLiked;
 
                                 if (isLiked === targetLiked) {
                                     // 用户在请求空中未发生新的点击：以服务端状态为准
                                     isLiked = serverLiked;
                                     renderLikeUI(isLiked);
-                                    if (isLiked) setStorage(storageKeyLike, "true");
+                                    if (isLiked)
+                                        setStorage(storageKeyLike, "true");
                                     else removeStorage(storageKeyLike);
                                     currentLikes = confirmedLikes;
                                 } else {
                                     // 用户在请求空中已再次点击改变主意：保留用户最新状态，基于最新基准动态修正计数
-                                    const diff = isLiked ? (initialLiked ? 0 : 1) : (initialLiked ? -1 : 0);
-                                    currentLikes = Math.max(0, confirmedLikes + diff);
+                                    const diff = isLiked
+                                        ? initialLiked
+                                            ? 0
+                                            : 1
+                                        : initialLiked
+                                          ? -1
+                                          : 0;
+                                    currentLikes = Math.max(
+                                        0,
+                                        confirmedLikes + diff,
+                                    );
                                 }
                                 likesNodes.forEach((el) =>
                                     unpulse(el, formatNum(currentLikes)),
@@ -376,6 +403,8 @@
                 clearTimeout(debounceTimer);
                 debounceTimer = null;
                 const action = isLiked ? "like" : "unlike";
+                const targetLiked = isLiked;
+                initialLiked = targetLiked; // 同步对齐基准，杜绝重返前台时误判吞掉反向操作
                 safeFetch("/api/stats", {
                     method: "POST",
                     keepalive: true,
@@ -385,7 +414,21 @@
                         action,
                         vid: visitorId,
                     }),
-                }).catch(() => {});
+                })
+                    .then((r) => (r.ok ? r.json() : null))
+                    .then((res) => {
+                        hasLikedSettled = true;
+                        if (res && typeof res.likes === "number") {
+                            confirmedLikes = res.likes;
+                            if (isLiked === targetLiked) {
+                                currentLikes = confirmedLikes;
+                                likesNodes.forEach((el) =>
+                                    unpulse(el, formatNum(currentLikes)),
+                                );
+                            }
+                        }
+                    })
+                    .catch(() => {});
             }
 
             window.addEventListener("pagehide", flushPendingLike);
@@ -409,9 +452,15 @@
                     currentLikes = Math.max(0, currentLikes + delta);
                     // 不更新 confirmedLikes：它仅由服务端响应校准，
                     // 防止叠加未确认的乐观增量导致永久性计数漂移
-                    likesNodes.forEach((el) => unpulse(el, formatNum(currentLikes)));
+                    likesNodes.forEach((el) =>
+                        unpulse(el, formatNum(currentLikes)),
+                    );
                 }
-            } else if (e.key === storageKeyView && e.newValue && cancelViewRecorder) {
+            } else if (
+                e.key === storageKeyView &&
+                e.newValue &&
+                cancelViewRecorder
+            ) {
                 // 另一标签页已上报阅读量，本标签页静默注销监听与倒计时，免除重复请求
                 cancelViewRecorder();
             }

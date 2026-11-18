@@ -183,10 +183,12 @@ header .header-container {
     contain-intrinsic-size: auto 400px;
 }
 
-
 /* ============================================================
-   文章点赞（Likes）爱心图标与交互色彩规范 (适配深浅主题与无障碍对比度)
+   文章点赞（Likes）与浏览量（Views）等宽排版与色彩规范
    ============================================================ */
+.article-meta-stat {
+    font-variant-numeric: tabular-nums;
+}
 
 /* 1. 列表静态卡片爱心与已赞激活态基础红色 */
 .article-meta-stat .icon-heart-static,
