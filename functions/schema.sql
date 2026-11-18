@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS stats (
   likes INTEGER NOT NULL DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_stats_updated_at ON stats(updated_at);
 
 CREATE TABLE IF NOT EXISTS stats_likes_log (
   post_id TEXT NOT NULL,

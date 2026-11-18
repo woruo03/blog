@@ -86,17 +86,20 @@
     }
 
     function safeFetch(url, options = {}) {
-        const timeoutSignal =
-            "timeout" in AbortSignal ? AbortSignal.timeout(6000) : undefined;
         let signal = options.signal;
-        if (timeoutSignal && signal) {
-            signal = AbortSignal.any
-                ? AbortSignal.any([signal, timeoutSignal])
-                : signal;
-        } else {
-            signal = signal || timeoutSignal;
+        // keepalive 属于页面卸载/后台保活传输，避免混合附加 AbortSignal 导致特定浏览器抛出 TypeError
+        if (!options.keepalive) {
+            const timeoutSignal =
+                "timeout" in AbortSignal ? AbortSignal.timeout(6000) : undefined;
+            if (timeoutSignal && signal) {
+                signal = AbortSignal.any
+                    ? AbortSignal.any([signal, timeoutSignal])
+                    : signal;
+            } else {
+                signal = signal || timeoutSignal;
+            }
         }
-        return fetch(url, { ...options, signal });
+        return fetch(url, { ...options, ...(signal ? { signal } : {}) });
     }
 
     // 1. 单篇文章交互（首屏极速呈现 + 真实阅读行为门禁 + 点赞状态机）

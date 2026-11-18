@@ -114,24 +114,27 @@ function isRateLimited(ipHash) {
 }
 
 let isDbInitialized = false;
+let schemaInitPromise = null;
 async function ensureDbSchema(db) {
     if (isDbInitialized) return;
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS stats (
-          id TEXT PRIMARY KEY,
-          views INTEGER NOT NULL DEFAULT 0,
-          likes INTEGER NOT NULL DEFAULT 0,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_stats_updated_at ON stats(updated_at);
-        CREATE TABLE IF NOT EXISTS stats_likes_log (
-          post_id TEXT NOT NULL,
-          client_hash TEXT NOT NULL,
-          liked_at INTEGER NOT NULL,
-          PRIMARY KEY (post_id, client_hash)
-        );
-    `);
-    isDbInitialized = true;
+    if (!schemaInitPromise) {
+        schemaInitPromise = (async () => {
+            // 注意：D1 的 exec() 以换行作为语句边界，单条语句必须完整写在一行内，
+            // 否则会抛出 "D1_EXEC_ERROR: ... incomplete input" 导致冷启动回退失败。
+            // 移除了无查询使用的 idx_stats_updated_at 索引，降低写放大
+            await db.exec(
+                "CREATE TABLE IF NOT EXISTS stats (id TEXT PRIMARY KEY, views INTEGER NOT NULL DEFAULT 0, likes INTEGER NOT NULL DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+            );
+            await db.exec(
+                "CREATE TABLE IF NOT EXISTS stats_likes_log (post_id TEXT NOT NULL, client_hash TEXT NOT NULL, liked_at INTEGER NOT NULL, PRIMARY KEY (post_id, client_hash));",
+            );
+            isDbInitialized = true;
+        })().catch((err) => {
+            schemaInitPromise = null;
+            throw err;
+        });
+    }
+    return schemaInitPromise;
 }
 
 // 仅在初次部署命中表不存在时触发 DDL，消除正常请求的冷启动元数据写锁与延迟
@@ -236,7 +239,7 @@ export async function onRequestGet(context) {
         } catch (err) {
             return new Response(
                 JSON.stringify({
-                    error: err.message || "Failed to query stats",
+                    error: "Failed to query stats",
                 }),
                 {
                     status: 500,
@@ -316,7 +319,7 @@ export async function onRequestGet(context) {
         } catch (err) {
             return new Response(
                 JSON.stringify({
-                    error: err.message || "Failed to query post stats",
+                    error: "Failed to query post stats",
                 }),
                 {
                     status: 500,
@@ -496,18 +499,16 @@ export async function onRequestPost(context) {
     if (isAdminBypass) {
         try {
             return await executeWithSchemaFallback(env.DB, async () => {
-                const [row, likeRecord] = await Promise.all([
+                const batchRes = await env.DB.batch([
                     env.DB.prepare(
                         "SELECT views, likes FROM stats WHERE id = ?",
-                    )
-                        .bind(id)
-                        .first(),
+                    ).bind(id),
                     env.DB.prepare(
                         "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                    )
-                        .bind(id, clientHash)
-                        .first(),
+                    ).bind(id, clientHash),
                 ]);
+                const row = batchRes[0]?.results?.[0];
+                const likeRecord = batchRes[1]?.results?.[0];
 
                 return new Response(
                     JSON.stringify({
@@ -529,7 +530,7 @@ export async function onRequestPost(context) {
         } catch (err) {
             return new Response(
                 JSON.stringify({
-                    error: err.message || "Internal server error",
+                    error: "Internal server error",
                 }),
                 {
                     status: 500,
@@ -556,6 +557,11 @@ export async function onRequestPost(context) {
                 let isCachedView = hasViewCookie;
                 let cacheKey = null;
 
+                let host = "blog.woruo03.com";
+                try {
+                    host = new URL(request.url).host;
+                } catch (_) {}
+
                 if (
                     !isCachedView &&
                     typeof caches !== "undefined" &&
@@ -563,7 +569,7 @@ export async function onRequestPost(context) {
                 ) {
                     try {
                         cacheKey = new Request(
-                            `https://cache.stats.internal/view/${encodeURIComponent(id)}/${clientHash}`,
+                            `https://${host}/__stats_cache/view/${encodeURIComponent(id)}/${clientHash}`,
                             { method: "GET" },
                         );
                         const match = await caches.default.match(cacheKey);
@@ -574,19 +580,17 @@ export async function onRequestPost(context) {
                 }
 
                 if (isCachedView) {
-                    // 24小时冷却期内（命中 Cookie 或 Edge Cache）：0 D1 写入，只读返回
-                    const [row, likeRecord] = await Promise.all([
+                    // 24小时冷却期内（命中 Cookie 或 Edge Cache）：0 D1 写入，单次 batch 只读返回
+                    const batchRes = await env.DB.batch([
                         env.DB.prepare(
                             "SELECT views, likes FROM stats WHERE id = ?",
-                        )
-                            .bind(id)
-                            .first(),
+                        ).bind(id),
                         env.DB.prepare(
                             "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                        )
-                            .bind(id, clientHash)
-                            .first(),
+                        ).bind(id, clientHash),
                     ]);
+                    const row = batchRes[0]?.results?.[0];
+                    const likeRecord = batchRes[1]?.results?.[0];
 
                     const resHeaders = {
                         ...corsHeaders,
@@ -610,8 +614,8 @@ export async function onRequestPost(context) {
                     );
                 }
 
-                // 首次访问或冷却过期：原子级更新 stats 主表（严格仅 1 次写入）
-                const [row, likeRecord] = await Promise.all([
+                // 首次访问或冷却过期：原子级更新 stats 主表（1 次 batch 往返完成主表更新与点赞状态校验）
+                const batchRes = await env.DB.batch([
                     env.DB.prepare(
                         `
                         INSERT INTO stats (id, views, likes)
@@ -619,15 +623,13 @@ export async function onRequestPost(context) {
                         ON CONFLICT(id) DO UPDATE SET views = views + 1, updated_at = CURRENT_TIMESTAMP
                         RETURNING views, likes;
                     `,
-                    )
-                        .bind(id)
-                        .first(),
+                    ).bind(id),
                     env.DB.prepare(
                         "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                    )
-                        .bind(id, clientHash)
-                        .first(),
+                    ).bind(id, clientHash),
                 ]);
+                const row = batchRes[0]?.results?.[0];
+                const likeRecord = batchRes[1]?.results?.[0];
 
                 // 异步将此访问标记写入 Edge Cache（TTL 24小时），不阻塞当前响应
                 if (
@@ -781,7 +783,7 @@ export async function onRequestPost(context) {
         });
     } catch (err) {
         return new Response(
-            JSON.stringify({ error: err.message || "Internal server error" }),
+            JSON.stringify({ error: "Internal server error" }),
             {
                 status: 500,
                 headers: {
