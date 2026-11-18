@@ -27,7 +27,6 @@ term = ["HTML"]
 [taxonomies]
 tag = "tags"
 category = "categories"
-author = "authors"
 series = "series"
 
 # 语义化文章链接

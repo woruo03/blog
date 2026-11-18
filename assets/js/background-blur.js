@@ -14,36 +14,31 @@
         const blurElement = document.getElementById(targetId);
         if (!blurElement) return;
 
-        blurElement.setAttribute("aria-hidden", "true");
-        if (disableBlur) {
-            if (!isMenuBlur) {
-                blurElement.style.display = "none";
-                blurElement.style.opacity = "0";
-            } else {
-                blurElement.style.display = "";
-            }
-        } else {
-            blurElement.style.display = "";
+        if (disableBlur && !isMenuBlur) {
+            blurElement.style.display = "none";
+            blurElement.style.opacity = "0";
+            return;
         }
+
+        blurElement.style.display = "";
+        blurElement.setAttribute("role", "presentation");
 
         let lastOpacity = -1;
         const updateBlur = () => {
-            if (!disableBlur || isMenuBlur) {
-                const scroll =
-                    window.scrollY ||
-                    window.pageYOffset ||
-                    document.documentElement.scrollTop ||
-                    0;
-                // 限制在 [0, 1] 范围，采用 2 位精度规避浮点微差，一旦超过 300px 锁定为 1 杜绝无效更新
-                const opacity = Math.min(
-                    1,
-                    Math.max(0, scroll / scrollDivisor),
-                );
-                const roundedOpacity = Math.round(opacity * 100) / 100;
-                if (roundedOpacity !== lastOpacity) {
-                    blurElement.style.opacity = roundedOpacity.toString();
-                    lastOpacity = roundedOpacity;
-                }
+            const scroll =
+                window.scrollY ||
+                window.pageYOffset ||
+                document.documentElement.scrollTop ||
+                0;
+            // 限制在 [0, 1] 范围，采用 2 位精度规避浮点微差，一旦超过 300px 锁定为 1 杜绝无效更新
+            const opacity = Math.min(
+                1,
+                Math.max(0, scroll / scrollDivisor),
+            );
+            const roundedOpacity = Math.round(opacity * 100) / 100;
+            if (roundedOpacity !== lastOpacity) {
+                blurElement.style.opacity = roundedOpacity.toString();
+                lastOpacity = roundedOpacity;
             }
         };
 
@@ -57,7 +52,6 @@
             });
         };
 
-        blurElement.setAttribute("role", "presentation");
         window.addEventListener("scroll", requestBlurUpdate, { passive: true });
         updateBlur();
     }

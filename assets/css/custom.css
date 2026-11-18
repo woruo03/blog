@@ -94,8 +94,7 @@ body.zen-mode-enable article footer {
    ============================================================ */
 
 /* 1. 顶部占位高度与实际导航栏 (~60px) 精确匹配，消除异常的大面积空旷留白 */
-header .header-spacer,
-header div[class*="min-h-"] {
+header .header-spacer {
     min-height: 3.75rem !important; /* 60px */
     height: 3.75rem !important;
 }
@@ -158,6 +157,7 @@ header .header-container {
     align-items: center !important;
     vertical-align: middle !important;
     line-height: 1 !important;
+    font-variant-numeric: tabular-nums;
 }
 
 .article-meta-stat .icon {
@@ -169,7 +169,7 @@ header .header-container {
 
 .article-meta-stat .icon svg {
     display: block !important;
-    height: 0.72em !important;
+    height: 0.72em;
     height: 1cap !important;
     width: auto !important;
     max-width: none !important;
@@ -186,9 +186,6 @@ header .header-container {
 /* ============================================================
    文章点赞（Likes）与浏览量（Views）等宽排版与色彩规范
    ============================================================ */
-.article-meta-stat {
-    font-variant-numeric: tabular-nums;
-}
 
 /* 1. 列表静态卡片爱心与已赞激活态基础红色 */
 .article-meta-stat .icon-heart-static,
@@ -220,3 +217,17 @@ html.dark #button_likes:hover {
         outline-offset: 2px !important;
     }
 }
+
+/* ============================================================
+   无脚本环境友好优雅降级 (Modern Web Guidance: @media (scripting: none))
+   禁用 JS 时，浏览量与点赞骨架屏占位清空并恢复默认继承色，不留空白或闪烁骨架
+   ============================================================ */
+@media (scripting: none) {
+    span[id^="views_"],
+    span[id^="likes_"] {
+        color: inherit !important;
+        background: transparent !important;
+        animation: none !important;
+    }
+}
+

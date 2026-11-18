@@ -275,7 +275,6 @@
             function triggerReport() {
                 if (reported) return;
                 cancelViewRecorder();
-                setStorage(storageKeyView, String(Date.now()));
 
                 safeFetch("/api/stats", {
                     method: "POST",
@@ -291,6 +290,7 @@
                     .then((r) => (r.ok ? r.json() : null))
                     .then((data) => {
                         if (!data) return;
+                        setStorage(storageKeyView, String(Date.now()));
                         updateViews(data.views);
                         if (
                             typeof data.likes === "number" &&

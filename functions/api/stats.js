@@ -59,7 +59,7 @@ function isBotRequest(request) {
     return false;
 }
 
-async function getClientHash(request, vid, secret = "woruo03-salt") {
+async function getClientHash(vid, secret = "woruo03-salt") {
     const salt =
         (typeof secret === "string" && secret.trim()) || "woruo03-salt";
     const cleanVid = (typeof vid === "string" && vid.trim()) || "anonymous";
@@ -90,7 +90,8 @@ async function getIpHash(request, secret = "woruo03-salt") {
         .slice(0, 32);
 }
 
-// 边缘内存滑动窗口限流：拦截高频暴击脚本，0 磁盘写入，0 数据库往返
+// 边缘内存限流：拦截高频暴击脚本，0 磁盘写入，0 数据库往返
+// 说明：此 Map 驻留在 Cloudflare Worker 单个 Isolate 实例局部内存，属于轻量边缘缓解层；点赞幂等性由 D1 主键约束强保障
 const ipRateLimits = new Map();
 const RATE_LIMIT_MAX = 30; // 60 秒内最多 30 次写操作
 const RATE_LIMIT_WINDOW = 60 * 1000;
@@ -105,6 +106,10 @@ function isRateLimited(ipHash) {
                 if (now - v.start >= RATE_LIMIT_WINDOW) {
                     ipRateLimits.delete(k);
                 }
+            }
+            // 若清理后依然超出上限（例如持续高频攻击条目保持活跃），执行全局重置兜底，杜绝 Isolate 内存无上限膨胀
+            if (ipRateLimits.size > 2000) {
+                ipRateLimits.clear();
             }
         }
         return false;
@@ -143,6 +148,8 @@ async function executeWithSchemaFallback(db, queryFn) {
         return await queryFn();
     } catch (err) {
         if (/no such table/i.test(err?.message || "")) {
+            isDbInitialized = false;
+            schemaInitPromise = null;
             await ensureDbSchema(db);
             return await queryFn();
         }
@@ -168,27 +175,41 @@ export async function onRequestGet(context) {
     const ids = url.searchParams.get("ids");
     const vid = url.searchParams.get("vid");
 
-    if (!env.DB) {
-        return new Response(
-            JSON.stringify({
-                warning: "Cloudflare D1 database (DB) is not bound yet.",
-                views: 0,
-                likes: 0,
-                data: {},
-            }),
-            {
-                status: 200,
+    if (!env?.STATS_SECRET) {
+        console.warn("[Stats] Warning: STATS_SECRET is not configured. Falling back to default salt.");
+    }
+
+    // 爬虫与自动化工具直接返回空/零数据，杜绝无意义消耗 D1 读配额
+    if (isBotRequest(request)) {
+        if (ids) {
+            return new Response(JSON.stringify({ data: {} }), {
                 headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
-                    "Cache-Control": "no-store",
+                    "Cache-Control": "public, max-age=300",
+                },
+            });
+        }
+        return new Response(
+            JSON.stringify({
+                id: id || "",
+                views: 0,
+                likes: 0,
+                userLiked: false,
+                botIgnored: true,
+            }),
+            {
+                headers: {
+                    ...corsHeaders,
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Cache-Control": "public, max-age=300",
                 },
             },
         );
     }
 
     // 1. 批量查询（用于列表页或首页卡片）
-    if (ids) {
+    if (ids !== null) {
         const idList = [
             ...new Set(
                 ids
@@ -203,8 +224,28 @@ export async function onRequestGet(context) {
                 headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
+                    "Cache-Control": "public, max-age=60",
                 },
             });
+        }
+
+        if (!env.DB) {
+            return new Response(
+                JSON.stringify({
+                    warning: "Cloudflare D1 database (DB) is not bound yet.",
+                    views: 0,
+                    likes: 0,
+                    data: {},
+                }),
+                {
+                    status: 200,
+                    headers: {
+                        ...corsHeaders,
+                        "Content-Type": "application/json; charset=utf-8",
+                        "Cache-Control": "no-store",
+                    },
+                },
+            );
         }
 
         try {
@@ -264,13 +305,32 @@ export async function onRequestGet(context) {
             });
         }
 
+        if (!env.DB) {
+            return new Response(
+                JSON.stringify({
+                    warning: "Cloudflare D1 database (DB) is not bound yet.",
+                    id,
+                    views: 0,
+                    likes: 0,
+                    userLiked: false,
+                }),
+                {
+                    status: 200,
+                    headers: {
+                        ...corsHeaders,
+                        "Content-Type": "application/json; charset=utf-8",
+                        "Cache-Control": "no-store",
+                    },
+                },
+            );
+        }
+
         try {
             let row = null;
             let userLiked = false;
 
             if (vid) {
                 const clientHash = await getClientHash(
-                    request,
                     vid,
                     env.STATS_SECRET,
                 );
@@ -444,20 +504,13 @@ export async function onRequestPost(context) {
         );
     }
 
-    // 2. 爬虫与自动化测试工具静默旁路（Silent Ignore）
+    // 2. 爬虫与自动化测试工具静默旁路（彻底 0 数据库读写）
     if (isBotRequest(request)) {
-        const row = await executeWithSchemaFallback(env.DB, async () => {
-            return await env.DB.prepare(
-                "SELECT views, likes FROM stats WHERE id = ?",
-            )
-                .bind(id)
-                .first();
-        });
         return new Response(
             JSON.stringify({
                 id,
-                views: row?.views || 0,
-                likes: row?.likes || 0,
+                views: 0,
+                likes: 0,
                 botIgnored: true,
             }),
             {
@@ -488,7 +541,7 @@ export async function onRequestPost(context) {
         );
     }
 
-    const clientHash = await getClientHash(request, vid, env.STATS_SECRET);
+    const clientHash = await getClientHash(vid, env.STATS_SECRET);
     const now = Math.floor(Date.now() / 1000);
 
     // 4. 博主免记模式判定：0 数据库写入，只读返回当前真实统计
@@ -599,7 +652,7 @@ export async function onRequestPost(context) {
                     };
                     if (!hasViewCookie) {
                         resHeaders["Set-Cookie"] =
-                            `${viewCookieName}=1; Max-Age=86400; Path=/; SameSite=Lax; Secure`;
+                            `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure`;
                     }
 
                     return new Response(
@@ -654,7 +707,7 @@ export async function onRequestPost(context) {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
                     "Cache-Control": "no-store",
-                    "Set-Cookie": `${viewCookieName}=1; Max-Age=86400; Path=/; SameSite=Lax; Secure`,
+                    "Set-Cookie": `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure`,
                 };
 
                 return new Response(
