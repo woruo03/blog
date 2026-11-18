@@ -12,6 +12,28 @@
         Boolean(window.document.documentElement.getAttribute("webdriver")) ||
         Boolean(window._phantom || window.__nightmare || window.callPhantom);
 
+    // 博主免记模式（Admin Bypass）：访问携带 ?admin=1 或 ?admin=0 切换持久化免记标记
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("admin") === "1") {
+            try {
+                localStorage.setItem("blog_admin_bypass", "true");
+                console.info(
+                    "[Stats] 博主免记模式已激活：当前设备的所有浏览将不再计入统计与写入。",
+                );
+            } catch (_) {}
+        } else if (urlParams.get("admin") === "0") {
+            try {
+                localStorage.removeItem("blog_admin_bypass");
+                console.info("[Stats] 博主免记模式已停用。");
+            } catch (_) {}
+        }
+    } catch (_) {}
+    let isAdminBypass = false;
+    try {
+        isAdminBypass = localStorage.getItem("blog_admin_bypass") === "true";
+    } catch (_) {}
+
     function getStorage(key) {
         try {
             return localStorage.getItem(key);
@@ -205,7 +227,7 @@
                 }
             });
 
-        // B. 真实阅读行为门禁：停留达到 2.5 秒且可见，或读者滚动超 150px 时才上报浏览量
+        // B. 真实有效阅读门禁：深度停留（>= 6秒）或中度滚动（>= 30%且停留>= 3.5秒）才上报
         function setupViewRecorder() {
             function isViewInCooldown() {
                 const val = getStorage(storageKeyView);
@@ -218,15 +240,28 @@
                 return false;
             }
 
-            const shouldRecord = !isLocal && !isBot && !isViewInCooldown();
+            const shouldRecord =
+                !isLocal && !isBot && !isAdminBypass && !isViewInCooldown();
             if (!shouldRecord) return;
 
             let reported = false;
+            let activeDwellMs = 0;
+            let lastActiveTimestamp = document.hidden ? 0 : Date.now();
             let dwellTimer = null;
+            let scrollCheckTimer = null;
+
+            function getCurrentActiveDwell() {
+                let current = activeDwellMs;
+                if (!document.hidden && lastActiveTimestamp > 0) {
+                    current += Date.now() - lastActiveTimestamp;
+                }
+                return current;
+            }
 
             cancelViewRecorder = function () {
                 reported = true;
                 if (dwellTimer) clearTimeout(dwellTimer);
+                if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
                 window.removeEventListener("scroll", onScroll);
                 document.removeEventListener(
                     "visibilitychange",
@@ -276,22 +311,69 @@
                     .catch(() => {});
             }
 
-            function onScroll() {
-                if (window.scrollY > 150) {
+            function scheduleDwellTimer() {
+                if (dwellTimer) clearTimeout(dwellTimer);
+                if (document.hidden) return;
+
+                const current = getCurrentActiveDwell();
+                const remaining = Math.max(0, 6000 - current);
+                if (remaining === 0) {
                     triggerReport();
+                } else {
+                    dwellTimer = setTimeout(triggerReport, remaining);
                 }
+            }
+
+            function checkScrollEngagement() {
+                if (document.hidden || reported) return;
+                const scrollable =
+                    document.documentElement.scrollHeight - window.innerHeight;
+                if (scrollable <= 0) return;
+
+                const scrollRatio = window.scrollY / scrollable;
+                // 内容滚动超过 30% 且停留超过 3.5 秒即可判定为真实阅读
+                if (scrollRatio >= 0.3) {
+                    const current = getCurrentActiveDwell();
+                    if (current >= 3500) {
+                        triggerReport();
+                    } else {
+                        if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
+                        scrollCheckTimer = setTimeout(() => {
+                            if (!document.hidden && !reported) {
+                                triggerReport();
+                            }
+                        }, 3500 - current);
+                    }
+                }
+            }
+
+            let scrollThrottle = false;
+            function onScroll() {
+                if (scrollThrottle) return;
+                scrollThrottle = true;
+                requestAnimationFrame(() => {
+                    checkScrollEngagement();
+                    scrollThrottle = false;
+                });
             }
 
             function onVisibilityChange() {
                 if (document.hidden) {
+                    if (lastActiveTimestamp > 0) {
+                        activeDwellMs += Date.now() - lastActiveTimestamp;
+                        lastActiveTimestamp = 0;
+                    }
                     if (dwellTimer) clearTimeout(dwellTimer);
+                    if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
                 } else {
-                    dwellTimer = setTimeout(triggerReport, 2500);
+                    lastActiveTimestamp = Date.now();
+                    scheduleDwellTimer();
+                    checkScrollEngagement();
                 }
             }
 
             if (!document.hidden && document.visibilityState !== "prerender") {
-                dwellTimer = setTimeout(triggerReport, 2500);
+                scheduleDwellTimer();
             }
             document.addEventListener("visibilitychange", onVisibilityChange);
             window.addEventListener("scroll", onScroll, { passive: true });
@@ -394,7 +476,7 @@
                                 unpulse(el, formatNum(currentLikes)),
                             );
                         });
-                }, 250);
+                }, 450);
             });
 
             // 离开页面或切入后台时，立即同步送出挂起的防抖点赞操作，防止关闭或锁屏丢失数据

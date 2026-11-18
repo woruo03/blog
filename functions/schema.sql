@@ -1,5 +1,6 @@
 -- functions/schema.sql
 -- Cloudflare D1 数据库模式定义：文章统计系统核心表与高性能索引
+-- 浏览量（Views）由客户端 LocalStorage + Cloudflare 边缘缓存与安全 Cookie 协同去重，直写 stats 表，无需临时日志表开销
 
 CREATE TABLE IF NOT EXISTS stats (
   id TEXT PRIMARY KEY,
@@ -8,14 +9,6 @@ CREATE TABLE IF NOT EXISTS stats (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_stats_updated_at ON stats(updated_at);
-
-CREATE TABLE IF NOT EXISTS stats_views_log (
-  post_id TEXT NOT NULL,
-  client_hash TEXT NOT NULL,
-  viewed_at INTEGER NOT NULL, -- Unix 秒级时间戳
-  PRIMARY KEY (post_id, client_hash)
-);
-CREATE INDEX IF NOT EXISTS idx_views_log_time ON stats_views_log(viewed_at);
 
 CREATE TABLE IF NOT EXISTS stats_likes_log (
   post_id TEXT NOT NULL,

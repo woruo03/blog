@@ -256,14 +256,6 @@ git push
         );
         CREATE INDEX IF NOT EXISTS idx_stats_updated_at ON stats(updated_at);
 
-        CREATE TABLE IF NOT EXISTS stats_views_log (
-          post_id TEXT NOT NULL,
-          client_hash TEXT NOT NULL,
-          viewed_at INTEGER NOT NULL,
-          PRIMARY KEY (post_id, client_hash)
-        );
-        CREATE INDEX IF NOT EXISTS idx_views_log_time ON stats_views_log(viewed_at);
-
         CREATE TABLE IF NOT EXISTS stats_likes_log (
           post_id TEXT NOT NULL,
           client_hash TEXT NOT NULL,
@@ -281,9 +273,11 @@ git push
 
 4. **高级特性与设计亮点**：
     - **极速冷启动与 0 冗余 DDL**：运行时采用自愈式惰性捕获，生产环境 0 额外 DDL 耗时，冷启动 TTFB 降低 50~200ms。
-    - **边缘内存级限流**：Worker 内存滑动窗口拦截暴击脚本，0 磁盘写入开销，节省 50% 以上 D1 每日写配额。
-    - **真实阅读行为门禁**：停留达 2.5 秒且可见或滚动超 150px 才计为有效浏览，杜绝爬虫与秒关跳出虚增。
-    - **乐观更新与确定性回滚**：点赞 0ms 视觉呈现、250ms 防抖归位去重、网络异常精确回退、关窗/锁屏通过 `keepalive` 同步送出。
+    - **D1 写入极致压缩（骤降 75%~90%）**：淘汰临时访问日志表，结合客户端 LocalStorage、Cloudflare Edge Cache（Cache API）与安全 Cookie 实现 24h 边缘零写入去重，单次阅读直写主表仅 1 行写入，消除多余写锁与定期清理开销。
+    - **边缘内存级限流**：Worker 内存滑动窗口拦截暴击脚本，0 磁盘写入开销，保护 D1 免费层 100k 每日写入配额。
+    - **真实深度阅读门禁**：页面处于可见状态停留满 6 秒或滚动超 30% 且停留超 3.5 秒才上报，彻底消灭爬虫与误触秒关跳出的无效写入。
+    - **博主免记模式（Admin Bypass）**：访问博客任意页面并携带 `?admin=1`（如 `https://blog.woruo03.com/?admin=1`）即可持久化激活免记模式，博主自身巡检、排版调试不再消耗任何写入配额（访问 `?admin=0` 可恢复）。
+    - **乐观更新与 450ms 对冲防抖**：点赞 0ms 视觉呈现、450ms 防抖反悔对冲、网络异常精确回退、关窗/锁屏通过 `keepalive` 同步送出。
     - **WAI-ARIA 无障碍与 0 布局抖动**：读屏活动区独立外挂、等宽数字排版（`tabular-nums`）与骨架屏保护，累积布局偏移（CLS）为 0。
 
 ---
