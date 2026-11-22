@@ -10,9 +10,9 @@ slug: "gcp-always-free-dual-stack-reality"
 showTableOfContents: true
 ---
 
-Google Cloud Platform (GCP) 的永久免费层（Always Free）为个人开发者提供了一定规格的基础设施资源。其中，位于美国指定可用区的 `e2-micro` 计算实例结合标准网络服务层级，可享有每月 200 GB 的免费全球互联网出站流量。
+Google Cloud Platform (GCP) 的永久免费层（Always Free）中，位于美国指定区域的 `e2-micro` 实例配合标准网络服务层级（Standard Tier），每月提供 200 GB 的免费互联网出站流量。
 
-本文将详细介绍如何充分利用该免费配额，构建一套具备 IPv4 与 IPv6 双栈直连能力的代理服务。架构结合 Xray 的 VLESS-Reality 协议降低传输开销，使用 Cloudflare CDN 配合防火墙白名单彻底隐藏 3x-ui 管理面板，并在客户端采用 Mihomo 进行 TUN 接管与故障转移。
+本文记录如何利用这项配额搭建 IPv4/IPv6 双栈代理：服务端用 Xray 的 VLESS-Reality 协议，3x-ui 面板通过 Cloudflare CDN 反代并配合 GCP 防火墙白名单隐藏源站，客户端用 Mihomo 开启 TUN 模式与故障转移。
 
 ---
 
@@ -20,29 +20,29 @@ Google Cloud Platform (GCP) 的永久免费层（Always Free）为个人开发�
 
 ### 1. 核心资源选型与配额边界
 
-GCP 对出站网络提供两种层级：**Premium（高级层级）** 与 **Standard（标准层级）**。若使用默认的高级层级，流量将通过 Google 全球私有骨干网传输，流向中国大陆方向需要按昂贵费率计费。只有显式选择**标准层级（Standard）**，流量在就近的 Google POP 节点接入公网公共网络，才享有 Always Free 政策中每月 200 GB 的免费出站额度。
+GCP 的出站网络分为 Premium（高级层级）和 Standard（标准层级）。默认的 Premium 层级通过 Google 全球骨干网传输，流向中国大陆方向按标准流量费计费；只有显式选择 Standard 层级，流量在就近的 Google POP 节点进入公网，才计入每月 200 GB 的免费出站额度。
 
 | 体系组件       | 选型与规格                                         | 核心作用与计费考量                                                                                                                           |
 | :------------- | :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| **云主机**     | GCP `e2-micro`（`us-west1-b` 俄勒冈）              | 2 vCPU（共享核心）、1 GB 物理内存、30 GB 标准持久磁盘（`pd-standard`），处于 Always Free 范围内。                                            |
-| **网络层级**   | **Standard（标准层级）** + 自定义双栈 VPC          | 享有每月 **200 GB** 免费全球出站流量（覆盖中国大陆方向）。提供公网静态 IPv4（**按小时计费，约 $0.005/hr**）与**完全免费**的外部 `/96` IPv6。 |
-| **代理协议**   | `3x-ui` + Xray（`VLESS + TCP + Reality + Vision`） | 监听 `443` 端口直连，省去额外的 TLS 握手与证书维护，并支持抗量子密钥交换（`X25519MLKEM768`）。                                               |
-| **面板安全**   | `8443` 端口 + Cloudflare CDN + 源站证书            | 隐藏真实源站 IP，GCP 防火墙严格限制仅允许 Cloudflare 官方回源 IP 访问，杜绝公网扫描。                                                        |
-| **本地客户端** | Linux + Mihomo（Clash Verge Rev）                  | 开启 `TUN` 模式全局接管流量，配合 `Fake-IP` 分流与双栈节点自动健康检查故障转移。                                                             |
+| 云主机         | GCP `e2-micro`（`us-west1-b` 俄勒冈）              | 2 vCPU（共享核心）、1 GB 物理内存、30 GB 标准持久磁盘（`pd-standard`），处于 Always Free 范围内。                                            |
+| 网络层级       | Standard（标准层级）+ 自定义双栈 VPC               | 享有每月 200 GB 免费全球出站流量（覆盖中国大陆方向）。提供公网静态 IPv4（按小时计费，约 $0.005/hr）与免费的外部 `/96` IPv6。                 |
+| 代理协议       | `3x-ui` + Xray（`VLESS + TCP + Reality + Vision`） | 监听 `443` 端口直连，省去额外的 TLS 握手与证书维护，并支持抗量子密钥交换（`X25519MLKEM768`）。                                               |
+| 面板安全       | `8443` 端口 + Cloudflare CDN + 源站证书            | 隐藏真实源站 IP，GCP 防火墙限制仅允许 Cloudflare 官方回源 IP 访问，防止公网扫描暴露。                                                         |
+| 本地客户端     | Linux + Mihomo（Clash Verge Rev）                  | 开启 TUN 模式全局接管流量，配合 Fake-IP 分流与双栈节点自动健康检查故障转移。                                                                  |
 
 > [!WARNING]
-> **关键计费注意事项：外部 IPv4 地址是按小时计费的**
-> 很多初次接触 GCP 免费层的开发者容易忽略外部 IPv4 的独立计费项：
+> **外部 IPv4 地址是按小时计费的**
+> 使用 GCP 免费层时需注意外部 IPv4 的计费规则：
 >
-> - **运行中按小时收费**：无论静态（Static）还是临时（Ephemeral）IP，分配给标准虚拟机运行使用的外部 IPv4 均按 **$0.005 / 小时** 计费，一个月（按 720 小时计）约产生 **$3.60 ~ $3.65** 的固定账单。
-> - **关机闲置惩罚费率**：如果创建了静态 IPv4 但将虚拟机停止（Stop），未绑定到运行中实例的静态 IP 会触发更高的闲置费率——**$0.010 / 小时**（约 $7.20 / 月）。如果停止实例且不再使用，务必及时释放（Release）该 IP。
-> - **IPv6 完全免费**：与之相对，GCP 为子网分配的 `/96` 外部 IPv6 地址是**完全免费**的，不会产生任何地址占用费。
+> - **运行中按小时收费**：无论静态（Static）还是临时（Ephemeral）IP，分配给运行中虚拟机的外部 IPv4 均按 **$0.005 / 小时** 计费，一个月（按 720 小时计）约产生 **$3.60 ~ $3.65** 的固定账单。
+> - **未挂载闲置费率**：如果创建了静态 IPv4 但将虚拟机停止（Stop），未绑定到运行中实例的静态 IP 会触发更高的闲置费率——**$0.010 / 小时**（约 $7.20 / 月）。如果停止实例且不再使用，务必及时释放（Release）该 IP。
+> - **IPv6 不收费**：GCP 为子网分配的 `/96` 外部 IPv6 地址完全免费，不产生地址占用费。
 >
-> 因此在规划方案时需要明确：若需要 IPv4 + IPv6 双栈直连，每月需计入约 $3.6 的 IPv4 地址保留成本；如果追求极致的“绝对 $0 账单”，可以考虑仅保留外部 IPv6（纯 IPv6 实例），通过双栈 CDN 或 IPv6 原生网络进行连接。
+> 因此在规划方案时需要明确：若需要 IPv4 + IPv6 双栈直连，每月需计入约 $3.6 的 IPv4 地址保留成本；如果追求零账单，可以仅保留外部 IPv6（纯 IPv6 实例），通过双栈 CDN 或 IPv6 原生网络连接。
 
 ### 2. 网络拓扑与流量路径
 
-架构将代理传输流量与管理流量彻底解耦，形成双轨访问通道：
+方案将代理业务流量与面板管理流量分开走不同路径：
 
 {{< mermaid >}}
 flowchart TD
@@ -145,11 +145,11 @@ gcloud compute firewall-rules create vpc-ipv6-allow-cf-panel-v6 \
 
 ## 三、 Debian 服务端内核与内存调优
 
-从美西（俄勒冈）到国内的网络物理延迟通常在 150ms ~ 180ms 之间。同时，`e2-micro` 仅有 1 GB 物理内存，且 `pd-standard` 云磁盘的随机 I/O 性能相对较弱。必须通过针对性的内核参数调优消除高延迟链路下的吞吐瓶颈，并避免高负载时发生磁盘换页抖动。
+美西（俄勒冈）到国内的物理延迟通常在 150ms ~ 180ms。此外 `e2-micro` 只有 1 GB 物理内存，搭配的 `pd-standard` 云磁盘随机 I/O 较慢，需要调整内核网络缓冲，并避免内存不足时因磁盘换页导致卡顿。
 
 ### 1. 启用 BBR 与高延迟网络 TCP 调优
 
-根据带宽高延迟积（Bandwidth-Delay Product, BDP）理论，在高延迟大带宽环境下，若 TCP 发送与接收缓冲区设置过小，滑动窗口将无法充分填满可用带宽。以下配置将接收与发送缓冲区上限提高至 16 MB，并启用 BBR 拥塞控制：
+在高延迟网络中，如果 TCP 发送与接收缓冲区设置过小，滑动窗口无法跑满可用带宽。以下配置将接收与发送缓冲区上限提高至 16 MB，并启用 BBR 拥塞控制：
 
 ```bash
 cat << 'EOF' | sudo tee /etc/sysctl.d/98-tcp-tune.conf
@@ -181,7 +181,7 @@ sudo sysctl --system
 
 ### 2. 启用 Zram 内存压缩
 
-当 1 GB 内存由于突发网络并发出现不足时，如果系统将匿名内存写入底层 `pd-standard` 磁盘上的 Swap 分区，会触发较高的 I/O 等待，导致系统响应停滞。使用 Zram 可以在内存中划分出一块压缩块设备作为交换空间，以少量的 CPU 压缩开销彻底消除磁盘 I/O 瓶颈：
+当 1 GB 内存因网络并发不足时，如果系统将匿名内存写入底层 `pd-standard` 磁盘的 Swap 分区，会触发较高的 I/O 等待甚至假死。使用 Zram 可以在内存中划分出一块压缩块设备作为交换空间，以少量的 CPU 压缩开销避免磁盘 Swap 带来的 I/O 卡顿：
 
 ```bash
 # 安装 zram-tools 工具包
@@ -206,16 +206,16 @@ swapon --show
 bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
 ```
 
-安装提示中，设置面板监听端口为 **`8443`**，并配置一段随机的安全访问根路径（例如 `/<RANDOM_ROOT_PATH>/`）。
+安装提示中，设置面板监听端口为 `8443`，并配置一段随机的安全访问根路径（例如 `/<RANDOM_ROOT_PATH>/`）。
 
 ### 2. 配置 Cloudflare 源站证书与 CDN 反代
 
-为了彻底隐藏 VPS 的真实 IP，面板访问全程经由 Cloudflare CDN 转发：
+为了避免暴露 VPS 真实 IP，面板访问全程经由 Cloudflare CDN 反代：
 
 1. **DNS 记录配置**：在 Cloudflare 控制台中，为面板专用子域名（如 `panel.example.com`）分别添加：
     - `A` 记录：指向 VPS 的外部 IPv4 地址；
     - `AAAA` 记录：指向 VPS 的外部 IPv6 地址；
-    - 确保两条记录的**代理状态均处于开启（橙色云朵）**状态。
+    - 确保两条记录的代理状态均处于开启（开启橙色云朵代理）。
 2. **部署源站证书**：
     - 进入 Cloudflare 控制台的 **SSL/TLS → 源服务器（Origin Server）**；
     - 点击“创建证书”，生成 15 年有效期的 Origin Certificate；
@@ -226,7 +226,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.
     - 在 **网络（Network）** 选项中，确保开启 **WebSockets** 与 **HTTP/2 到源服务器**，以保证后台监控图表正常长连接刷新。
 
 > [!TIP]
-> 完成上述配置后，由于 GCP 防火墙已限制 8443 端口仅允许 Cloudflare 官方网段接入，任何直接探测 `https://<VPS_IP>:8443/` 的请求都会被系统底层防火墙静默丢弃（Drop），全网扫描工具无法探测到面板服务的存在。
+> 完成上述配置后，由于 GCP 防火墙已限制 8443 端口仅允许 Cloudflare 官方网段接入，任何直接探测 `https://<VPS_IP>:8443/` 的请求都会被系统防火墙静默丢弃（Drop），公网扫描无法直接探测到面板端口。
 
 ### 3. 配置 VLESS + Reality 入站与防超额配额
 
@@ -242,14 +242,14 @@ bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.
     - 在高级设置中勾选 `TCP Fast Open` 与 `TCP No Delay`；
     - 在 **Xray 设置** 中，将 Access 访问日志设为 `none`，避免低速磁盘因持续写入连接日志消耗 I/O。
 - **流量熔断配额**：
-    - 将该入站节点的 **总流量上限设为 `180 GB`**，并设置在每月账单日自动重置。
-    - 为 Always Free 政策中的 200 GB 上限保留 20 GB 缓冲余量，防止非预期超额产生扣费账单。
+    - 将该入站节点的总流量上限设为 `180 GB`，并在每月账单日自动重置。
+    - 为 Always Free 政策中的 200 GB 上限保留 20 GB 缓冲余量，防止意外超额产生扣费账单。
 
 ---
 
 ## 五、 客户端 Mihomo (Clash Verge Rev) 双栈配置
 
-在 Linux 桌面环境（尤其是 Wayland 显示协议下）中，许多应用程序不遵从系统环境变量的代理设置。开启 Mihomo 的 `TUN` 模式可以实现网络层级的全局接管，并搭配 `Fake-IP` 与双栈节点自动测速实现高可用故障转移。
+在 Linux 桌面环境（尤其是 Wayland 下）中，许多应用不遵从系统环境变量的代理设置。开启 Mihomo 的 TUN 模式可以实现网络层全局接管，并搭配 Fake-IP 与双栈节点自动测速实现故障转移。
 
 ### 1. 完整配置样例
 
@@ -366,19 +366,19 @@ rules:
 
 ### 2. 关键配置解析
 
-- **`tun.stack: mixed`**：混合堆栈在 Linux 环境下具备优秀的吞吐表现，`strict-route: true` 配合 `dns-hijack` 可强制将所有 53 端口的 DNS 查询与常规 TCP/UDP 数据报文导入 TUN 虚拟网卡。
-- **`AUTO-URLTEST` 策略组**：配置为每 180 秒对 IPv4 与 IPv6 节点进行一次健康状态探测。当 IPv6 链路出现偶发性丢包或劣化时，内核会自动切换至 IPv4 路径。
-- **`DOMAIN,panel.example.com,PROXY` 规则位序**：若主域名 `example.com` 配有直连规则，必须将面板子域名的 `PROXY` 规则显式置于其前，确保访问面板时走代理隧道。
+- `tun.stack: mixed`：混合堆栈在 Linux 环境下吞吐性能较好，`strict-route: true` 配合 `dns-hijack` 可将所有 53 端口的 DNS 查询与常规 TCP/UDP 数据导入 TUN 虚拟网卡。
+- `AUTO-URLTEST` 策略组：每 180 秒探测一次 IPv4 与 IPv6 节点连通性。当 IPv6 链路出现丢包或劣化时，内核会自动切换到 IPv4 节点。
+- `DOMAIN,panel.example.com,PROXY` 规则顺序：若主域名 `example.com` 配有直连规则，必须将面板子域名的 `PROXY` 规则放在它前面，确保访问面板时走代理隧道。
 
 ---
 
 ## 六、 实战部署中的 3 个典型深坑总结
 
-在实际部署与日常使用中，以下 3 个隐蔽网络与配置问题较为常见：
+在实际部署与使用中，以下 3 个网络与配置问题较为常见：
 
 ### 1. 校园网拦截 8443 端口与规则顺序配置不当
 
-- **故障现象**：在特定受控网络（如部分高校校园网、企业内网）环境下，浏览器打开 `https://panel.example.com:8443/<路径>/` 界面时，页面虽然能展现框架（源于本地 HTTP 缓存），但所有的 API 请求与 WebSocket 连接均持续报错 `NetworkError`。
+- **故障现象**：在受控网络（如部分高校校园网、企业内网）环境下，浏览器打开 `https://panel.example.com:8443/<路径>/` 界面时，页面虽然能显示框架（来自本地缓存），但所有 API 请求与 WebSocket 连接均持续报错 `NetworkError`。
 - **原因分析**：部分受控网络网关配置了严格的出口端口过滤，默认拦截非标准 HTTPS 端口（如 8443）。若此时客户端的分流规则将个人主域名解析为 `DIRECT`（直连），浏览器就会尝试绕过代理直连 Cloudflare CDN 边缘节点的 8443 端口，导致握手失败。
 - **解决方案**：在客户端规则链中，将面板域名单独提出来指定为 `PROXY`，且规则位置必须高于主域名的 `DIRECT`：
     ```yaml
@@ -390,10 +390,10 @@ rules:
 
 ### 2. VPC 防火墙遗漏 `--network` 与缺少 ICMPv6
 
-- **故障现象**：配置完成后，IPv4 节点运转正常，但 IPv6 节点出现异常：TLS 握手能正常通过，小体积 HTTP 请求可以响应，但一旦发起高并发请求、大文件下载或访问富媒体内容，网络传输会彻底停滞并最终超时报错。
+- **故障现象**：配置完成后，IPv4 节点正常，但 IPv6 节点出现异常：TLS 握手能通过，小体积 HTTP 请求也能响应，但一旦发起并发请求、大文件下载或访问大体积媒体内容，传输会停滞并最终超时报错。
 - **原因分析**：
-    1. 执行 `gcloud compute firewall-rules create` 时若未带 `--network=vpc-ipv6` 参数，规则会默认写入 GCP 的 `default` 网络，导致自定义 VPC 内的规则未实际生效。
-    2. IPv6 不支持中间路由器分片，完全依赖**路径 MTU 发现机制（Path MTU Discovery, PMTUD）**。PMTUD 需要依赖 ICMPv6 的“Packet Too Big”报文（协议号 58）。若防火墙仅放行了 IPv4 ICMP 而遗漏了协议号 58，中间路由器返回的分片指示报文将被丢弃，形成 **Path MTU 黑洞**，导致超过 MTU 的长数据包无法送达。
+    1. 执行 `gcloud compute firewall-rules create` 时若未带 `--network=vpc-ipv6` 参数，规则会默认写入 GCP 的 `default` 网络，导致自定义 VPC 内的规则未生效。
+    2. IPv6 不支持中间路由器分片，完全依赖路径 MTU 发现机制（Path MTU Discovery, PMTUD）。PMTUD 依赖 ICMPv6 的“Packet Too Big”报文（协议号 58）。若防火墙仅放行了 IPv4 ICMP 而遗漏了协议号 58，中间路由器返回的分片指示报文会被丢弃，形成 Path MTU 黑洞，导致超过 MTU 的长数据包无法送达。
 - **排查命令**：检查规则列表中是否包含协议号为 58 的放行规则：
     ```bash
     gcloud compute firewall-rules list --filter="network:vpc-ipv6"
@@ -401,7 +401,7 @@ rules:
 
 ### 3. `curl -I` 探测 3x-ui 面板返回 404 状态码
 
-- **故障现象**：部署完面板后，管理员常习惯在终端执行 `curl -I https://panel.example.com:8443/<随机路径>/` 验证连通性，终端却返回 `HTTP/2 404`，容易被误判为 Cloudflare CDN 反代失败或后端服务未启动。
+- **故障现象**：部署完面板后，在终端执行 `curl -I https://panel.example.com:8443/<随机路径>/` 验证连通性，终端返回 `HTTP/2 404`，容易被误判为 Cloudflare CDN 反代失败或后端服务未启动。
 - **原因分析**：3x-ui 的 Web 服务基于 Go Gin 框架构建，其路由表仅注册了 `GET` 与 `POST` 方法，并未针对 `HEAD` 请求（`curl -I` 所发送的方法）注册处理器。接收到 HEAD 请求时，Gin 框架默认返回 404 Not Found。
 - **正确探测指令**：使用完整的 `GET` 请求获取 HTTP 状态码：
     ```bash
@@ -413,7 +413,7 @@ rules:
 
 ## 结语
 
-通过将 GCP Always Free 提供的计算资源与 Standard 网络层级相结合，可以在不产生任何额外开销的前提下，获取一套高质量的独立代理网络节点。
+利用 GCP Always Free 的 e2-micro 搭配 Standard 网络层级，可以在控制成本（每月仅 IPv4 保留费约 $3.6，或纯 IPv6 零费用）的前提下，获得一个线路相对稳定的自建双栈代理节点。
 
 ---
 
