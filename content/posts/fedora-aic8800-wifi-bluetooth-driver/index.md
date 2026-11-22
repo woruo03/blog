@@ -1,5 +1,5 @@
 ---
-title: "Fedora 45 折腾 AIC8800D80 (AX900M) USB 免驱网卡：从识别为 U 盘到 Wi-Fi、蓝牙正常工作"
+title: "Fedora 45 折腾 AIC8800D80 (AX900M) USB 免驱网卡"
 date: 2026-11-22
 lastmod: 2026-11-22
 description: "记录在 Fedora 45（Linux 7.3.4 内核）下驱动 AX900M（爱科微 AIC8800D80）免驱双模 USB 网卡的过程：从默认识别为 U 盘脱壳、设备超时断开时序、DKMS 驱动编译，到 lsusb -t 接口分流与 aic_zlp_quirk 蓝牙补丁验证。"
