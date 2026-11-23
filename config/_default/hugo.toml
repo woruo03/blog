@@ -16,12 +16,44 @@ summaryLength = 40
 [pagination]
 pagerSize = 10
 
-# 输出格式（JSON 用于 Blowfish Fuse.js 搜索索引）
+# 输出格式（JSON 用于 Blowfish Fuse.js 搜索索引，LLMS 生成 /llms.txt）
+[outputFormats.LLMS]
+mediaType = "text/plain"
+baseName = "llms"
+isPlainText = true
+notAlternative = true
+
 [outputs]
-home = ["HTML", "RSS", "JSON"]
+home = ["HTML", "RSS", "JSON", "LLMS"]
 section = ["HTML", "RSS"]
 taxonomy = ["HTML"]
 term = ["HTML"]
+
+# 图片裁剪锚点
+[imaging]
+anchor = "Center"
+
+# 相关文章权重引擎
+[related]
+includeNewer = true
+threshold = 0
+toLower = false
+
+  [[related.indices]]
+  name = "tags"
+  weight = 100
+
+  [[related.indices]]
+  name = "categories"
+  weight = 100
+
+  [[related.indices]]
+  name = "series"
+  weight = 50
+
+  [[related.indices]]
+  name = "date"
+  weight = 10
 
 # 分类体系
 [taxonomies]

@@ -1,6 +1,7 @@
 <details
     open
     id="TOCView"
+    {{ if site.Params.smartTOCHideUnfocusedChildren }}data-collapse-unfocused="true"{{ end }}
     class="toc-right mt-0 overflow-y-auto overscroll-contain bf-scrollbar rounded-lg -ms-5 ps-5 pe-2 hidden lg:block"
 >
     <summary
@@ -43,7 +44,6 @@
       const TOC_SELECTOR = '#TableOfContents'
       const ANCHOR_SELECTOR = '.anchor'
       const TOC_LINK_SELECTOR = 'a[href^="#"]'
-      const NESTED_LIST_SELECTOR = 'li ul'
       const ACTIVE_CLASS = 'active'
 
       let isJumpingToAnchor = false
@@ -51,6 +51,7 @@
       let jumpTimeout = null
       let currentActiveId = null
       let prevActiveLink = null
+      let openUls = new Set()
 
       function safeDecode(str) {
         if (!str) return ''
@@ -116,7 +117,9 @@
         return validAnchors[candidateIndex].id
       }
 
-      function updateTOC({ toc, validAnchors, linkMap, collapseInactive }) {
+      function updateTOC({ toc, tocView, validAnchors, linkMap, collapseInactive }) {
+        if (tocView && tocView.offsetParent === null) return
+
         const activeId = getActiveAnchorId(validAnchors)
         if (!activeId) return
 
@@ -131,10 +134,6 @@
         if (prevActiveLink && prevActiveLink !== nextActiveLink) {
           prevActiveLink.classList.remove(ACTIVE_CLASS)
           prevActiveLink.removeAttribute('aria-current')
-          if (collapseInactive) {
-            const ul = prevActiveLink.closest('li')?.querySelector('ul')
-            if (ul) ul.style.display = 'none'
-          }
         }
 
         if (nextActiveLink) {
@@ -142,17 +141,33 @@
           nextActiveLink.setAttribute('aria-current', 'location')
 
           if (collapseInactive) {
+            const nextOpenUls = new Set()
             let el = nextActiveLink
             while (el && el !== toc) {
-              if (el.tagName === 'UL') el.style.display = ''
-              if (el.tagName === 'LI') el.querySelector('ul')?.style.setProperty('display', '')
+              if (el.tagName === 'UL' && el.parentElement && el.parentElement.tagName === 'LI') {
+                nextOpenUls.add(el)
+              }
               el = el.parentElement
             }
+            const directChildUl = nextActiveLink.closest('li')?.querySelector(':scope > ul')
+            if (directChildUl) nextOpenUls.add(directChildUl)
+
+            openUls.forEach(ul => {
+              if (!nextOpenUls.has(ul)) ul.classList.remove('toc-open')
+            })
+            nextOpenUls.forEach(ul => {
+              if (!openUls.has(ul)) ul.classList.add('toc-open')
+            })
+            openUls = nextOpenUls
           }
 
-          // 使用 behavior: 'auto' 保证大纲跟随不与主窗口滚动产生帧竞争
-          if (!isJumpingToAnchor) {
-            nextActiveLink.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+          // 仅在大纲容器自身内部滚动跟随，防止触发主窗口滚动竞争
+          if (!isJumpingToAnchor && tocView) {
+            const viewRect = tocView.getBoundingClientRect()
+            const linkRect = nextActiveLink.getBoundingClientRect()
+            if (linkRect.top < viewRect.top + 16 || linkRect.bottom > viewRect.bottom - 16) {
+              tocView.scrollTop += linkRect.top - viewRect.top - viewRect.height / 3
+            }
           }
 
           prevActiveLink = nextActiveLink
@@ -162,6 +177,7 @@
       function initTOC() {
         const toc = document.querySelector(TOC_SELECTOR)
         if (!toc) return
+        const tocView = document.getElementById('TOCView')
 
         const collapseInactive = {{ if site.Params.smartTOCHideUnfocusedChildren }}true{{ else }}false{{ end }}
         const allAnchors = [...document.querySelectorAll(ANCHOR_SELECTOR)]
@@ -180,10 +196,6 @@
 
         // 在初始化阶段完成有效标题过滤，避免在滚动帧中高频重复创建数组
         const validAnchors = allAnchors.filter(anchor => tocIds.has(safeDecode(anchor.id)))
-
-        if (collapseInactive) {
-          toc.querySelectorAll(NESTED_LIST_SELECTOR).forEach(ul => ul.style.display = 'none')
-        }
 
         links.forEach(link => {
           link.addEventListener('click', () => {
@@ -214,6 +226,7 @@
 
         const config = {
           toc,
+          tocView,
           validAnchors,
           linkMap,
           collapseInactive
@@ -236,6 +249,7 @@
         }, { passive: true })
 
         updateTOC(config)
+        tocView?.classList.add('smart-toc-ready')
       }
 
       document.readyState === 'loading'

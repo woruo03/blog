@@ -312,6 +312,86 @@ Blowfish 提供了一系列优雅的前端组件，丰富你的文章表达：
 前往 GitHub 查看本站源码
 {{< /button >}}
 
+### 10.4 多平台标签页 (Tabs)
+
+撰写跨发行版或不同协议对比教程时，可用 `tabs` + `tab` 精简篇幅：
+
+{{< tabs >}}
+{{< tab label="Fedora" >}}
+```bash
+sudo dnf install hugo
+```
+{{< /tab >}}
+{{< tab label="Ubuntu / Debian" >}}
+```bash
+sudo apt install hugo
+```
+{{< /tab >}}
+{{< tab label="Arch Linux" >}}
+```bash
+sudo pacman -S hugo
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+### 10.5 分步时间线 (Steps)
+
+用 `steps` + `step` 直观串联有先后顺序的编译、部署或排障步骤：
+
+{{< steps >}}
+{{< step number="1" title="创建文章目录" >}}
+运行 `hugo new posts/my-post/index.md` 创建独立 Page Bundle。
+{{< /step >}}
+{{< step number="2" title="本地实时预览" >}}
+执行 `hugo server -D` 在浏览器检查排版与数学公式渲染。
+{{< /step >}}
+{{< step number="3" title="推送自动发布" >}}
+将 `draft` 设为 `false` 后提交推送，Cloudflare Pages 自动完成构建上线。
+{{< /step >}}
+{{< /steps >}}
+
+### 10.6 折叠问答与可折叠提示框 (Accordion & Collapsible Admonition)
+
+长段排障 FAQ 可使用原生互斥折叠组件 `accordion`：
+
+{{< accordion mode="collapse" separated="true" >}}
+{{< accordionItem title="什么时候使用可折叠区域？" open="true" >}}
+适合收纳冗长的 `dmesg` 内核日志、完整配置文件或常见问题解答，保持正文主线紧凑。
+{{< /accordionItem >}}
+{{< accordionItem title="能否使用纯 Markdown 语法实现折叠提示框？" >}}
+可以！在 GitHub Alert 语法后追加 `-`（默认折叠）或 `+`（默认展开）即可，例如 `> [!TIP]- 标题`。
+{{< /accordionItem >}}
+{{< /accordion >}}
+
+也可以直接使用纯 Markdown 的可折叠提示框语法（基于原生 `<details>`，零 JS 开销）：
+
+> [!TIP]- 点击展开完整调试日志示例
+> ```text
+> [    2.418902] usb 1-3: new high-speed USB device number 4 using xhci_hcd
+> [    2.561034] aic_load_fw: firmware loaded successfully
+> ```
+
+### 10.7 站内文章引用卡片与防爬虫邮箱 (Article & Email)
+
+在正文内通过 `article` 短代码嵌入另一篇站内文章卡片：
+
+{{< article link="/posts/gcp-always-free-dual-stack-reality/" showSummary=true >}}
+
+使用 `email` 短代码输出 Base64 保护的邮箱链接（防止静态页面被爬虫抓取明文邮箱）：
+{{< email email="woruo03@gmail.com" text="通过保护链接联系博主" subject="来自博客语法手册的反馈" >}}
+
+### 10.8 外部仓库卡片与视频延迟加载语法参考
+
+撰写开源工具推荐或附带视频演示时，Blowfish 原生还支持 `github`（构建期拉取仓库 Star/Fork 状态）与 `youtubeLite`（点击前仅加载缩略图，避免首屏加载第三方 iframe）：
+
+```markdown
+<!-- GitHub 开源仓库卡片（注意：构建期会请求 api.github.com，离线或触发 API 限流时注意按需使用） -->
+{{</* github repo="nunocoracao/blowfish" showThumbnail=true */>}}
+
+<!-- YouTube 延迟加载播放器（零首屏 iframe 阻塞） -->
+{{</* youtubeLite id="视频ID" */>}}
+```
+
 ---
 
 ## 11. 脚注与参考链接

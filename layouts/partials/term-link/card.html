@@ -1,0 +1,19 @@
+<article
+  class="bf-term-card group relative min-w-full overflow-hidden rounded-lg border border-neutral-300/80 bg-white/85 transition-colors dark:border-neutral-600/80 dark:bg-neutral-900/80">
+  <a
+    {{ with .Page.Params.externalUrl }}
+      href="{{ . }}" target="_blank" rel="external noopener noreferrer"
+    {{ else }}
+      href="{{ .Page.RelPermalink }}"
+    {{ end }}
+    class="not-prose flex items-center justify-between gap-4 px-5 py-4 text-neutral-800 dark:text-neutral">
+    <span class="bf-term-card__title text-lg font-bold tracking-tight transition-colors">
+      {{ .Page.Title | emojify }}
+    </span>
+    {{ if site.Params.taxonomy.showTermCount | default true }}
+      <span class="bf-term-card__count shrink-0 rounded-full text-xs font-medium">
+        {{ .Count }} 篇
+      </span>
+    {{ end }}
+  </a>
+</article>

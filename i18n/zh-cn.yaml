@@ -1,3 +1,10 @@
+a11y:
+    title: "阅读与无障碍设置"
+    open_panel: "打开阅读与无障碍设置"
+    close_panel: "关闭设置面板"
+    zen_mode: "专注阅读模式"
+    font_size_default: "默认"
+
 article:
     breadcrumbs: "面包屑导航"
     views: "浏览量"

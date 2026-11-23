@@ -1,4 +1,4 @@
-<div class="header-spacer min-h-[60px] h-[60px]"></div>
+<div class="header-spacer"></div>
 <div class="fixed top-0 inset-x-0 z-100">
     <div
         id="menu-blur"
@@ -16,5 +16,6 @@ $backgroundBlur = $backgroundBlur | resources.Minify | resources.Fingerprint
     src="{{ $backgroundBlur.RelPermalink }}"
     integrity="{{ $backgroundBlur.Data.Integrity }}"
     data-blur-id="menu-blur"
+    data-scroll-divisor="80"
     defer
 ></script>

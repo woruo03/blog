@@ -5,6 +5,18 @@
 const BOT_UA_REGEX =
     /bot|spider|crawl|slurp|curl|wget|python|java|httpclient|axios|scrapy|postman|insomnia|go-http|headless/i;
 
+let hasWarnedMissingSecret = false;
+
+function getViewCookieName(id) {
+    return (
+        "viewed_" +
+        encodeURIComponent(id).replace(
+            /[()]/g,
+            (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+        )
+    );
+}
+
 function isAllowedOrigin(origin, env = {}) {
     if (!origin) return true;
     try {
@@ -175,18 +187,21 @@ export async function onRequestGet(context) {
     const ids = url.searchParams.get("ids");
     const vid = url.searchParams.get("vid");
 
-    if (!env?.STATS_SECRET) {
-        console.warn("[Stats] Warning: STATS_SECRET is not configured. Falling back to default salt.");
+    if (!env?.STATS_SECRET && !hasWarnedMissingSecret) {
+        hasWarnedMissingSecret = true;
+        console.warn(
+            "[Stats] Warning: STATS_SECRET is not configured. Falling back to default salt.",
+        );
     }
 
-    // 爬虫与自动化工具直接返回空/零数据，杜绝无意义消耗 D1 读配额
+    // 爬虫与自动化工具直接返回空/零数据，杜绝无意义消耗 D1 读配额（禁止进入公共 CDN 缓存污染真实用户）
     if (isBotRequest(request)) {
         if (ids) {
             return new Response(JSON.stringify({ data: {} }), {
                 headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
-                    "Cache-Control": "public, max-age=300",
+                    "Cache-Control": "private, no-store",
                 },
             });
         }
@@ -202,7 +217,7 @@ export async function onRequestGet(context) {
                 headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
-                    "Cache-Control": "public, max-age=300",
+                    "Cache-Control": "private, no-store",
                 },
             },
         );
@@ -233,8 +248,6 @@ export async function onRequestGet(context) {
             return new Response(
                 JSON.stringify({
                     warning: "Cloudflare D1 database (DB) is not bound yet.",
-                    views: 0,
-                    likes: 0,
                     data: {},
                 }),
                 {
@@ -542,59 +555,6 @@ export async function onRequestPost(context) {
     }
 
     const clientHash = await getClientHash(vid, env.STATS_SECRET);
-    const now = Math.floor(Date.now() / 1000);
-
-    // 4. 博主免记模式判定：0 数据库写入，只读返回当前真实统计
-    const isAdminBypass =
-        request.headers.get("x-admin-bypass") === "1" ||
-        body?.adminBypass === true;
-
-    if (isAdminBypass) {
-        try {
-            return await executeWithSchemaFallback(env.DB, async () => {
-                const batchRes = await env.DB.batch([
-                    env.DB.prepare(
-                        "SELECT views, likes FROM stats WHERE id = ?",
-                    ).bind(id),
-                    env.DB.prepare(
-                        "SELECT 1 FROM stats_likes_log WHERE post_id = ? AND client_hash = ?",
-                    ).bind(id, clientHash),
-                ]);
-                const row = batchRes[0]?.results?.[0];
-                const likeRecord = batchRes[1]?.results?.[0];
-
-                return new Response(
-                    JSON.stringify({
-                        id,
-                        views: row?.views || 0,
-                        likes: row?.likes || 0,
-                        userLiked: !!likeRecord,
-                        adminBypassed: true,
-                    }),
-                    {
-                        headers: {
-                            ...corsHeaders,
-                            "Content-Type": "application/json; charset=utf-8",
-                            "Cache-Control": "no-store",
-                        },
-                    },
-                );
-            });
-        } catch (err) {
-            return new Response(
-                JSON.stringify({
-                    error: "Internal server error",
-                }),
-                {
-                    status: 500,
-                    headers: {
-                        ...corsHeaders,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                },
-            );
-        }
-    }
 
     try {
         return await executeWithSchemaFallback(env.DB, async () => {
@@ -602,7 +562,7 @@ export async function onRequestPost(context) {
                 // 浏览量：基于 Cookie 与 Edge Cache（caches.default）双重 24h 边缘去重
                 // 彻底省除 D1 临时日志表写入与 DELETE 清理开销，单次有效阅读仅 1 次 D1 写入！
                 const cookieHeader = request.headers.get("cookie") || "";
-                const viewCookieName = `viewed_${encodeURIComponent(id)}`;
+                const viewCookieName = getViewCookieName(id);
                 const hasViewCookie = cookieHeader
                     .split(";")
                     .some((c) => c.trim().startsWith(`${viewCookieName}=`));
@@ -652,7 +612,7 @@ export async function onRequestPost(context) {
                     };
                     if (!hasViewCookie) {
                         resHeaders["Set-Cookie"] =
-                            `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure`;
+                            `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure; HttpOnly`;
                     }
 
                     return new Response(
@@ -690,14 +650,16 @@ export async function onRequestPost(context) {
                     typeof caches !== "undefined" &&
                     caches?.default
                 ) {
-                    const cachePutPromise = caches.default.put(
-                        cacheKey,
-                        new Response("1", {
-                            headers: {
-                                "Cache-Control": "public, max-age=86400",
-                            },
-                        }),
-                    );
+                    const cachePutPromise = caches.default
+                        .put(
+                            cacheKey,
+                            new Response("1", {
+                                headers: {
+                                    "Cache-Control": "public, max-age=86400",
+                                },
+                            }),
+                        )
+                        .catch(() => {});
                     if (context.waitUntil) {
                         context.waitUntil(cachePutPromise);
                     }
@@ -707,7 +669,7 @@ export async function onRequestPost(context) {
                     ...corsHeaders,
                     "Content-Type": "application/json; charset=utf-8",
                     "Cache-Control": "no-store",
-                    "Set-Cookie": `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure`,
+                    "Set-Cookie": `${viewCookieName}=1; Max-Age=86400; Path=/api/; SameSite=Lax; Secure; HttpOnly`,
                 };
 
                 return new Response(
@@ -720,6 +682,7 @@ export async function onRequestPost(context) {
                     { headers: resHeaders },
                 );
             } else if (action === "like") {
+                const now = Math.floor(Date.now() / 1000);
                 // 点赞：利用主键冲突优雅防重，杜绝重复递增与多余写锁
                 const logRes = await env.DB.prepare(
                     "INSERT OR IGNORE INTO stats_likes_log (post_id, client_hash, liked_at) VALUES (?1, ?2, ?3)",

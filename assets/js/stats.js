@@ -86,9 +86,12 @@
     }
 
     function safeFetch(url, options = {}) {
-        let signal = options.signal;
+        const fetchOptions = { ...options };
         // keepalive 属于页面卸载/后台保活传输，避免混合附加 AbortSignal 导致特定浏览器抛出 TypeError
-        if (!options.keepalive) {
+        if (fetchOptions.keepalive) {
+            delete fetchOptions.signal;
+        } else {
+            let signal = fetchOptions.signal;
             const timeoutSignal =
                 "timeout" in AbortSignal ? AbortSignal.timeout(6000) : undefined;
             if (timeoutSignal && signal) {
@@ -98,8 +101,11 @@
             } else {
                 signal = signal || timeoutSignal;
             }
+            if (signal) {
+                fetchOptions.signal = signal;
+            }
         }
-        return fetch(url, { ...options, ...(signal ? { signal } : {}) });
+        return fetch(url, fetchOptions);
     }
 
     // 1. 单篇文章交互（首屏极速呈现 + 真实阅读行为门禁 + 点赞状态机）
@@ -163,17 +169,18 @@
         const titleLiked =
             likeBtn?.getAttribute("data-title-liked") || "已赞 (再次点击取消)";
 
+        const likeLabelEl = document.getElementById("button_likes_label");
+
         function renderLikeUI(liked, liveMsg) {
             if (!likeBtn) return;
             if (filledHeart) filledHeart.classList.toggle("hidden", !liked);
             if (emptyHeart) emptyHeart.classList.toggle("hidden", liked);
             likeBtn.classList.toggle("liked", liked);
-            likeBtn.classList.toggle("text-red-500", liked);
-            likeBtn.classList.toggle("dark:text-red-400", liked);
             likeBtn.setAttribute("aria-pressed", liked ? "true" : "false");
             const label = liked ? titleLiked : titleLike;
-            likeBtn.setAttribute("aria-label", label);
-            likeBtn.setAttribute("aria-describedby", "likes_" + rawId);
+            if (likeLabelEl) {
+                likeLabelEl.textContent = label + " ";
+            }
             likeBtn.setAttribute("title", label);
             if (liveRegion && liveMsg) {
                 liveRegion.textContent = liveMsg;
@@ -339,9 +346,9 @@
                     const current = getCurrentActiveDwell();
                     if (current >= 3500) {
                         triggerReport();
-                    } else {
-                        if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
+                    } else if (!scrollCheckTimer) {
                         scrollCheckTimer = setTimeout(() => {
+                            scrollCheckTimer = null;
                             if (!document.hidden && !reported) {
                                 triggerReport();
                             }
@@ -366,8 +373,14 @@
                         activeDwellMs += Date.now() - lastActiveTimestamp;
                         lastActiveTimestamp = 0;
                     }
-                    if (dwellTimer) clearTimeout(dwellTimer);
-                    if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
+                    if (dwellTimer) {
+                        clearTimeout(dwellTimer);
+                        dwellTimer = null;
+                    }
+                    if (scrollCheckTimer) {
+                        clearTimeout(scrollCheckTimer);
+                        scrollCheckTimer = null;
+                    }
                 } else {
                     lastActiveTimestamp = Date.now();
                     scheduleDwellTimer();
@@ -405,6 +418,7 @@
 
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
+                    debounceTimer = null;
                     if (isLiked === initialLiked) return; // 快速反悔且归位，无需向网络发送请求
                     const action = isLiked ? "like" : "unlike";
                     const targetLiked = isLiked;
@@ -416,7 +430,6 @@
 
                     safeFetch("/api/stats", {
                         method: "POST",
-                        keepalive: true,
                         signal: inflightController.signal,
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({

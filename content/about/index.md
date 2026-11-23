@@ -6,6 +6,7 @@ showReadingTime: false
 showWordCount: false
 showTableOfContents: false
 showZenMode: false
+showReadingProgress: false
 showComments: false
 showPagination: false
 showViews: false
@@ -54,4 +55,4 @@ showLikes: false
 如果你在文章中发现错误，或者有想交流的想法，随时欢迎联系我：
 
 - **GitHub**: [woruo03](https://github.com/woruo03)
-- **Email**: <woruo03@gmail.com>
+- **Email**: {{< email email="woruo03@gmail.com" text="woruo03@gmail.com" subject="来自博客的联系" >}}

@@ -8,26 +8,34 @@ defaultAppearance = "dark"
 autoSwitchAppearance = true
 
 # ---- 全局功能 ----
+enableA11y = true
 enableSearch = true
 enableCodeCopy = true
 enableStyledScrollbar = true
 enableStructuredBreadcrumbs = true
+replyByEmail = false
+defaultSocialImage = "img/og-default.png"
+highlightCurrentMenuArea = true
 smartTOC = true
-smartTOCHideUnfocusedChildren = false
+smartTOCHideUnfocusedChildren = true
 mainSections = ["posts"]
 description = "woruo03 的技术学习与折腾日常"
 robots = "index, follow"
 
+[seo]
+metaDescriptionOrder = ["description", "summary", "site"]
+
 # ---- 顶栏配置 ----
 [header]
 layout = "fixed-fill-blur"
-highlightCurrentMenuArea = true
+mobileMenuStyle = "dropdown"
 
 # ---- 首页布局 ----
 [homepage]
 layout = "profile"
 showRecent = true
 showRecentItems = 8
+showMoreLink = false
 cardView = true
 cardViewScreenWidth = false
 
@@ -35,30 +43,52 @@ cardViewScreenWidth = false
 [article]
 showDate = true
 showDateUpdated = true
+showAuthorBottom = false
 showReadingTime = true
-showReadingProgress = false
+showReadingProgress = true
 showWordCount = true
 showViews = true
 showLikes = true
 showTableOfContents = true
 showZenMode = true
+showEdit = true
+editURL = "https://github.com/woruo03/blog/edit/main/content"
+editAppendPath = true
 showTaxonomies = true
 showCategoriesInSecondaryColor = true
 showRelatedContent = true
-relatedContentLimit = 3
+relatedContentLimit = 2
 showBreadcrumbs = true
 showPagination = true
 showComments = true
 showHero = false
 showHeadingAnchors = true
+sharingLinks = ["telegram", "twitter", "reddit", "bluesky", "mastodon", "email"]
 
 # ---- 列表页 ----
 [list]
 showBreadcrumbs = true
+showSummary = true
 showTableOfContents = false
 groupByYear = true
 cardView = true
 featureImageHover = true
+showViews = false
+showLikes = false
+
+# ---- 分类/标签总览页 ----
+[taxonomy]
+showTermCount = true
+showBreadcrumbs = false
+cardView = false
+
+# ---- 单一分类/标签详情页 ----
+[term]
+showBreadcrumbs = false
+showTableOfContents = false
+groupByYear = true
+cardView = true
+cardViewScreenWidth = false
 showViews = false
 showLikes = false
 

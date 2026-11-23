@@ -18,15 +18,17 @@
   {{ $parentCrumb = dict "title" (.Parent.Title | default .Parent.Section) "url" .Parent.RelPermalink }}
 {{ end }}
 
-{{ if or $parentCrumb $isSingle }}
+{{ $hasDynamicTax := and $isSingle (gt (len $taxData) 0) }}
+
+{{ if or $parentCrumb $hasDynamicTax }}
 <nav aria-label="{{ i18n "article.breadcrumbs" | default "面包屑导航" }}" class="print:hidden">
   <ol
     id="breadcrumbs-trail"
     class="flex flex-wrap items-center text-sm text-neutral-500 dark:text-neutral-400"
-    {{ if $isSingle }}data-taxonomies="{{ $taxData | jsonify }}"{{ end }}>
+    {{ if $hasDynamicTax }}data-taxonomies="{{ $taxData | jsonify }}"{{ end }}>
     {{ if $parentCrumb }}
       <li class="inline-flex items-center">
-        <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="{{ $parentCrumb.url }}">
+        <a class="hover:underline decoration-neutral-300" href="{{ $parentCrumb.url }}">
           {{ $parentCrumb.title }}
         </a>
         <span class="px-1.5 text-primary-500 select-none" aria-hidden="true">/</span>
@@ -36,7 +38,7 @@
 </nav>
 {{ end }}
 
-{{ if $isSingle }}
+{{ if $hasDynamicTax }}
 <script>
   (function () {
     "use strict";
@@ -54,8 +56,8 @@
     if (!trail || !trail.dataset.taxonomies) return;
 
     let referrerPath = "";
-    if (document.referrer) {
-      try {
+    try {
+      if (document.referrer) {
         const refUrl = new URL(document.referrer);
         if (refUrl.origin === window.location.origin) {
           referrerPath = safeDecode(refUrl.pathname);
@@ -63,10 +65,10 @@
         } else {
           sessionStorage.removeItem("blog_breadcrumb_ref");
         }
-      } catch (_) {}
-    } else {
-      referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
-    }
+      } else {
+        referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
+      }
+    } catch (_) {}
     if (!referrerPath) return;
 
     let taxData = {};
@@ -91,7 +93,7 @@
       li.className = "inline-flex items-center";
 
       const a = document.createElement("a");
-      a.className = "hover:underline decoration-neutral-300 dark:underline-neutral-600";
+      a.className = "hover:underline decoration-neutral-300";
       a.href = target.url;
       a.textContent = target.title;
 

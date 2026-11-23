@@ -75,23 +75,28 @@
     {{ $meta.Add "partials" (slice (partial "meta/likes.html" (dict "context" . "scope" $scope))) }}
   {{ end }}
 
-  {{ if and (eq $scope "single") (.Params.showEdit | default (site.Params.article.showEdit | default false)) }}
+  {{ $showEdit := cond (isset .Params "showedit") .Params.showEdit (and $isArticle (site.Params.article.showEdit | default false)) }}
+  {{ if and (eq $scope "single") $showEdit }}
     {{ $meta.Add "partials" (slice (partial "meta/edit.html" .)) }}
   {{ end }}
 
   {{/* ZenMode 小图标已移至主标题末尾，此处不再加入元数据切片，确保尾随无多余小圆点与图标 */}}
 
-  <div class="flex flex-row flex-wrap items-center">
-    {{/* Output partials */}}
-    {{ with ($meta.Get "partials") }}
-      {{ delimit . "<span class=\"px-2 text-primary-500\">&middot;</span>" | safeHTML }}
-    {{ end }}
+  {{ $metaPartials := $meta.Get "partials" }}
+  {{ $showDraft := and (eq $scope "single") (and .Draft site.Params.article.showDraftLabel) }}
+  {{ if or $metaPartials $showDraft }}
+    <div class="flex flex-row flex-wrap items-center">
+      {{/* Output partials */}}
+      {{ with $metaPartials }}
+        {{ delimit . "<span class=\"px-2 text-primary-500\">&middot;</span>" | safeHTML }}
+      {{ end }}
 
-    {{/* Output draft label */}}
-    {{ if and (eq $scope "single") (and .Draft site.Params.article.showDraftLabel) }}
-      <span class="ps-2">{{ partial "badge.html" (i18n "article.draft" | emojify) }}</span>
-    {{ end }}
-  </div>
+      {{/* Output draft label */}}
+      {{ if $showDraft }}
+        <span class="ps-2">{{ partial "badge.html" (i18n "article.draft" | emojify) }}</span>
+      {{ end }}
+    </div>
+  {{ end }}
 
   {{ if .Params.showAuthorsBadges | default (site.Params.article.showAuthorsBadges | default false) }}
     {{ with $context.GetTerms "authors" }}
@@ -106,34 +111,35 @@
 
   {{/* Output taxonomies */}}
   {{ if .Params.showTaxonomies | default (site.Params.article.showTaxonomies | default false) }}
-    <div class="flex flex-row flex-wrap items-center">
-      {{ range $taxonomy, $terms := site.Taxonomies }}
-        {{ if (gt (len ($context.GetTerms $taxonomy)) 0) }}
-          {{ range $context.GetTerms $taxonomy }}
-            {{ if (or (eq $taxonomy "authors") (eq $taxonomy "series"))}}
-              {{/* Ignore authors and series, since they are handled in other places */}}
-              {{ continue }}
-            {{ else if (eq $taxonomy "categories") }}
-              {{ if .Params.showCategories | default (site.Params.article.showCategories | default true) }}
-                <a class="relative mt-[0.5rem] me-2" href="{{ .RelPermalink }}">
-                  {{ $useSecondaryColor := .Params.showCategoriesInSecondaryColor | default (site.Params.article.showCategoriesInSecondaryColor | default false) }}
-                  {{ partial "badge.html" (dict "linkTitle" .LinkTitle "useSecondaryColor" $useSecondaryColor) }}
-                </a>
-              {{ end }}
-            {{ else if (eq $taxonomy "tags") }}
-              {{ if .Params.showTags | default (site.Params.article.showTags | default true) }}
-                <a class="relative mt-[0.5rem] me-2" href="{{ .RelPermalink }}">
-                  {{ partial "badge.html" .LinkTitle }}
-                </a>
-              {{ end }}
-            {{ else }}
-              <a class="relative mt-[0.5rem] me-2" href="{{ .RelPermalink }}">
-                {{ partial "badge.html" .LinkTitle }}
-              </a>
+    {{ $taxBadges := slice }}
+    {{ range $taxonomy, $terms := site.Taxonomies }}
+      {{ if (gt (len ($context.GetTerms $taxonomy)) 0) }}
+        {{ range $context.GetTerms $taxonomy }}
+          {{ if (or (eq $taxonomy "authors") (eq $taxonomy "series")) }}
+            {{/* Ignore authors and series, since they are handled in other places */}}
+            {{ continue }}
+          {{ else if (eq $taxonomy "categories") }}
+            {{ if .Params.showCategories | default (site.Params.article.showCategories | default true) }}
+              {{ $useSecondaryColor := .Params.showCategoriesInSecondaryColor | default (site.Params.article.showCategoriesInSecondaryColor | default false) }}
+              {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" (dict "linkTitle" .LinkTitle "useSecondaryColor" $useSecondaryColor)) }}
+              {{ $taxBadges = $taxBadges | append $badge }}
             {{ end }}
+          {{ else if (eq $taxonomy "tags") }}
+            {{ if .Params.showTags | default (site.Params.article.showTags | default true) }}
+              {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" .LinkTitle) }}
+              {{ $taxBadges = $taxBadges | append $badge }}
+            {{ end }}
+          {{ else }}
+            {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" .LinkTitle) }}
+            {{ $taxBadges = $taxBadges | append $badge }}
           {{ end }}
         {{ end }}
       {{ end }}
-    </div>
+    {{ end }}
+    {{ with $taxBadges }}
+      <div class="flex flex-row flex-wrap items-center">
+        {{ delimit . "" | safeHTML }}
+      </div>
+    {{ end }}
   {{ end }}
 {{ end }}

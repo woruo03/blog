@@ -20,8 +20,8 @@ flowchart LR
 ```
 
 - **生成引擎**：[Hugo](https://gohugo.io/) Extended (极速静态构建)
-- **前端主题**：[Blowfish](https://blowfish.page/) (Tailwind CSS，支持深色模式、智能大纲目录、专注阅读模式、KaTeX 公式与代码复制)
-- **部署平台**：[Cloudflare Pages](https://pages.cloudflare.com/) (免费自动化 CI/CD，自动配置 HTTPS)
+- **前端主题**：[Blowfish](https://blowfish.page/) (Tailwind CSS，支持深色模式、零重排阅读进度条、智能大纲折叠、专注阅读模式、无障碍阅读面板、GitHub 源码直达编辑、社交分享、`llms.txt` AI 索引、KaTeX 公式与代码复制)
+- **部署平台**：[Cloudflare Pages](https://pages.cloudflare.com/) (免费自动化 CI/CD，自动配置 HTTPS，静态资源与 `/img/*` 边缘长缓存)
 - **统计与点赞**：[Cloudflare D1](https://developers.cloudflare.com/d1/) (Serverless SQLite 边缘数据库，每日 10 万次写 / 500 万次读免费额度)
 - **评论系统**：[Giscus](https://giscus.app/) (基于 GitHub Discussions，免数据库)
 
@@ -120,7 +120,7 @@ slug: "embedded-linux-setup" # 自定义文章 URL 网址后缀
 > [!TIP]
 > **如何折叠大纲，为正文腾出更多阅读空间？**
 >
-> - **方式一（动态折叠与扩展）**：本博客已全局开启 **原生专注模式 (Zen Mode)**。读者阅读文章时，点击标题下方元数据栏的 **全屏展开图标（开启专注阅读）**，右侧大纲会自动折叠隐藏，且正文排版宽度会自动舒展加宽，极其适合阅读宽屏长代码和复杂表格！再次点击即可复原大纲和默认宽度。
+> - **方式一（动态折叠与扩展）**：本博客已全局开启 **原生专注模式 (Zen Mode)**。读者阅读文章时，点击文章标题末尾的 **全屏展开图标（开启专注阅读）**，右侧大纲会自动折叠隐藏，且正文排版宽度会自动舒展加宽，极其适合阅读宽屏长代码和复杂表格！再次点击即可复原大纲和默认宽度。
 > - **方式二（完全关闭大纲）**：如果你写的是一篇很短的随笔，不需要右侧大纲侧栏，直接在文章开头设置 `showTableOfContents: false`，右侧大纲栏将彻底消失，正文独占居中排版！
 
 > **数学公式提示**：如果文章中包含数学公式，请在正文第一行加上这一行短代码：
@@ -142,7 +142,7 @@ slug: "embedded-linux-setup" # 自定义文章 URL 网址后缀
 
 #### 3. 语法速查（不知道怎么写时）
 
-本博客自带一篇详尽的语法展示字典，遇到想用的排版（如公式、流程图、彩色提示框等），直接查看：
+本博客自带一篇详尽的语法展示字典，遇到想用的排版（如公式、流程图、彩色/可折叠提示框、多平台 `tabs` 标签页、`steps` 分步时间线、`accordion` 折叠问答、站内文章卡片、防爬虫 `email` 链接等），直接查看：
 📄 `content/posts/hello-world/index.md`，复制里面的语法即可。
 
 ---
@@ -198,19 +198,23 @@ git push
 
 1. 准备一张正方形的图片，重命名为 `avatar.png`。
 2. 替换掉 `assets/img/avatar.png`。
-3. 在终端运行以下一键脚本，会自动将你的新头像缩放为全套浏览器 Favicon、苹果图标和 Android Chrome 图标：
+3. 在终端运行以下一键脚本，会自动将你的新头像缩放生成优化后的站内 WebP 头像（`assets/img/avatar.webp`）、默认社交分享图（`assets/img/og-default.png`）以及全套浏览器 Favicon、苹果图标和 Android Chrome 图标：
     ```bash
     python3 -c "
-    import os; from PIL import Image
+    from PIL import Image
     with Image.open('assets/img/avatar.png') as img:
-        img = img.convert('RGBA')
-        img.resize((512, 512), Image.Resampling.LANCZOS).save('static/android-chrome-512x512.png')
-        img.resize((192, 192), Image.Resampling.LANCZOS).save('static/android-chrome-192x192.png')
-        img.resize((180, 180), Image.Resampling.LANCZOS).save('static/apple-touch-icon.png')
-        img.resize((32, 32), Image.Resampling.LANCZOS).save('static/favicon-32x32.png')
-        img.resize((16, 16), Image.Resampling.LANCZOS).save('static/favicon-16x16.png')
-        img.resize((48, 48), Image.Resampling.LANCZOS).save('static/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
-    print('✓ 所有图标同步更新完毕！')
+        img_rgba = img.convert('RGBA')
+        img_rgba.resize((576, 576), Image.Resampling.LANCZOS).save('assets/img/avatar.webp', format='WEBP', quality=85, method=6)
+        bg = Image.new('RGB', img.size, (255, 255, 255))
+        bg.paste(img_rgba, mask=img_rgba.split()[3])
+        bg.resize((512, 512), Image.Resampling.LANCZOS).save('assets/img/og-default.png', format='PNG', optimize=True)
+        img_rgba.resize((512, 512), Image.Resampling.LANCZOS).save('static/android-chrome-512x512.png')
+        img_rgba.resize((192, 192), Image.Resampling.LANCZOS).save('static/android-chrome-192x192.png')
+        img_rgba.resize((180, 180), Image.Resampling.LANCZOS).save('static/apple-touch-icon.png')
+        img_rgba.resize((32, 32), Image.Resampling.LANCZOS).save('static/favicon-32x32.png')
+        img_rgba.resize((16, 16), Image.Resampling.LANCZOS).save('static/favicon-16x16.png')
+        img_rgba.resize((48, 48), Image.Resampling.LANCZOS).save('static/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
+    print('✓ 所有头像、OG 图与图标同步更新完毕！')
     "
     ```
 4. 提交并推送到 GitHub 即可。

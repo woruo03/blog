@@ -1,0 +1,89 @@
+{{- $prefix := .prefix | default "" -}}
+<div class="flex items-center">
+  <button
+    id="{{ $prefix }}a11y-toggle"
+    aria-label="{{ i18n "a11y.open_panel" }}"
+    title="{{ i18n "a11y.title" }}"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    type="button"
+    class="flex items-center justify-center bf-icon-color-hover">
+    {{ partial "icon.html" "a11y" }}
+  </button>
+
+  <dialog
+    id="{{ $prefix }}a11y-panel"
+    closedby="any"
+    aria-labelledby="{{ $prefix }}a11y-panel-title"
+    class="bf-a11y-dialog m-auto w-80 rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2
+          id="{{ $prefix }}a11y-panel-title"
+          class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          {{ i18n "a11y.title" }}
+        </h2>
+        <button
+          id="{{ $prefix }}a11y-close"
+          type="button"
+          autofocus
+          class="flex items-center justify-center rounded-lg p-1 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 cursor-pointer"
+          aria-label="{{ i18n "a11y.close_panel" }}"
+          title="{{ i18n "a11y.close_panel" }}">
+          {{ partial "icon.html" "xmark" }}
+        </button>
+      </div>
+
+      <div class="space-y-5">
+        {{ $toggles := slice }}
+        {{ $shouldDisableBlur := or site.Params.homepage.layoutBackgroundBlur site.Params.article.layoutBackgroundBlur site.Params.list.layoutBackgroundBlur (hasPrefix site.Params.header.layout "fixed") }}
+        {{ $shouldDisableBackgroundImage := or
+          (eq site.Params.homepage.layout "background")
+          (eq site.Params.article.heroStyle "background")
+          (eq site.Params.list.heroStyle "background")
+          (eq site.Params.taxonomy.heroStyle "background")
+          (eq site.Params.term.heroStyle "background")
+        }}
+        {{ if $shouldDisableBlur }}
+          {{ $toggles = $toggles | append (dict "id" (print $prefix "disable-blur") "label" (i18n "a11y.disable_blur")) }}
+        {{ end }}
+        {{ if $shouldDisableBackgroundImage }}
+          {{ $toggles = $toggles | append (dict "id" (print $prefix "disable-images") "label" (i18n "a11y.disable_images")) }}
+        {{ end }}
+        {{- $toggles = $toggles | append
+          (dict "id" (print $prefix "underline-links") "label" (i18n "a11y.show_link_underline"))
+          (dict "id" (print $prefix "zen-mode") "label" (i18n "a11y.zen_mode"))
+        -}}
+
+        {{- range $toggles }}
+          <div class="flex items-center justify-between">
+            <label for="{{ .id }}" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              {{ .label }}
+            </label>
+            <div class="ios-toggle">
+              <input type="checkbox" id="{{ .id }}">
+            </div>
+          </div>
+        {{- end }}
+
+        <div class="flex items-center justify-between">
+          <label
+            for="{{ $prefix }}font-size-select"
+            class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            {{ i18n "a11y.font_size" }}
+          </label>
+          <select
+            id="{{ $prefix }}font-size-select"
+            class="border rounded-lg px-3 py-1.5 pr-8 text-neutral-900 text-sm dark:bg-neutral-700 dark:text-neutral-200 focus:ring-primary-500 focus:border-primary-500">
+            <option value="default">{{ i18n "a11y.font_size_default" }}</option>
+            {{ $fontSizes := slice "12px" "14px" "16px" "18px" "20px" "22px" "24px" }}
+            {{ range $fontSizes }}
+              <option value="{{ . }}">{{ . }}</option>
+            {{ end }}
+          </select>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</div>
+{{- /* Trim EOF */ -}}

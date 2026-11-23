@@ -37,9 +37,32 @@
   (function () {
     "use strict";
 
+    const strings = {{ $content }};
+    const el = document.getElementById("{{ $id }}");
+    if (!el) return;
+
+    function fillStaticFallback() {
+      if (strings.length > 0 && !el.textContent.trim()) {
+        el.textContent = strings[0];
+      }
+    }
+
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      fillStaticFallback();
+      return;
+    }
+
+    let retries = 0;
+    const MAX_RETRIES = 20;
+
     function run() {
       if (typeof TypeIt === "undefined") {
         if (document.readyState === "complete") {
+          if (retries >= MAX_RETRIES) {
+            fillStaticFallback();
+            return;
+          }
+          retries++;
           setTimeout(run, 100);
           return;
         }
@@ -50,11 +73,11 @@
     }
 
     function initTypeIt() {
-      const strings = {{ $content }};
+      const textList = [...strings];
       {{ if $randomLines }}
-      for (let i = strings.length - 1; i > 0; i--) {
+      for (let i = textList.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [strings[i], strings[j]] = [strings[j], strings[i]];
+        [textList[i], textList[j]] = [textList[j], textList[i]];
       }
       {{ end }}
       const instance = new TypeIt("#{{ $id }}", {
@@ -69,9 +92,9 @@
       });
 
       const breakLines = {{ $breakLines }};
-      strings.forEach(function (str, idx) {
+      textList.forEach(function (str, idx) {
         instance.type(str);
-        if (idx < strings.length - 1) {
+        if (idx < textList.length - 1) {
           if (breakLines) {
             instance.break();
           } else {

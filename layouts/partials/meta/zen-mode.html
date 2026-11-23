@@ -2,7 +2,7 @@
   type="button"
   id="zen-mode-button"
   aria-pressed="false"
-  class="inline-flex items-center text-neutral-400 hover:text-primary-500 dark:text-neutral-500 dark:hover:text-primary-400 cursor-pointer transition-colors align-middle text-2xl select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded p-1 bg-transparent border-0"
+  class="inline-flex items-center text-neutral-400 hover:text-primary-500 dark:text-neutral-500 dark:hover:text-primary-400 cursor-pointer transition-colors align-middle text-2xl select-none rounded p-1 bg-transparent border-0"
   title="{{ i18n "article.zen_mode_title.enable" }}"
   data-title-i18n-disable="{{ i18n "article.zen_mode_title.enable" }}"
   data-title-i18n-enable="{{ i18n "article.zen_mode_title.disable" }}"
@@ -17,13 +17,29 @@
     const btn = document.getElementById("zen-mode-button");
     if (!btn) return;
 
-    // 原生 <button> 已内建 Enter 与 Space 触发，只需响应式同步无障碍状态
+    // 原生 <button> 已内建 Enter 与 Space 触发，只需响应式同步无障碍状态与持久化面板开关
     const observer = new MutationObserver(function () {
       const isZen = document.body.classList.contains("zen-mode-enable");
       btn.setAttribute("aria-pressed", isZen ? "true" : "false");
       const currentTitle = btn.getAttribute(isZen ? "data-title-i18n-enable" : "data-title-i18n-disable");
       if (currentTitle) {
         btn.setAttribute("aria-label", currentTitle);
+        btn.setAttribute("title", currentTitle);
+      }
+      if (
+        window.A11yPanel &&
+        typeof window.A11yPanel.getSettings === "function" &&
+        typeof window.A11yPanel.updateSetting === "function"
+      ) {
+        if (Boolean(window.A11yPanel.getSettings().zenMode) !== isZen) {
+          window.A11yPanel.updateSetting("zenMode", isZen);
+        }
+      } else {
+        document.querySelectorAll('[id$="zen-mode"]').forEach(function (cb) {
+          if (cb.type === "checkbox") {
+            cb.checked = isZen;
+          }
+        });
       }
     });
 

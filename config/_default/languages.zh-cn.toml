@@ -10,11 +10,14 @@ title = "woruo03's Blog"
 [params]
 displayName = "ZH"
 isoCode = "zh-cn"
-description = "woruo03 的技术学习笔记"
+dateFormat = "2006-01-02"
+copyright = "© { year } woruo03 · [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)"
 
 [params.author]
 name = "woruo03"
-image = "img/avatar.png"
+email = "woruo03@gmail.com"
+image = "img/avatar.webp"
+imagequality = "80"
 headline = "记录学习笔记"
 bio = "一名正在探索计算机与 Linux 世界的 ACG 爱好者，记录日常学习笔记。"
 links = [

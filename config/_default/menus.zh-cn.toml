@@ -9,6 +9,12 @@ title = "全部文章"
 weight = 10
 
 [[main]]
+name = "专栏"
+pageRef = "series"
+title = "全部专栏"
+weight = 15
+
+[[main]]
 name = "分类"
 pageRef = "categories"
 title = "全部分类"
@@ -31,3 +37,10 @@ name = "友链"
 pageRef = "links"
 title = "友情链接"
 weight = 50
+
+[[main]]
+identifier = "github"
+pre = "github"
+url = "https://github.com/woruo03/blog"
+title = "GitHub 源码"
+weight = 60

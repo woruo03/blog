@@ -1,0 +1,22 @@
+{{ with .Params.sharingLinks | default (.Site.Params.article.sharingLinks | default false) }}
+  {{ $links := hugo.Data.sharing }}
+  {{ $pageURL := urlquery $.Permalink }}
+  {{ $pageTitle := urlquery $.Title }}
+  {{ $mastodonURL := replace $pageURL "+" "%20" }}
+  {{ $mastodonTitle := replace $pageTitle "+" "%20" }}
+  <section class="flex flex-row flex-wrap justify-center gap-2 pt-4 text-xl">
+    {{ range . }}
+      {{ with index $links . }}
+        <a
+          class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2 transition-colors"
+          target="_blank"
+          rel="noopener noreferrer"
+          href="{{ if eq .icon "mastodon" }}{{ printf .url $mastodonURL $mastodonTitle | safeURL }}{{ else }}{{ printf .url $pageURL $pageTitle | safeURL }}{{ end }}"
+          title="{{ i18n .title }}"
+          aria-label="{{ i18n .title }}">
+          {{ partial "icon.html" .icon }}
+        </a>
+      {{ end }}
+    {{ end }}
+  </section>
+{{ end }}

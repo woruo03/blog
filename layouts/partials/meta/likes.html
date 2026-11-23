@@ -18,19 +18,17 @@
           data-post-id="{{ $id }}"
           data-title-like="{{ i18n "article.like" | default "点赞" }}"
           data-title-liked="{{ i18n "article.liked" | default "已赞 (再次点击取消)" }}"
-          aria-label="{{ i18n "article.like" | default "点赞" }}"
           aria-pressed="false"
-          aria-describedby="likes_{{ $id }}"
           title="{{ i18n "article.like" | default "点赞" }}"
-          class="article-meta-stat group gap-1 text-neutral-500 hover:text-red-500 dark:text-neutral-400 dark:hover:text-red-400 transition-colors cursor-pointer select-none px-1.5 py-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900">
-          <span id="button_likes_icon" class="icon icon-heart transition-transform duration-200 group-hover:scale-125" aria-hidden="true">
+          class="article-meta-stat group gap-1 text-neutral-500 dark:text-neutral-400 transition-colors cursor-pointer select-none px-1.5 py-0.5 rounded">
+          <span id="button_likes_icon" class="icon icon-heart transition-transform duration-200" aria-hidden="true">
             <span id="button_likes_heart" class="hidden">{{ partial "icon.html" "heart" }}</span>
             <span id="button_likes_empty_heart">{{ partial "icon.html" "heart-empty" }}</span>
           </span>
-          <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
+          <span id="button_likes_label" class="sr-only">{{ i18n "article.like" | default "点赞" }} </span>
           <span
             id="likes_{{ $id }}"
-            class="animate-pulse inline-block text-transparent min-w-[2ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none tabular-nums"
+            class="animate-pulse inline-block text-transparent rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
             title="{{ i18n "article.likes" | default "点赞数" }}"
             aria-busy="true"
             >0</span
@@ -43,11 +41,11 @@
       {{/* 列表卡片：静态只读展示 */}}
       <span>
         <span class="article-meta-stat gap-1 text-neutral-500 dark:text-neutral-400">
-          <span class="icon icon-heart icon-heart-static text-red-500" aria-hidden="true">{{ partial "icon.html" "heart" }}</span>
+          <span class="icon icon-heart icon-heart-static" aria-hidden="true">{{ partial "icon.html" "heart" }}</span>
           <span class="sr-only">{{ i18n "article.likes" | default "点赞数" }}: </span>
           <span
             id="likes_{{ $id }}"
-            class="animate-pulse inline-block text-transparent min-w-[2ch] rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none tabular-nums"
+            class="animate-pulse inline-block text-transparent rounded bg-neutral-300 dark:bg-neutral-600 select-none leading-none"
             title="{{ i18n "article.likes" | default "点赞数" }}"
             aria-busy="true"
             >0</span
