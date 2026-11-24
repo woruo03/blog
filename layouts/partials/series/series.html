@@ -1,0 +1,42 @@
+{{ with .GetTerms "series" }}
+  {{ $seriesTerm := index . 0 }}
+  {{ $seriesPages := $seriesTerm.Pages }}
+  {{ if gt (len $seriesPages) 1 }}
+    {{ $ordered := sort (where $seriesPages "Params.series_order" "ne" nil) "Params.series_order" }}
+    {{ $unordered := sort (where $seriesPages "Params.series_order" "eq" nil) "Date" }}
+    {{ $all := slice }}
+    {{ range $ordered }}
+      {{ $all = $all | append . }}
+    {{ end }}
+    {{ range $unordered }}
+      {{ $all = $all | append . }}
+    {{ end }}
+    <details
+      class="mt-2 mb-5 overflow-hidden rounded-lg ms-0 ps-5"
+      {{ if $.Params.seriesOpened | default (site.Params.article.seriesOpened | default false) }}open{{ end }}>
+      <summary
+        class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
+        {{ $seriesTerm.LinkTitle }} -
+        {{ i18n "article.part_of_series" }}
+      </summary>
+      {{ range $idx, $post := $all }}
+        {{ $order := add $idx 1 }}
+        {{ if eq $post.Permalink $.Permalink }}
+          <div
+            class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+            {{ i18n "article.part" }} {{ $order }}:
+            {{ i18n "article.this_article" }}
+          </div>
+        {{ else }}
+          <div
+            class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+            <a href="{{ $post.RelPermalink }}">
+              {{ i18n "article.part" }} {{ $order }}:
+              {{ $post.Title | emojify }}
+            </a>
+          </div>
+        {{ end }}
+      {{ end }}
+    </details>
+  {{ end }}
+{{ end }}

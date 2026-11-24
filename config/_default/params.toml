@@ -69,7 +69,7 @@ layoutBackgroundBlur = true
 layoutBackgroundBlurStyle = "fade"
 layoutBackgroundHeaderSpace = true
 showHeadingAnchors = true
-sharingLinks = ["telegram", "twitter", "reddit", "bluesky", "mastodon", "email"]
+sharingLinks = ["telegram", "twitter", "reddit", "bluesky", "mastodon", "linkedin", "facebook", "whatsapp", "line", "pinterest", "email"]
 
 # ---- 列表页 ----
 [list]

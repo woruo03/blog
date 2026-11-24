@@ -63,11 +63,7 @@
         {{ if (.Params.showAuthorBottom | default (site.Params.article.showAuthorBottom | default false)) }}
           {{ template "SingleAuthor" . }}
         {{ end }}
-        {{ partial "series/series-closed.html" . }}
-        {{ $showSharing := cond (isset .Params "sharinglinks") (ne .Params.sharingLinks false) $isArticle }}
-        {{ if $showSharing }}
-          {{ partial "sharing-links.html" . }}
-        {{ end }}
+        {{ partial "sharing-links.html" . }}
         {{ $showRelated := cond (isset .Params "showrelatedcontent") .Params.showRelatedContent (and $isArticle (site.Params.article.showRelatedContent | default false)) }}
         {{ if $showRelated }}
           {{ partial "related.html" . }}

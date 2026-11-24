@@ -7,6 +7,7 @@ summary: "包含标题、排版、列表、表格、代码块、KaTeX 公式、M
 tags: ["Markdown", "语法手册", "Hugo", "Blowfish"]
 categories: ["使用教程"]
 series: ["博客指南"]
+series_order: 1
 slug: "syntax-showcase"
 aliases: ["/posts/hello-world/"]
 showTableOfContents: true

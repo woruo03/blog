@@ -215,6 +215,17 @@
       src="{{ $jsReadingProgress.RelPermalink }}"
       integrity="{{ $jsReadingProgress.Data.Integrity }}"></script>
   {{ end }}
+  {{ $sharing := partial "functions/sharing-links.html" . }}
+  {{ if and .IsPage $sharing.enabled }}
+    {{ with resources.Get "js/share.js" }}
+      {{ $jsShare := . | resources.Minify | resources.Fingerprint $alg }}
+      <script
+        defer
+        type="text/javascript"
+        src="{{ $jsShare.RelPermalink }}"
+        integrity="{{ $jsShare.Data.Integrity }}"></script>
+    {{ end }}
+  {{ end }}
 
   {{/* JS deferred */}}
   {{ $jsResources := slice }}

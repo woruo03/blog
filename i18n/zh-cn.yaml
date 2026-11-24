@@ -23,6 +23,7 @@ article:
     likes: "点赞数"
     like: "点赞"
     liked: "已赞"
+    part_of_series: "专栏系列"
     zen_mode_title:
         enable: "开启专注阅读 (折叠大纲并加宽正文)"
         disable: "退出专注阅读"
@@ -39,4 +40,10 @@ nav:
     toggle_submenu: "切换子菜单"
 
 sharing:
+    section_label: "分享文章"
+    copy_link: "复制文章链接"
+    copied: "已复制链接"
+    copy_failed: "复制失败"
+    native_share: "系统分享"
+    share_failed: "分享失败"
     mastodon: "通过 Mastodon 分享"

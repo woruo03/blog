@@ -369,6 +369,10 @@ html.dark #zen-mode-button:focus-visible {
         background: transparent !important;
         animation: none !important;
     }
+
+    .bf-share-copy-wrap {
+        display: none;
+    }
 }
 
 /* ============================================================
@@ -692,6 +696,9 @@ html.dark .bf-term-card:hover .bf-term-card__count {
 
 /* 5. 文章底部分享栏按钮：统一半透明细描边 Ocean 质感 */
 .bf-share-btn {
+    min-inline-size: 2.25rem;
+    min-block-size: 2.25rem;
+    cursor: pointer;
     background-color: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(var(--color-neutral-300), 0.8);
     color: rgb(var(--color-neutral-700)) !important;
@@ -728,6 +735,108 @@ html.dark .bf-share-btn:hover {
 .bf-share-btn:focus-visible {
     outline: 2px solid rgb(var(--color-primary-400));
     outline-offset: 2px;
+}
+
+.bf-share-action {
+    position: relative;
+    display: inline-flex;
+}
+
+/* 显式保留 HTML hidden 属性语义，避免 display: inline-flex 覆盖浏览器默认 hidden 规则导致空白占位 */
+.bf-share-action[hidden] {
+    display: none;
+}
+
+.bf-share-icon-default {
+    display: inline-flex;
+}
+
+.bf-share-icon-copied {
+    display: none;
+}
+
+.bf-share-btn[data-copied] .bf-share-icon-default {
+    display: none;
+}
+
+.bf-share-btn[data-copied] .bf-share-icon-copied {
+    display: inline-flex;
+}
+
+.bf-share-btn[data-copied] {
+    border-color: rgba(21, 128, 61, 0.75);
+    color: #15803d !important;
+    background-color: rgba(21, 128, 61, 0.1);
+}
+
+html.dark .bf-share-btn[data-copied] {
+    border-color: rgba(74, 222, 128, 0.75);
+    color: #4ade80 !important;
+    background-color: rgba(74, 222, 128, 0.14);
+}
+
+.bf-share-btn[data-failed] {
+    border-color: rgba(185, 28, 28, 0.75);
+    color: #b91c1c !important;
+    background-color: rgba(185, 28, 28, 0.08);
+}
+
+html.dark .bf-share-btn[data-failed] {
+    border-color: rgba(248, 113, 113, 0.75);
+    color: #f87171 !important;
+    background-color: rgba(248, 113, 113, 0.14);
+}
+
+.bf-share-tip {
+    position: absolute;
+    inset-block-end: calc(100% + 0.5rem);
+    inset-inline-start: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 20;
+    background-color: rgba(var(--color-neutral), 0.96);
+    border: 1px solid rgba(var(--color-neutral-300), 0.9);
+    color: rgb(var(--color-neutral-800));
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    transition:
+        opacity 150ms ease-out,
+        transform 150ms ease-out;
+}
+
+html.dark .bf-share-tip {
+    background-color: rgba(var(--color-neutral-800), 0.96);
+    border-color: rgba(var(--color-neutral-600), 0.9);
+    color: rgb(var(--color-neutral-100));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.bf-share-btn:is([data-copied], [data-failed]) + .bf-share-tip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.bf-share-btn[data-failed] + .bf-share-tip {
+    border-color: rgba(185, 28, 28, 0.75);
+    color: #b91c1c;
+}
+
+html.dark .bf-share-btn[data-failed] + .bf-share-tip {
+    border-color: rgba(248, 113, 113, 0.75);
+    color: #fca5a5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bf-share-tip {
+        transform: translateX(-50%);
+        transition: opacity 150ms ease-out;
+    }
 }
 
 /* 禁用模糊效果时，顶栏切换为高不透明实底并加细底边线，杜绝目录与正文文字穿透重叠 */
@@ -1037,14 +1146,16 @@ html.dark .bf-settings-segment-option:has(input:checked) {
 
 @media (forced-colors: active) {
     #button_likes:focus-visible,
-    #zen-mode-button:focus-visible {
+    #zen-mode-button:focus-visible,
+    .bf-share-btn:focus-visible {
         outline: 2px solid Highlight !important;
         outline-offset: 2px !important;
     }
 
     dialog.bf-a11y-dialog,
     .bf-settings-segment,
-    .bf-settings-reset {
+    .bf-settings-reset,
+    .bf-share-tip {
         border: 1px solid CanvasText;
     }
 
