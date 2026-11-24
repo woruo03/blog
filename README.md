@@ -1,14 +1,14 @@
 # woruo03's Blog — 个人技术博客
 
-欢迎来到我的个人博客项目！本站主要记录 Linux、嵌入式硬件及计算机日常学习笔记。
+这是我的个人技术博客仓库，主要记录 Linux、嵌入式硬件和计算机日常学习笔记。
 
-🔗 **线上访问地址**：[https://blog.woruo03.com](https://blog.woruo03.com)
+线上地址：[https://blog.woruo03.com](https://blog.woruo03.com)
 
 ---
 
 ## 🛠 技术架构速览
 
-本博客采用现代化的静态网站架构，零服务器维护成本，极速且安全：
+博客采用静态网站架构，不需要维护独立服务器：
 
 ```mermaid
 flowchart LR
@@ -19,21 +19,21 @@ flowchart LR
     E --> F["6. 读者访问<br/>blog.woruo03.com"]
 ```
 
-- **生成引擎**：[Hugo](https://gohugo.io/) Extended (极速静态构建)
-- **前端主题**：[Blowfish](https://blowfish.page/) (Tailwind CSS，支持深色模式、零重排阅读进度条、智能大纲折叠、专注阅读模式、无障碍阅读面板、GitHub 源码直达编辑、社交分享、`llms.txt` AI 索引、KaTeX 公式与代码复制)
-- **部署平台**：[Cloudflare Pages](https://pages.cloudflare.com/) (免费自动化 CI/CD，自动配置 HTTPS，静态资源与 `/img/*` 边缘长缓存)
-- **统计与点赞**：[Cloudflare D1](https://developers.cloudflare.com/d1/) (Serverless SQLite 边缘数据库，每日 10 万次写 / 500 万次读免费额度)
-- **评论系统**：[Giscus](https://giscus.app/) (基于 GitHub Discussions，免数据库)
+- **生成引擎**：[Hugo](https://gohugo.io/) Extended（静态站点构建）
+- **前端主题**：[Blowfish](https://blowfish.page/)（Tailwind CSS，支持深色模式、零重排阅读进度条、智能大纲折叠、专注阅读模式、设置面板、GitHub 源码直达编辑、社交分享、`llms.txt` AI 索引、KaTeX 公式与代码复制）
+- **部署平台**：[Cloudflare Pages](https://pages.cloudflare.com/)（自动 CI/CD 与 HTTPS，静态资源及 `/img/*` 边缘长缓存）
+- **统计与点赞**：[Cloudflare D1](https://developers.cloudflare.com/d1/)（Serverless SQLite 边缘数据库，每日 10 万次写 / 500 万次读免费额度）
+- **评论系统**：[Giscus](https://giscus.app/)（基于 GitHub Discussions，免数据库）
 
 ---
 
 ## 📖 新手日常写作与发布全流程（保姆级教程）
 
-平时写博客只需记住 **“写文章 ➔ 本地看效果 ➔ 推送上线”** 三步！
+日常写作和发布分为三步：写文章、本地预览、推送上线。
 
 ### 第一步：新建一篇文章
 
-推荐采用 **Page Bundle（独立文件夹）** 形式存放文章，这样每篇文章的文字和图片都收纳在一起，非常干净。
+文章建议按 Page Bundle（独立文件夹）存放，每篇文章的正文和配图放在同一个目录里，方便管理。
 
 在博客根目录下打开终端，执行：
 
@@ -42,9 +42,9 @@ flowchart LR
 hugo new posts/linux-basic-commands/index.md
 ```
 
-此时会在 `content/posts/linux-basic-commands/` 下生成一个 `index.md` 文件。
+这会在 `content/posts/linux-basic-commands/` 下生成一个 `index.md` 文件。
 
-> **提示**：你也可以不用命令，直接在 `content/posts/` 目录下手动新建一个文件夹（如 `my-post`），然后在里面新建一个 `index.md` 文件。
+> 提示：也可以不用命令，直接在 `content/posts/` 下手动新建文件夹（如 `my-post`）并创建 `index.md`。
 
 ---
 
@@ -52,7 +52,7 @@ hugo new posts/linux-basic-commands/index.md
 
 #### 1. 文章头部信息（Front Matter）详解
 
-打开刚创建的 `index.md`，文件最顶部由两条三连横线 `---` 包裹的内容称为 **Front Matter（文章元数据）**。它是 Hugo 识别文章标题、发布日期、分类、大纲和草稿状态的“身份证”。
+打开 `index.md`，顶部由两条 `---` 包裹的区域是 Front Matter（文章元数据），Hugo 通过它读取标题、发布日期、分类、大纲和草稿状态。
 
 ##### ① 极简常用模板（日常写作 90% 场景，直接复制即用）
 
@@ -84,94 +84,96 @@ draft: false # 正式发布
 showTableOfContents: true # 开启右侧大纲
 showZenMode: true # 开启专注模式按钮（点击可折叠大纲加宽正文）
 showComments: true # 是否开启文末评论区（默认 true）
-featureimage: "cover.png" # 封面特色图（直接存放在同文件夹即可）
+featureimage: "https://img.woruo03.com/posts/example/cover.webp" # 封面大图外链或本地文件名（有图则显、无图不显）
+imagePosition: "50% 20%" # 二次元人物建议设为 50% 20% 或 top，避免裁掉头部
 slug: "embedded-linux-setup" # 自定义文章 URL 网址后缀
 ---
 ```
 
 ##### ③ Front Matter 常用参数速查表
 
-| 参数名                |  类型  | 推荐设置 | 说明                                                                              |
-| :-------------------- | :----: | :------: | :-------------------------------------------------------------------------------- |
-| `title`               | 字符串 |   必填   | 文章标题，展示在文章页面最顶部、首页卡片及浏览器标签栏。                          |
-| `date`                |  日期  |   必填   | 初始创建与发布日期，推荐格式：`YYYY-MM-DD`。                                      |
-| `lastmod`             |  日期  |   可选   | 最后修改日期。若修改了旧文章，加上此项会在标题下显示“更新于...”。                 |
-| `description`         | 字符串 | 推荐填写 | 文章简短介绍，在文章卡片列表、社交分享卡片以及搜索结果中展示。                    |
-| `tags`                |  数组  |   可选   | 标签列表，如 `["Linux", "C语言"]`，读者点击标签可查阅同主题文章。                 |
-| `categories`          |  数组  |   可选   | 分类目录，如 `["学习笔记"]`。                                                     |
-| `draft`               |  布尔  | `false`  | **草稿标记**。`true` 仅本地可见，`false` 才会正式推送到公网上线。                 |
-| `showTableOfContents` |  布尔  |  `true`  | **右侧大纲目录开关**。长文建议 `true`；若文章简短想让正文直接居中，设为 `false`。 |
-| `showZenMode`         |  布尔  |  `true`  | **专注阅读模式开关**。标题旁显示“全屏展开”按钮，读者点击可折叠大纲并加宽正文。    |
-| `showComments`        |  布尔  |  `true`  | **评论区开关**。设为 `false` 可单独关闭本篇文章底部的评论区。                     |
-| `series`              |  数组  |   可选   | 系列专栏名称，如 `series: ["Linux 基础系列"]`。同系列文章会自动串联展示前后篇章。 |
-| `series_order`        |  数字  |   可选   | 本篇在系列专栏中的序号（如 `1`、`2`）。                                           |
-| `featureimage`        | 字符串 |   可选   | 文章封面大图文件名（如 `cover.png`，直接放在文章文件夹内即可）。                  |
-| `slug`                | 字符串 |   可选   | 自定义当前文章的网页链接后缀（如 `slug: "my-first-post"`）。                      |
+| 参数名                |  类型  | 推荐设置 | 说明                                                                                                      |
+| :-------------------- | :----: | :------: | :-------------------------------------------------------------------------------------------------------- |
+| `title`               | 字符串 |   必填   | 文章标题，展示在文章页面最顶部、首页卡片及浏览器标签栏。                                                  |
+| `date`                |  日期  |   必填   | 初始创建与发布日期，推荐格式：`YYYY-MM-DD`。                                                              |
+| `lastmod`             |  日期  |   可选   | 最后修改日期。若修改了旧文章，加上此项会在标题下显示“更新于...”。                                         |
+| `description`         | 字符串 | 推荐填写 | 文章简短介绍，在文章卡片列表、社交分享卡片以及搜索结果中展示。                                            |
+| `tags`                |  数组  |   可选   | 标签列表，如 `["Linux", "C语言"]`，读者点击标签可查阅同主题文章。                                         |
+| `categories`          |  数组  |   可选   | 分类目录，如 `["学习笔记"]`。                                                                             |
+| `draft`               |  布尔  | `false`  | 草稿标记。`true` 仅本地可见，`false` 才会正式推送到公网上线。                                             |
+| `showTableOfContents` |  布尔  |  `true`  | 右侧大纲目录开关。长文建议 `true`；若文章简短想让正文直接居中，设为 `false`。                             |
+| `showZenMode`         |  布尔  |  `true`  | 专注阅读模式开关。标题旁显示“全屏展开”按钮，读者点击可折叠大纲并加宽正文。                                |
+| `showComments`        |  布尔  |  `true`  | 评论区开关。设为 `false` 可单独关闭本篇文章底部的评论区。                                                 |
+| `series`              |  数组  |   可选   | 系列专栏名称，如 `series: ["Linux 基础系列"]`。同系列文章会自动串联展示前后篇章。                         |
+| `series_order`        |  数字  |   可选   | 本篇在系列专栏中的序号（如 `1`、`2`）。                                                                   |
+| `featureimage`        | 字符串 |   可选   | 文章封面图 URL（如 R2 `https://img.woruo03.com/...`）或同目录文件名；有图才显示顶部背景封面，无图不占位。 |
+| `imagePosition`       | 字符串 |   可选   | 背景封面裁剪焦点（如 `"50% 20%"`、`top`），二次元人物插画建议设为 `"50% 20%"`。                           |
+| `featureimagecaption` | 字符串 |   可选   | 前景「大图」模式下显示的图注（支持 Markdown，如画师出处链接）。                                           |
+| `hideFeatureImage`    |  布尔  |   可选   | 设为 `true` 时仅在文章页显示顶部封面，不在首页/列表卡片展示缩略图。                                       |
+| `slug`                | 字符串 |   可选   | 自定义当前文章的网页链接后缀（如 `slug: "my-first-post"`）。                                              |
 
 ##### ④ 核心机制深度解析
 
 > [!IMPORTANT]
-> **`draft: false` 与 `draft: true` 的本质区别**：
+> `draft: false` 与 `draft: true` 的区别：
 >
-> - `draft` 即英文的 **“草稿”**。
-> - 当 `draft: true` 时：文章被视为未完工草稿。Cloudflare Pages 在云端执行正式打包时会**严格忽略**所有草稿，因此哪怕你提交并推送到了 GitHub，全球访客也**绝对无法**在公网上看到这篇内容。只有在本地终端运行 `hugo server -D`（带有 `-D` 即 `--buildDrafts` 允许预览草稿）时，你自己的浏览器才能看到它。
-> - 当 `draft: false` 时：文章被视为**正式定稿**。推送到 GitHub 后 Cloudflare Pages 会立即部署上线。**写完文章准备发布时，务必将 `draft` 改为 `false`！**
+> - `draft` 表示“草稿”。
+> - `draft: true` 时，Cloudflare Pages 执行生产构建会忽略该文章，即使已经推送到 GitHub，公网访客也看不到；只有在本地运行 `hugo server -D`（`--buildDrafts`）时才能预览。
+> - `draft: false` 时，推送到 GitHub 后 Cloudflare Pages 会正常构建发布。准备上线时需要将 `draft` 改为 `false`。
 
 > [!TIP]
-> **如何折叠大纲，为正文腾出更多阅读空间？**
+> 折叠大纲或为正文留出更多宽度的方法：
 >
-> - **方式一（动态折叠与扩展）**：本博客已全局开启 **原生专注模式 (Zen Mode)**。读者阅读文章时，点击文章标题末尾的 **全屏展开图标（开启专注阅读）**，右侧大纲会自动折叠隐藏，且正文排版宽度会自动舒展加宽，极其适合阅读宽屏长代码和复杂表格！再次点击即可复原大纲和默认宽度。
-> - **方式二（完全关闭大纲）**：如果你写的是一篇很短的随笔，不需要右侧大纲侧栏，直接在文章开头设置 `showTableOfContents: false`，右侧大纲栏将彻底消失，正文独占居中排版！
+> - 方式一（动态切换）：博客已全局开启专注模式（Zen Mode），点击文章标题旁的全屏展开按钮即可隐藏右侧大纲并加宽正文，适合阅读宽屏代码和表格；再次点击可恢复原布局。
+> - 方式二（单篇关闭）：短篇随笔不需要目录时，可在文章开头设置 `showTableOfContents: false`，关闭右侧大纲栏让正文居中。
 
-> **数学公式提示**：如果文章中包含数学公式，请在正文第一行加上这一行短代码：
-> `{{</* katex */>}}`（实际写时去掉 `/* */`，写作 `{{< katex >}}`）。
+> 数学公式提示：文章包含数学公式时，请在正文第一行加上 `{{</* katex */>}}`（实际使用时去掉 `/* */`，写作 `{{< katex >}}`）。
 
 ---
 
 #### 2. 如何插入本地图片
 
-若文章需要配图：
+文章需要配图时：
 
-1. 将你的图片（例如 `screenshot.png`）直接放到该文章的文件夹里（与 `index.md` 在同一层）。
-2. 在 Markdown 正文里直接引用：
+1. 将图片（例如 `screenshot.png`）放到该文章的文件夹里（与 `index.md` 同级）。
+2. 在 Markdown 正文里引用：
     ```markdown
     ![命令运行截图](screenshot.png)
     ```
 
-图片会自动被 Hugo 识别和优化，不需要复杂的路径！
+图片会由 Hugo 自动识别和优化，不需要写复杂路径。
 
 #### 3. 语法速查（不知道怎么写时）
 
-本博客自带一篇详尽的语法展示字典，遇到想用的排版（如公式、流程图、彩色/可折叠提示框、多平台 `tabs` 标签页、`steps` 分步时间线、`accordion` 折叠问答、站内文章卡片、防爬虫 `email` 链接等），直接查看：
-📄 `content/posts/hello-world/index.md`，复制里面的语法即可。
+仓库里自带一篇语法展示文章 `content/posts/hello-world/index.md`，需要用到公式、流程图、彩色/可折叠提示框、多平台 `tabs` 标签页、`steps` 分步时间线、`accordion` 折叠问答、站内文章卡片或防爬虫 `email` 链接时，可以直接从里面复制。
 
 ---
 
 ### 第三步：本地实时预览（看效果）
 
-写完文章或正在写的时候，可以在本地打开网页实时查看排版效果：
+写作过程中，可以在本地启动预览服务查看排版效果：
 
 ```bash
 # 在博客根目录下运行
 hugo server -D
 ```
 
-终端会输出如下提示：
+终端会输出以下提示：
 
 ```
 Web Server is available at http://localhost:1313/ (bind address 127.0.0.1)
 Press Ctrl+C to stop
 ```
 
-1. 打开浏览器访问：`http://localhost:1313`。
-2. **实时热更新**：你每次在编辑器里按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 保存文章，浏览器页面都会在 0.1 秒内**自动刷新**！
-3. 预览满意后，在终端按 <kbd>Ctrl</kbd> + <kbd>C</kbd> 即可退出本地预览服务。
+1. 打开浏览器访问 `http://localhost:1313`。
+2. 在编辑器按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 保存后，浏览器页面会在 0.1 秒内自动刷新。
+3. 预览结束后，在终端按 <kbd>Ctrl</kbd> + <kbd>C</kbd> 退出本地服务。
 
 ---
 
 ### 第四步：一键推送到网页（发布上线）
 
-确认文章排版没有问题后，只需三条 Git 命令即可发布到全球公网：
+确认排版没问题后，执行三条 Git 命令发布：
 
 ```bash
 # 1. 保存并暂存所有修改
@@ -184,11 +186,11 @@ git commit -m "发布新文章：Linux 常用命令学习笔记"
 git push
 ```
 
-**推送后发生了什么？**
+推送后流程：
 
-- GitHub 收到你的最新代码后，会自动通知 Cloudflare Pages。
-- Cloudflare Pages 会在 1 分钟左右自动完成重新编译和 CDN 缓存刷新。
-- 打开你的博客网址 **[https://blog.woruo03.com](https://blog.woruo03.com)**，刷新一下就能看到新文章已上线！🎉
+- GitHub 收到更新后会自动触发 Cloudflare Pages 构建。
+- Cloudflare Pages 通常在约 1 分钟左右完成编译并刷新 CDN 缓存。
+- 访问 [https://blog.woruo03.com](https://blog.woruo03.com) 即可看到新文章。
 
 ---
 
@@ -196,9 +198,9 @@ git push
 
 ### 1. 如何更换头像并同步所有图标？
 
-1. 准备一张正方形的图片，重命名为 `avatar.png`。
+1. 准备一张正方形图片，重命名为 `avatar.png`。
 2. 替换掉 `assets/img/avatar.png`。
-3. 在终端运行以下一键脚本，会自动将你的新头像缩放生成优化后的站内 WebP 头像（`assets/img/avatar.webp`）、默认社交分享图（`assets/img/og-default.png`）以及全套浏览器 Favicon、苹果图标和 Android Chrome 图标：
+3. 在终端运行下面的脚本，会基于新头像生成站内 WebP 头像（`assets/img/avatar.webp`）、默认社交分享图（`assets/img/og-default.png`），以及浏览器 Favicon、Apple Touch Icon 和 Android Chrome 图标：
     ```bash
     python3 -c "
     from PIL import Image
@@ -233,24 +235,24 @@ git push
 
 ### 4. 如何使用 Giscus 评论区？
 
-博客已在 `layouts/partials/comments.html` 中配置好你的仓库 ID 和讨论区参数。若要在网页上正常接收评论，只需确保在 GitHub 开启了 Discussions：
+博客已在 `layouts/partials/comments.html` 中配置好仓库 ID 和讨论区参数。开启评论需要确认 GitHub Discussions 已打开：
 
 1. 访问 GitHub 仓库页面：`https://github.com/woruo03/blog`。
 2. 进入 **Settings** → 滚动到 **Features** 区域。
 3. 勾选 **Discussions**。
 4. 在 [GitHub Giscus App](https://github.com/apps/giscus) 安装并授权访问 `woruo03/blog` 仓库。
-   开启后，读者即可在每篇文章底部通过 GitHub 账号登录留言互动！
+   开启后，读者就可以在每篇文章底部使用 GitHub 账号留言。
 
 ### 5. 如何激活文章浏览量（Views）与点赞（Likes）？
 
-博客已内置基于 **Cloudflare Pages Functions + D1 数据库** 的高性能边缘交互系统（具备防跳出真实阅读门禁、乐观 UI、跨标签页实时同步、边缘内存防刷与 WAI-ARIA 无障碍支持）。代码推送后只需在 Cloudflare 控制台进行一次性极简绑定（约 2 分钟）：
+文章统计与点赞基于 **Cloudflare Pages Functions + D1 数据库** 实现，包含阅读门禁、乐观更新、跨标签页同步、边缘内存限流和 WAI-ARIA 无障碍支持。推送代码后，在 Cloudflare 控制台完成一次绑定即可启用（约 2 分钟）：
 
 1. **新建 D1 数据库**：
     - 登录 [Cloudflare 控制台](https://dash.cloudflare.com/) → **Storage & Databases** → **D1**。
     - 点击 **Create database**，输入数据库名（如 `blog-db`），点击确认。
 2. **初始化数据表**：
     - 点击进入刚创建的 `blog-db`，进入 **Console**（控制台）标签页。
-    - 执行仓库中 `functions/schema.sql` 中的建表语句（程序在首次部署访问时也会自动检查并自愈创建）：
+    - 执行仓库中 `functions/schema.sql` 中的建表语句（首次访问时服务端也会自动检查并建表）：
         ```sql
         CREATE TABLE IF NOT EXISTS stats (
           id TEXT PRIMARY KEY,
@@ -272,21 +274,56 @@ git push
     - 点击 **Add binding**：
         - **Variable name（变量名）**：输入 `DB`
         - **D1 database（数据库）**：选择刚才创建的 `blog-db`
-    - 保存即可。全站浏览量统计、防刷去重与点赞交互即刻全网生效！
+    - 保存后，浏览量统计、去重防刷与点赞功能即生效。
 
 4. **（可选）配置环境变量增强安全**：
-    - 在 **Settings** → **Environment variables** 中，可选择性添加以下生产环境变量：
-        - `STATS_SECRET`：访客匿名哈希的加密盐值（推荐填入一段长随机密钥），用于隔离访客点赞签名与防伪造。
-        - `ALLOWED_ORIGINS`：自定义允许 CORS 访问的域名列表（以英文逗号分隔，例如 `https://blog.woruo03.com,https://woruo03.pages.dev`）。默认已自动允许当前同源、生产主域及 Pages 预览域。
+    - 在 **Settings** → **Environment variables** 中，可按需添加以下生产环境变量：
+        - `STATS_SECRET`：访客匿名哈希的加密盐值（建议填入长随机密钥），用于隔离访客点赞签名与防伪造。
+        - `ALLOWED_ORIGINS`：自定义允许 CORS 访问的域名列表（以英文逗号分隔，例如 `https://blog.woruo03.com,https://woruo03.pages.dev`）。默认已允许当前同源、生产主域及 Pages 预览域。
 
-5. **高级特性与设计亮点**：
-    - **极速冷启动与 0 冗余 DDL**：运行时采用自愈式惰性捕获，生产环境 0 额外 DDL 耗时，冷启动 TTFB 降低 50~200ms。
-    - **D1 写入极致压缩（骤降 75%~90%）**：淘汰临时访问日志表，结合客户端 LocalStorage、Cloudflare Edge Cache（Cache API）与安全 Cookie 实现 24h 边缘零写入去重，单次阅读直写主表仅 1 行写入，消除多余写锁与定期清理开销。
-    - **边缘内存级限流**：Worker 内存滑动窗口拦截暴击脚本，0 磁盘写入开销，保护 D1 免费层 100k 每日写入配额。
-    - **真实深度阅读门禁**：页面处于可见状态停留满 6 秒或滚动超 30% 且停留超 3.5 秒才上报，彻底消灭爬虫与误触秒关跳出的无效写入。
-    - **博主免记模式（Admin Bypass）**：访问博客任意页面并携带 `?admin=1`（如 `https://blog.woruo03.com/?admin=1`）即可持久化激活免记模式，博主自身巡检、排版调试不再消耗任何写入配额（访问 `?admin=0` 可恢复）。
-    - **乐观更新与 450ms 对冲防抖**：点赞 0ms 视觉呈现、450ms 防抖反悔对冲、网络异常精确回退、关窗/锁屏通过 `keepalive` 同步送出。
-    - **WAI-ARIA 无障碍与 0 布局抖动**：读屏活动区独立外挂、等宽数字排版（`tabular-nums`）与骨架屏保护，累积布局偏移（CLS）为 0。
+5. **实现细节**：
+    - **冷启动与按需建表**：运行时仅在缺表异常时惰性建表，常规请求不执行额外 DDL，冷启动 TTFB 可减少 50~200ms。
+    - **减少 D1 写入（约 75%~90%）**：结合客户端 LocalStorage、Cloudflare Edge Cache（Cache API）与安全 Cookie 实现 24 小时边缘去重，单次有效阅读只向主表写入 1 行，省去临时访问日志表和定期清理。
+    - **边缘内存限流**：通过 Worker 内存滑动窗口拦截高频刷量请求，不消耗磁盘写入，避免耗尽 D1 免费层每日 100k 写入配额。
+    - **阅读门禁**：页面处于可见状态停留满 6 秒，或滚动超过 30% 且停留超过 3.5 秒才上报阅读量，过滤爬虫和误触秒关。
+    - **博主免记模式（Admin Bypass）**：访问任意页面携带 `?admin=1`（如 `https://blog.woruo03.com/?admin=1`）可开启免记标记，巡检和调试时不再计入统计（访问 `?admin=0` 恢复）。
+    - **乐观更新与 450ms 防抖**：点赞立即切换状态，450ms 内重复点击会合并对冲，请求失败时回退到服务端状态，关窗或锁屏时通过 `keepalive` 补发挂起请求。
+    - **无障碍与防抖动**：使用独立的读屏活动区提示点赞结果，配合等宽数字（`tabular-nums`）与骨架屏占位，累积布局偏移（CLS）为 0。
+
+---
+
+### 6. 如何配置 Cloudflare R2 图床（防重复拉取缓存）与二次元封面？
+
+博客已开启全局 `background` 封面（有图则显、无图不显）及 `hotlinkFeatureImage = true`，R2 外链图片在 Hugo 构建期不会回源下载或二次压缩；顶栏右侧的「设置」弹窗支持读者调节沉浸背景开关、背景图浓度（15%～90%）和顶部前景封面（关闭 / 横幅 / 大图）。
+
+为了让图片走 Cloudflare 边缘缓存与浏览器本地强缓存，避免每次请求回源拉取 R2 原图，可在 Cloudflare 控制台完成以下一次配置：
+
+1. **创建 R2 存储桶并绑定自定义域名（勿用 `r2.dev`）**：
+    - 进入 Cloudflare Dashboard → **R2 Object Storage** → **Create bucket**（如 `blog-media`）。
+    - 进入桶的 **Settings** → **Public access** → **Custom Domains** → **Connect Domain**，绑定 `img.woruo03.com`（会自动生成橙云 Proxied DNS）。
+    - 保持 `r2.dev` 开发访问关闭（`r2.dev` 有限速，且不支持 Cloudflare 边缘缓存与 WAF）。
+2. **开启 Smart Tiered Cache（减少跨区回源）**：
+    - 进入域名 `woruo03.com` → **Caching** → **Tiered Cache** → 开启 **Smart Tiered Cache**（Free 计划免费可用，各地边缘 POP 未命中时会先查离 R2 最近的上层缓存节点）。
+3. **配置长缓存规则（Cache Rule）**：
+    - 进入 `woruo03.com` → **Caching** → **Cache Rules** → **Create rule**（命名为 `R2 Media Long Cache`）：
+        - **When incoming requests match**：选择 **Custom filter expression**，表达式填 `(http.host eq "img.woruo03.com")`
+        - **Cache eligibility**：选择 **Eligible for cache**
+        - **Edge TTL**：选择 **Ignore cache-control header and use this TTL**，设为 **1 month**
+        - **Browser TTL**：选择 **Override origin and use this TTL**，设为 **1 year**
+4. **上传图片时附带 `immutable` 缓存头（避免同名覆盖）**：
+    - 使用 `rclone` 或 PicList / PicGo（S3 模式）上传时，附带 `Cache-Control: public, max-age=31536000, immutable`：
+        ```bash
+        rclone copy ./local-images r2:blog-media/posts/my-post \
+          --header-upload "Cache-Control: public, max-age=31536000, immutable"
+        ```
+    - 需要替换已发布的图片时请使用新文件名（例如 `cover-v2.webp`），不要原地覆盖旧文件名。
+5. **（可选）配置 WAF 防盗链**：
+    - 在 `woruo03.com` → **Security** → **WAF** → **Custom rules** 限制 `http.host eq "img.woruo03.com"` 且 `http.referer` 不为空且不属于 `blog.woruo03.com`、`*.pages.dev`、`localhost` 时拦截，防止第三方盗刷 R2 Class B 请求额度。
+6. **验证缓存是否生效**：
+    - 连续两次执行以下命令，第二次应返回 `cf-cache-status: HIT`：
+        ```bash
+        curl -I https://img.woruo03.com/posts/example/cover.webp
+        ```
 
 ---
 
@@ -294,7 +331,7 @@ git push
 
 1. **写了新文章在网页上找不到？**
     - 检查文章开头的 `draft:` 是否为 `true`。草稿状态下文章不会公开展示，需要改为 `draft: false`。
-2. **数学公式没有渲染成漂亮的排版？**
+2. **数学公式没有正常渲染？**
     - 检查文章正文中是否加入了 `{{< katex >}}` 短代码声明。
 3. **本地启动提示端口被占用？**
     - 运行 `hugo server -p 1314` 可以指定其他端口预览。

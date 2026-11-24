@@ -301,7 +301,6 @@ html.dark #zen-mode-button:focus-visible {
     height: 2px !important;
     transform-origin: 0 50%;
     transform: scaleX(0);
-    will-change: transform;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -323,10 +322,12 @@ html.dark #zen-mode-button:focus-visible {
 }
 
 /* ============================================================
-   原生 <dialog> 阅读与无障碍设置弹窗 (Modern Web Guidance: dialog)
+   原生 <dialog> 设置弹窗与桌面端锚定 Popover (Modern Web Guidance)
    ============================================================ */
 dialog.bf-a11y-dialog {
-    max-width: calc(100vw - 2rem);
+    width: min(320px, calc(100vw - 1.5rem));
+    max-height: calc(100dvh - 5rem);
+    overflow-y: auto;
 }
 
 dialog.bf-a11y-dialog:modal {
@@ -338,6 +339,61 @@ dialog.bf-a11y-dialog::backdrop {
     overscroll-behavior: contain;
     background: rgba(15, 23, 42, 0.45);
     backdrop-filter: blur(2px);
+}
+
+dialog.bf-settings-popover-desktop[popover]::backdrop {
+    background: transparent;
+    backdrop-filter: none;
+}
+
+dialog.bf-settings-popover-desktop[popover] {
+    opacity: 0;
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
+}
+
+dialog.bf-settings-popover-desktop[popover]:popover-open {
+    opacity: 1;
+}
+
+@starting-style {
+    dialog.bf-settings-popover-desktop[popover]:popover-open {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    dialog.bf-settings-popover-desktop[popover] {
+        transform: translateY(-6px);
+    }
+
+    dialog.bf-settings-popover-desktop[popover]:popover-open {
+        transform: translateY(0);
+    }
+
+    @starting-style {
+        dialog.bf-settings-popover-desktop[popover]:popover-open {
+            transform: translateY(-6px);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    dialog.bf-settings-popover-desktop[popover] {
+        transition-duration: 80ms;
+    }
+}
+
+@supports (position-area: block-end) {
+    dialog.bf-settings-popover-desktop[popover] {
+        inset: auto;
+        margin: 0;
+        margin-block-start: 0.75rem;
+        position-area: block-end span-inline-start;
+        position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline;
+    }
 }
 
 .ios-toggle:has(input:focus-visible) {
@@ -402,7 +458,7 @@ html.dark .mermaid .edgeLabel rect {
    全站视觉审美与交互质感精修 (卡片层级、分类/专栏药丸、分享按钮、弹窗焦点)
    ============================================================ */
 
-/* 1. 顶栏无障碍图标视觉重心与右侧工具区对齐 */
+/* 1. 顶栏设置图标视觉重心与右侧工具区对齐 */
 #desktop-a11y-toggle {
     opacity: 0.8;
     transition:
@@ -421,18 +477,9 @@ dialog.bf-a11y-dialog button:focus:not(:focus-visible) {
     box-shadow: none;
 }
 
-dialog.bf-a11y-dialog button:focus-visible,
-dialog.bf-a11y-dialog select:focus-visible {
+dialog.bf-a11y-dialog button:focus-visible {
     outline: 2px solid rgb(var(--color-primary-400));
     outline-offset: 2px;
-}
-
-dialog.bf-a11y-dialog select {
-    cursor: pointer;
-}
-
-html.dark dialog.bf-a11y-dialog select {
-    border-color: rgba(var(--color-neutral-600), 0.8);
 }
 
 html.dark #breadcrumbs-trail a {
@@ -566,4 +613,333 @@ html.dark .bf-share-btn:hover {
 html.dark #menu-blur.bf-menu-blur-disabled {
     background-color: rgb(var(--color-neutral-800)) !important;
     border-bottom-color: rgba(var(--color-neutral-700), 0.7);
+}
+
+/* ============================================================
+   可组合文章封面系统 (背景氛围 + 可选横幅/大图 + 浓度调控 + 首帧零闪烁)
+   ============================================================ */
+
+.bf-hero-banner {
+    display: none;
+}
+
+html[data-hero-bg="off"] #hero,
+html[data-hero-bg="off"] #hero-background,
+html[data-hero-bg="off"] #background-blur {
+    display: none !important;
+}
+
+html[data-hero-banner="basic"] #hero,
+html[data-hero-banner="big"] #hero {
+    display: none !important;
+}
+
+.bf-hero-bg-img {
+    opacity: var(--bf-hero-bg-opacity, 0.5);
+    transition: opacity 150ms ease-out;
+}
+
+.bf-hero-bg-scrim {
+    background: linear-gradient(
+        to bottom,
+        rgba(var(--color-neutral), 0.12) 0%,
+        rgba(var(--color-neutral), 0.42) 55%,
+        rgba(var(--color-neutral), 0.92) 100%
+    );
+}
+
+html.dark .bf-hero-bg-scrim {
+    background: linear-gradient(
+        to bottom,
+        rgba(var(--color-neutral-800), 0.14) 0%,
+        rgba(var(--color-neutral-800), 0.48) 55%,
+        rgba(var(--color-neutral-800), 0.94) 100%
+    );
+}
+
+/* 显式链接下划线（静态属性选择器驱动，替代动态注入 <style>） */
+html[data-underline-links="true"] a {
+    text-decoration: underline !important;
+}
+
+/* 前景封面模式 (basic / big) */
+html[data-hero-banner="basic"] .bf-hero-banner,
+html[data-hero-banner="big"] .bf-hero-banner {
+    display: block;
+    margin: 1.25rem 0 0;
+}
+
+.bf-hero-banner__caption {
+    display: none;
+}
+
+html[data-hero-banner="basic"] .bf-hero-banner__frame {
+    height: 9rem;
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    html[data-hero-banner="basic"] .bf-hero-banner__frame {
+        height: 14rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    html[data-hero-banner="basic"] .bf-hero-banner__frame {
+        height: 18rem;
+    }
+}
+
+/* 前景完整大图模式 (big) */
+html[data-hero-banner="big"] .bf-hero-banner__frame {
+    width: 100%;
+    aspect-ratio: var(--bf-hero-aspect, 16 / 9);
+    max-height: 50vh;
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+html[data-hero-banner="big"] .bf-hero-banner__caption {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
+    text-decoration: underline;
+}
+
+/* 现代原生 CSS Scroll-Driven Animation：合成层驱动背景渐隐 */
+@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
+    @keyframes bf-hero-scroll-fade {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+
+    #hero-background[data-scroll-fade="true"] {
+        animation: bf-hero-scroll-fade auto linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 500px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #hero-background[data-scroll-fade="true"] {
+            animation-range: 0px 250px;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bf-hero-bg-img {
+        transition: none;
+    }
+}
+
+/* ============================================================
+   「设置」面板分组、浓度滑块、分段切换与重置按钮样式
+   ============================================================ */
+
+.bf-settings-mobile-label {
+    font-size: 0.9375rem !important;
+    line-height: 1.25 !important;
+    font-weight: 500;
+}
+
+.bf-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bf-settings-section + .bf-settings-section {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(var(--color-neutral-300), 0.7);
+}
+
+html.dark .bf-settings-section + .bf-settings-section {
+    border-top-color: rgba(var(--color-neutral-700), 0.7);
+}
+
+.bf-settings-section-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: rgb(var(--color-neutral-500));
+}
+
+html.dark .bf-settings-section-title {
+    color: rgb(var(--color-neutral-400));
+}
+
+.bf-settings-range-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: opacity 150ms ease-out;
+}
+
+.bf-settings-range-row.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.bf-settings-range-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.bf-settings-range {
+    width: 100%;
+    height: 1.25rem;
+    accent-color: rgb(var(--color-primary-500));
+    cursor: pointer;
+}
+
+html.dark .bf-settings-range {
+    accent-color: rgb(var(--color-primary-400));
+}
+
+.bf-settings-range:focus-visible {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+.bf-settings-segment-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bf-settings-legend {
+    padding: 0;
+}
+
+.bf-settings-segment {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.625rem;
+    background-color: rgba(var(--color-neutral-200), 0.8);
+    border: 1px solid rgba(var(--color-neutral-300), 0.75);
+}
+
+html.dark .bf-settings-segment {
+    background-color: rgba(var(--color-neutral-900), 0.75);
+    border-color: rgba(var(--color-neutral-700), 0.8);
+}
+
+.bf-settings-segment-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.45rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(var(--color-neutral-600));
+    cursor: pointer;
+    user-select: none;
+    transition:
+        background-color 150ms ease-out,
+        color 150ms ease-out,
+        box-shadow 150ms ease-out;
+}
+
+html.dark .bf-settings-segment-option {
+    color: rgb(var(--color-neutral-400));
+}
+
+.bf-settings-segment-option input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.bf-settings-segment-option:has(input:checked) {
+    background-color: #ffffff;
+    color: rgb(var(--color-primary-600));
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+html.dark .bf-settings-segment-option:has(input:checked) {
+    background-color: rgba(var(--color-neutral-700), 0.95);
+    color: rgb(var(--color-primary-300));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.bf-settings-segment-option:has(input:focus-visible) {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+    .bf-settings-segment-option:has(input:checked) {
+        outline: 2px solid Highlight;
+    }
+}
+
+.bf-settings-footer {
+    padding-top: 0.875rem;
+    border-top: 1px solid rgba(var(--color-neutral-300), 0.7);
+}
+
+html.dark .bf-settings-footer {
+    border-top-color: rgba(var(--color-neutral-700), 0.7);
+}
+
+.bf-settings-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 2.375rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(var(--color-neutral-600));
+    background-color: rgba(var(--color-neutral-200), 0.55);
+    border: 1px solid rgba(var(--color-neutral-300), 0.8);
+    cursor: pointer;
+    transition:
+        background-color 150ms ease-out,
+        color 150ms ease-out,
+        border-color 150ms ease-out,
+        scale 150ms ease-out;
+}
+
+html.dark .bf-settings-reset {
+    color: rgb(var(--color-neutral-300));
+    background-color: rgba(var(--color-neutral-900), 0.55);
+    border-color: rgba(var(--color-neutral-700), 0.85);
+}
+
+.bf-settings-reset:hover {
+    color: rgb(var(--color-primary-600));
+    border-color: rgba(var(--color-primary-500), 0.75);
+    background-color: rgba(var(--color-primary-500), 0.1);
+}
+
+html.dark .bf-settings-reset:hover {
+    color: rgb(var(--color-primary-300));
+    border-color: rgba(var(--color-primary-400), 0.75);
+    background-color: rgba(var(--color-primary-400), 0.14);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .bf-settings-reset:active {
+        scale: 0.98;
+    }
 }

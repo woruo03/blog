@@ -1,0 +1,35 @@
+{{- with strings.TrimRight "/" (site.Params.mediaOrigin | default "") -}}
+  {{- $origin := . -}}
+  {{- $usesMedia := false -}}
+  {{- $showCardFeatureImage := cond (isset site.Params.list "showcardfeatureimage") site.Params.list.showcardfeatureimage true -}}
+  {{- $showPageHero := false -}}
+  {{- if $.IsHome -}}
+    {{- $showPageHero = eq (site.Params.homepage.layout | default "") "background" -}}
+  {{- else if $.IsPage -}}
+    {{- $showPageHero = cond (isset $.Params "showhero") $.Params.showHero (site.Params.article.showHero | default false) -}}
+  {{- else -}}
+    {{- $showPageHero = cond (isset $.Params "showhero") $.Params.showHero (site.Params.list.showHero | default false) -}}
+  {{- end -}}
+  {{- $pageFeature := partial "functions/feature-image.html" $ | default "" -}}
+  {{- if or (and $showPageHero (strings.HasPrefix $pageFeature $origin)) (strings.Contains $.RawContent $origin) -}}
+    {{- $usesMedia = true -}}
+  {{- else if and $showCardFeatureImage $.IsHome (site.Params.homepage.showRecent | default false) -}}
+    {{- $mainSections := site.Params.mainSections | default (slice "posts") -}}
+    {{- $recentLimit := site.Params.homepage.showRecentItems | default 5 -}}
+    {{- range first $recentLimit (where site.RegularPages "Type" "in" $mainSections) -}}
+      {{- if and (not $usesMedia) (strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin) -}}
+        {{- $usesMedia = true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if and $showCardFeatureImage (not $.IsPage) -}}
+    {{- range $.RegularPages -}}
+      {{- if and (not $usesMedia) (strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin) -}}
+        {{- $usesMedia = true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if $usesMedia }}
+<link rel="preconnect" href="{{ $origin }}">
+<link rel="dns-prefetch" href="{{ $origin }}">
+  {{- end -}}
+{{- end -}}

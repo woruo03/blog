@@ -6,9 +6,6 @@
   {{ end }}
 
   {{ partial "header/components/translations.html" . }}
-  {{ if .Site.Params.enableA11y | default false }}
-    {{ partial "header/components/a11y.html" (dict "prefix" "desktop-") }}
-  {{ end }}
 
   {{ if .Site.Params.footer.showAppearanceSwitcher | default false }}
     <div class="flex items-center">
@@ -28,6 +25,10 @@
     </div>
   {{ end }}
 
+  {{ if .Site.Params.enableA11y | default false }}
+    {{ partial "header/components/a11y.html" (dict "prefix" "desktop-") }}
+  {{ end }}
+
   {{ if .Site.Params.enableSearch | default false }}
     <button
       id="search-button"
@@ -38,6 +39,7 @@
       <span class="sr-only">{{ i18n "search.open_button_title" }} </span>
       <kbd
         id="search-shortcut-hint"
+        aria-hidden="true"
         class="pointer-events-none font-sans text-xs text-neutral-500 dark:text-neutral-400">
         ⌘K
       </kbd>

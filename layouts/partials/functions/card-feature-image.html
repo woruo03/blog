@@ -1,0 +1,57 @@
+{{/* Resolve the card thumbnail URL for a Page, returning "" when card images are disabled. */}}
+{{- $page := . -}}
+{{- $featured := "" -}}
+{{- $featuredURL := "" -}}
+{{- $disableImageOptimization := site.Store.Get "disableImageOptimization" -}}
+
+{{- $showCardFeatureImage := cond (isset site.Params.list "showcardfeatureimage") site.Params.list.showcardfeatureimage true -}}
+{{- if isset $page.Params "showcardfeatureimage" -}}
+  {{- $showCardFeatureImage = $page.Params.showCardFeatureImage -}}
+{{- end -}}
+{{- $showCardFeatureImage = and $showCardFeatureImage (not ($page.Params.hideFeatureImage | default false)) -}}
+
+{{- if $showCardFeatureImage -}}
+  {{- with partial "functions/feature-image.html" $page -}}
+    {{- if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") -}}
+      {{- if site.Params.hotlinkFeatureImage -}}
+        {{- $featuredURL = . -}}
+      {{- else -}}
+        {{- $featured = resources.GetRemote . -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $featured = $page.Resources.Get . -}}
+      {{- if not $featured -}}
+        {{- $featured = resources.Get . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if not (or $featured $featuredURL) -}}
+    {{- $images := $page.Resources.ByType "image" -}}
+    {{- range slice "*feature*" "*cover*" "*thumbnail*" -}}
+      {{- if not $featured }}{{ $featured = $images.GetMatch . }}{{ end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if not (or $featured $featuredURL) -}}
+    {{- $default := site.Store.Get "defaultFeaturedImage" -}}
+    {{- if $default.url -}}
+      {{- $featuredURL = $default.url -}}
+    {{- else if $default.obj -}}
+      {{- $featured = $default.obj -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if not $featuredURL -}}
+    {{- with $featured -}}
+      {{- $featuredURL = .RelPermalink -}}
+      {{- if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) -}}
+        {{- with try (.Resize "600x") -}}
+          {{- with .Value }}{{ $featuredURL = .RelPermalink }}{{ end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $featuredURL -}}

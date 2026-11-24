@@ -1,13 +1,14 @@
 ---
 title: "基于 GCP 永久免费层的双栈代理与面板隐身配置指南"
 date: 2026-11-17
-lastmod: 2026-11-17
+lastmod: 2026-11-24
 description: "详解如何基于 GCP Always Free 免费层（e2-micro + Standard 网络）构建双栈 VLESS-Reality 代理，结合 Cloudflare CDN 隐蔽 3x-ui 面板，并配合 Linux 桌面端 Mihomo TUN 模式实现高效分流与零账单运维。"
 summary: "涵盖 GCP 计费规则与双栈 VPC 搭建、高延迟内核与 Zram 调优、Reality 协议与面板安全回源、Mihomo 双栈分流配置，以及 3 个典型网络黑洞与端口排障复盘。"
 tags: ["GCP", "Xray", "Reality", "IPv6", "Mihomo", "Linux", "网络优化"]
 categories: ["技术实战"]
 slug: "gcp-always-free-dual-stack-reality"
 showTableOfContents: true
+featureimage: "https://img.woruo03.com/posts/gcp-always-free-dual-stack-proxy/hakurei-reimu.jpg"
 ---
 
 Google Cloud Platform (GCP) 的永久免费层（Always Free）中，位于美国指定区域的 `e2-micro` 实例配合标准网络服务层级（Standard Tier），每月提供 200 GB 的免费互联网出站流量。

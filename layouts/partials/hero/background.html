@@ -1,0 +1,213 @@
+{{ $page := . }}
+{{ $disableImageOptimization := site.Store.Get "disableImageOptimization" }}
+
+{{ $featured := "" }}
+{{ $featuredURL := "" }}
+{{ with partial "functions/feature-image.html" . }}
+  {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
+    {{ if site.Params.hotlinkFeatureImage }}
+      {{ $featuredURL = . }}
+    {{ else }}
+      {{ $featured = resources.GetRemote . }}
+    {{ end }}
+  {{ else }}
+    {{ $featured = $page.Resources.Get . }}
+    {{ if not $featured }}
+      {{ $featured = resources.Get . }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ $images := .Resources.ByType "image" }}
+
+{{/* === Background Image === */}}
+{{ $background := $images.GetMatch "*background*" }}
+{{ $backgroundURL := "" }}
+
+{{ if not $background }}
+  {{ if $featuredURL }}
+    {{ $backgroundURL = $featuredURL }}
+  {{ else if $featured }}
+    {{ $background = $featured }}
+  {{ end }}
+{{ end }}
+
+{{ if not (or $background $backgroundURL) }}
+  {{ range slice "*feature*" "*cover*" "*thumbnail*" }}
+    {{ if not $background }}{{ $background = $images.GetMatch . }}{{ end }}
+  {{ end }}
+{{ end }}
+
+{{/* When the site-wide background canvas is active it already renders the
+  default background image, so only fall back to it here when disabled. */}}
+{{ if and (not (or $background $backgroundURL)) (not (site.Params.backgroundCanvas | default false)) }}
+  {{ $default := site.Store.Get "defaultBackgroundImage" }}
+  {{ if $default.url }}
+    {{ $backgroundURL = $default.url }}
+  {{ else if $default.obj }}
+    {{ $background = $default.obj }}
+  {{ end }}
+{{ end }}
+
+{{ if not $backgroundURL }}
+  {{ with $background }}
+    {{ $backgroundURL = .RelPermalink }}
+    {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
+      {{ $size := site.Store.Get "backgroundImageWidth" }}
+      {{ $backgroundURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{/* === Foreground Banner Image === */}}
+{{ $banner := $featured }}
+{{ $bannerURL := $featuredURL }}
+
+{{ if not (or $banner $bannerURL) }}
+  {{ range slice "*feature*" "*cover*" "*thumbnail*" "*background*" }}
+    {{ if not $banner }}{{ $banner = $images.GetMatch . }}{{ end }}
+  {{ end }}
+{{ end }}
+
+{{ if not (or $banner $bannerURL) }}
+  {{ $default := site.Store.Get "defaultFeaturedImage" }}
+  {{ if $default.url }}
+    {{ $bannerURL = $default.url }}
+  {{ else if $default.obj }}
+    {{ $banner = $default.obj }}
+  {{ end }}
+{{ end }}
+
+{{ if not (or $banner $bannerURL) }}
+  {{ if $backgroundURL }}
+    {{ $bannerURL = $backgroundURL }}
+    {{ $banner = $background }}
+  {{ else if $background }}
+    {{ $banner = $background }}
+  {{ end }}
+{{ end }}
+
+{{ if not $bannerURL }}
+  {{ with $banner }}
+    {{ if and $background (eq . $background) $backgroundURL }}
+      {{ $bannerURL = $backgroundURL }}
+    {{ else }}
+      {{ $bannerURL = .RelPermalink }}
+      {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
+        {{ $size := site.Store.Get "backgroundImageWidth" }}
+        {{ $bannerURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ if or $backgroundURL $bannerURL }}
+  {{ $scope := .Scratch.Get "scope" }}
+  {{ $scopeKey := cond (eq $scope "single") "article" (cond (eq $scope "terms") "taxonomy" $scope) }}
+  {{ $scopeParams := index site.Params $scopeKey | default dict }}
+  {{ $shouldBlur := cond (isset $.Params "layoutbackgroundblur") $.Params.layoutBackgroundBlur (cond (isset $scopeParams "layoutbackgroundblur") $scopeParams.layoutBackgroundBlur true) }}
+  {{ $shouldAddHeaderSpace := cond (isset $.Params "layoutbackgroundheaderspace") $.Params.layoutBackgroundHeaderSpace (cond (isset $scopeParams "layoutbackgroundheaderspace") $scopeParams.layoutBackgroundHeaderSpace true) }}
+  {{ $blurStyle := $.Params.layoutBackgroundBlurStyle | default ($scopeParams.layoutBackgroundBlurStyle | default "fade") }}
+  {{ $isClassic := eq $blurStyle "classic" }}
+
+  {{ $caption := "" }}
+  {{ if .Params.featureimagecaption }}
+    {{- $caption = .Params.featureimagecaption -}}
+  {{ end }}
+  {{- $alt := .Page.Title -}}
+  {{- with .Page.Params.alt }}{{ $alt = . }}{{ end -}}
+  {{- $aspect := .Params.featureimageAspect -}}
+
+  {{- $bgPosition := $.Params.imagePosition | default site.Params.imagePosition -}}
+  {{- $bannerPosition := $.Params.imagePositionFeature | default $.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition -}}
+  {{- $sameHeroSrc := and $backgroundURL $bannerURL (eq $backgroundURL $bannerURL) -}}
+
+  {{ if and $backgroundURL $shouldAddHeaderSpace }}
+    <div id="hero" aria-hidden="true" class="h-[150px] md:h-[200px]"></div>
+  {{ end }}
+
+  {{- with $bannerURL -}}
+    <figure id="hero-banner" class="bf-hero-banner">
+      <div class="bf-hero-banner__frame"{{ with $aspect }} style="--bf-hero-aspect: {{ . | safeCSS }};"{{ end }}>
+        <img
+          id="hero-banner-image"
+          src="{{ . }}"
+          alt="{{ $alt }}"
+          {{- if $sameHeroSrc }}
+          loading="eager"
+          {{- else }}
+          loading="lazy"
+          fetchpriority="low"
+          data-distinct-hero="true"
+          {{- end }}
+          decoding="async"
+          {{- with $banner }}
+            {{- if ne .MediaType.SubType "svg" }}
+          width="{{ .Width }}"
+          height="{{ .Height }}"
+            {{- end }}
+          {{- end }}
+          class="bf-hero-banner__img w-full h-full nozoom object-cover"
+          {{ with $bannerPosition }}style="object-position: {{ . | safeCSS }};"{{ end }} />
+      </div>
+      {{- if $caption }}
+        <figcaption class="bf-hero-banner__caption text-sm text-neutral-700 dark:text-neutral-400 text-center">
+          {{ $caption | markdownify }}
+        </figcaption>
+      {{- end }}
+    </figure>
+  {{- end -}}
+
+  {{- with $backgroundURL -}}
+    <div
+      id="hero-background"
+      aria-hidden="true"
+      {{ if and (not $isClassic) $shouldBlur }}data-scroll-fade="true" {{ end }}class="{{ if not $isClassic }}hero-canvas-fade {{ end }}fixed inset-x-0 top-0 h-[800px] single_hero_background nozoom">
+      <img
+        id="background-image"
+        src="{{ . }}"
+        alt=""
+        role="presentation"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+        class="bf-hero-bg-img nozoom absolute inset-0 w-full h-full object-cover"
+        {{ if $bgPosition }}style="object-position: {{ $bgPosition | safeCSS }};"{{ end }} />
+      {{ if $isClassic }}
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-neutral to-transparent mix-blend-normal dark:from-neutral-800"></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-neutral to-neutral-100 opacity-60 mix-blend-normal dark:from-neutral-800 dark:to-neutral-800"></div>
+      {{ else }}
+        <div class="bf-hero-bg-scrim absolute inset-0 pointer-events-none"></div>
+      {{ end }}
+    </div>
+
+    {{ if $shouldBlur }}
+      {{ if $isClassic }}
+        <div
+          id="background-blur"
+          aria-hidden="true"
+          class="fixed opacity-0 inset-x-0 top-0 h-full single_hero_background nozoom backdrop-blur-xl bg-neutral-100/75 dark:bg-neutral-800/60"></div>
+        {{ $backgroundBlur := resources.Get "js/background-blur.js" }}
+        {{ $backgroundBlur = $backgroundBlur | resources.Minify | resources.Fingerprint ($.Site.Params.fingerprintAlgorithm | default "sha512") }}
+        <script
+          defer
+          type="text/javascript"
+          src="{{ $backgroundBlur.RelPermalink }}"
+          integrity="{{ $backgroundBlur.Data.Integrity }}"
+          data-blur-id="background-blur"></script>
+      {{ else }}
+        {{ $heroFade := resources.Get "js/hero-scroll-fade.js" }}
+        {{ $heroFade = $heroFade | resources.Minify | resources.Fingerprint ($.Site.Params.fingerprintAlgorithm | default "sha512") }}
+        <script
+          defer
+          type="text/javascript"
+          src="{{ $heroFade.RelPermalink }}"
+          integrity="{{ $heroFade.Data.Integrity }}"
+          data-hero-id="hero-background"
+          data-fade-distance="500"></script>
+      {{ end }}
+    {{ end }}
+  {{- end -}}
+{{ end }}

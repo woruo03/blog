@@ -23,6 +23,7 @@
   {{ if .Site.Params.enableSearch | default false }}
     <button
       id="search-button-mobile"
+      type="button"
       aria-label="{{ i18n "search.open_button_title" }}"
       class="flex items-center justify-center bf-icon-color-hover"
       title="{{ i18n "search.open_button_title" }}">

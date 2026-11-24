@@ -1,7 +1,7 @@
 ---
 title: "Markdown 语法与博客功能展示大全"
 date: 2026-11-13
-lastmod: 2026-11-13
+lastmod: 2026-11-24
 description: "本文涵盖 Markdown 标准排版语法与 Blowfish 主题扩展组件，可作为日常撰写博文的查阅手册与模板字典。"
 summary: "包含标题、排版、列表、表格、代码块、KaTeX 公式、Mermaid 图表、GitHub Alerts 及 Blowfish 短代码等全功能展示。"
 tags: ["Markdown", "语法手册", "Hugo", "Blowfish"]
@@ -10,6 +10,7 @@ series: ["博客指南"]
 slug: "syntax-showcase"
 aliases: ["/posts/hello-world/"]
 showTableOfContents: true
+featureimage: "https://img.woruo03.com/posts/hello-world/rainbow-sea.png"
 ---
 
 {{< katex >}}

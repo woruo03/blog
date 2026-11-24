@@ -58,6 +58,7 @@
       let currentActiveId = null
       let prevActiveLink = null
       let openUls = new Set()
+      let scrollFollowRafId = null
 
       function safeDecode(str) {
         if (!str) return ''
@@ -167,13 +168,18 @@
             openUls = nextOpenUls
           }
 
-          // 仅在大纲容器自身内部滚动跟随，防止触发主窗口滚动竞争
-          if (!isJumpingToAnchor && tocView) {
-            const viewRect = tocView.getBoundingClientRect()
-            const linkRect = nextActiveLink.getBoundingClientRect()
-            if (linkRect.top < viewRect.top + 16 || linkRect.bottom > viewRect.bottom - 16) {
-              tocView.scrollTop += linkRect.top - viewRect.top - viewRect.height / 3
-            }
+          // 仅在大纲容器自身内部滚动跟随，推迟到下一帧执行以消除读写交错导致的强制重排
+          if (!isJumpingToAnchor && tocView && window.scrollY > 0) {
+            if (scrollFollowRafId) cancelAnimationFrame(scrollFollowRafId)
+            const followTarget = nextActiveLink
+            scrollFollowRafId = requestAnimationFrame(() => {
+              scrollFollowRafId = null
+              const viewRect = tocView.getBoundingClientRect()
+              const linkRect = followTarget.getBoundingClientRect()
+              if (linkRect.top < viewRect.top + 16 || linkRect.bottom > viewRect.bottom - 16) {
+                tocView.scrollTop += linkRect.top - viewRect.top - viewRect.height / 3
+              }
+            })
           }
 
           prevActiveLink = nextActiveLink

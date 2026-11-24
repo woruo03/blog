@@ -198,9 +198,12 @@
                 "&vid=" +
                 encodeURIComponent(visitorId),
         )
-            .then((r) => (r.ok ? r.json() : null))
+            .then((r) => {
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                return r.json();
+            })
             .then((data) => {
-                if (!data) return;
+                if (!data) throw new Error("Empty response");
                 updateViews(data.views);
 
                 if (typeof data.likes === "number" && !hasLikedSettled) {
@@ -574,12 +577,19 @@
         const map = new Map();
 
         document
-            .querySelectorAll("span[id^='views_'], span[id^='likes_']")
+            .querySelectorAll(
+                "span[id^='views_'], span[id^='likes_']:not([id^='likes_live_'])",
+            )
             .forEach((node) => {
                 const isView = node.id.startsWith("views_");
                 const prefix = isView ? "views_" : "likes_";
                 const id = node.id.slice(prefix.length);
-                if (id && id !== "null" && id !== excludeId) {
+                if (
+                    id &&
+                    id !== "null" &&
+                    id !== excludeId &&
+                    !id.startsWith("live_")
+                ) {
                     let entry = map.get(id);
                     if (!entry) {
                         entry = { views: [], likes: [] };

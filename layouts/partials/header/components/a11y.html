@@ -1,4 +1,14 @@
 {{- $prefix := .prefix | default "" -}}
+{{- $isDesktopPopover := ne $prefix "mobile-menu-" -}}
+{{- $hasArticleHero := or
+  (site.Params.article.showHero | default false)
+  (eq site.Params.homepage.layout "background")
+  (eq site.Params.article.heroStyle "background")
+  (eq site.Params.list.heroStyle "background")
+  (eq site.Params.taxonomy.heroStyle "background")
+  (eq site.Params.term.heroStyle "background")
+-}}
+{{- $shouldDisableBlur := or site.Params.homepage.layoutBackgroundBlur site.Params.article.layoutBackgroundBlur site.Params.list.layoutBackgroundBlur (hasPrefix site.Params.header.layout "fixed") -}}
 <div class="flex items-center">
   <button
     id="{{ $prefix }}a11y-toggle"
@@ -6,16 +16,28 @@
     title="{{ i18n "a11y.title" }}"
     aria-haspopup="dialog"
     aria-expanded="false"
+    {{- if $isDesktopPopover }}
+    popovertarget="{{ $prefix }}a11y-panel"
+    aria-controls="{{ $prefix }}a11y-panel"
+    {{- end }}
     type="button"
-    class="flex items-center justify-center bf-icon-color-hover">
-    {{ partial "icon.html" "a11y" }}
+    class="flex items-center justify-center{{ if eq $prefix "mobile-menu-" }} gap-2{{ end }} bf-icon-color-hover">
+    {{ partial "icon.html" "settings" }}
+    {{- if eq $prefix "mobile-menu-" -}}
+      <span class="bf-settings-mobile-label">{{ i18n "a11y.title" }}</span>
+    {{- end -}}
   </button>
 
   <dialog
     id="{{ $prefix }}a11y-panel"
+    {{- if $isDesktopPopover }}
+    popover="auto"
+    class="bf-a11y-dialog bf-settings-popover-desktop rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+    {{- else }}
     closedby="any"
-    aria-labelledby="{{ $prefix }}a11y-panel-title"
-    class="bf-a11y-dialog m-auto w-80 rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
+    class="bf-a11y-dialog m-auto rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+    {{- end }}
+    aria-labelledby="{{ $prefix }}a11y-panel-title">
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
         <h2
@@ -27,6 +49,10 @@
           id="{{ $prefix }}a11y-close"
           type="button"
           autofocus
+          {{- if $isDesktopPopover }}
+          popovertarget="{{ $prefix }}a11y-panel"
+          popovertargetaction="hide"
+          {{- end }}
           class="flex items-center justify-center rounded-lg p-1 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 cursor-pointer"
           aria-label="{{ i18n "a11y.close_panel" }}"
           title="{{ i18n "a11y.close_panel" }}">
@@ -35,52 +61,128 @@
       </div>
 
       <div class="space-y-5">
-        {{ $toggles := slice }}
-        {{ $shouldDisableBlur := or site.Params.homepage.layoutBackgroundBlur site.Params.article.layoutBackgroundBlur site.Params.list.layoutBackgroundBlur (hasPrefix site.Params.header.layout "fixed") }}
-        {{ $shouldDisableBackgroundImage := or
-          (eq site.Params.homepage.layout "background")
-          (eq site.Params.article.heroStyle "background")
-          (eq site.Params.list.heroStyle "background")
-          (eq site.Params.taxonomy.heroStyle "background")
-          (eq site.Params.term.heroStyle "background")
-        }}
-        {{ if $shouldDisableBlur }}
-          {{ $toggles = $toggles | append (dict "id" (print $prefix "disable-blur") "label" (i18n "a11y.disable_blur")) }}
-        {{ end }}
-        {{ if $shouldDisableBackgroundImage }}
-          {{ $toggles = $toggles | append (dict "id" (print $prefix "disable-images") "label" (i18n "a11y.disable_images")) }}
-        {{ end }}
-        {{- $toggles = $toggles | append
-          (dict "id" (print $prefix "underline-links") "label" (i18n "a11y.show_link_underline"))
-          (dict "id" (print $prefix "zen-mode") "label" (i18n "a11y.zen_mode"))
-        -}}
+        {{- if or $hasArticleHero $shouldDisableBlur -}}
+          <div class="bf-settings-section">
+            <h3 class="bf-settings-section-title">{{ i18n "a11y.section_visual" }}</h3>
+            {{- if $hasArticleHero -}}
+              <div class="flex items-center justify-between">
+                <label for="{{ $prefix }}hero-bg" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ i18n "a11y.hero_bg" }}
+                </label>
+                <div class="ios-toggle">
+                  <input type="checkbox" id="{{ $prefix }}hero-bg" checked>
+                </div>
+              </div>
 
-        {{- range $toggles }}
+              <div class="bf-settings-range-row" data-hero-bg-opacity-wrap>
+                <div class="flex items-center justify-between">
+                  <label for="{{ $prefix }}hero-bg-opacity" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    {{ i18n "a11y.hero_bg_opacity" }}
+                  </label>
+                  <output
+                    id="{{ $prefix }}hero-bg-opacity-value"
+                    for="{{ $prefix }}hero-bg-opacity"
+                    class="bf-settings-range-value text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    50%
+                  </output>
+                </div>
+                <input
+                  type="range"
+                  id="{{ $prefix }}hero-bg-opacity"
+                  class="bf-settings-range"
+                  min="15"
+                  max="90"
+                  step="5"
+                  value="50"
+                  aria-valuetext="50%">
+              </div>
+
+              <fieldset class="bf-settings-segment-fieldset">
+                <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ i18n "a11y.hero_banner" }}
+                </legend>
+                <div class="bf-settings-segment">
+                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-off">
+                    <input type="radio" id="{{ $prefix }}hero-banner-off" name="{{ $prefix }}hero-banner" value="off" checked>
+                    <span>{{ i18n "a11y.hero_banner_off" }}</span>
+                  </label>
+                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-basic">
+                    <input type="radio" id="{{ $prefix }}hero-banner-basic" name="{{ $prefix }}hero-banner" value="basic">
+                    <span>{{ i18n "a11y.hero_banner_basic" }}</span>
+                  </label>
+                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-big">
+                    <input type="radio" id="{{ $prefix }}hero-banner-big" name="{{ $prefix }}hero-banner" value="big">
+                    <span>{{ i18n "a11y.hero_banner_big" }}</span>
+                  </label>
+                </div>
+              </fieldset>
+            {{- end -}}
+
+            {{- if $shouldDisableBlur -}}
+              <div class="flex items-center justify-between">
+                <label for="{{ $prefix }}disable-blur" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ i18n "a11y.disable_blur" }}
+                </label>
+                <div class="ios-toggle">
+                  <input type="checkbox" id="{{ $prefix }}disable-blur">
+                </div>
+              </div>
+            {{- end -}}
+          </div>
+        {{- end -}}
+
+        <div class="bf-settings-section">
+          <h3 class="bf-settings-section-title">{{ i18n "a11y.section_reading" }}</h3>
           <div class="flex items-center justify-between">
-            <label for="{{ .id }}" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {{ .label }}
+            <label for="{{ $prefix }}zen-mode" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              {{ i18n "a11y.zen_mode" }}
             </label>
             <div class="ios-toggle">
-              <input type="checkbox" id="{{ .id }}">
+              <input type="checkbox" id="{{ $prefix }}zen-mode">
             </div>
           </div>
-        {{- end }}
 
-        <div class="flex items-center justify-between">
-          <label
-            for="{{ $prefix }}font-size-select"
-            class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            {{ i18n "a11y.font_size" }}
-          </label>
-          <select
-            id="{{ $prefix }}font-size-select"
-            class="border rounded-lg px-3 py-1.5 pr-8 text-neutral-900 text-sm dark:bg-neutral-700 dark:text-neutral-200 focus:ring-primary-500 focus:border-primary-500">
-            <option value="default">{{ i18n "a11y.font_size_default" }}</option>
-            {{ $fontSizes := slice "12px" "14px" "16px" "18px" "20px" "22px" "24px" }}
-            {{ range $fontSizes }}
-              <option value="{{ . }}">{{ . }}</option>
-            {{ end }}
-          </select>
+          <div class="flex items-center justify-between">
+            <label for="{{ $prefix }}underline-links" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              {{ i18n "a11y.show_link_underline" }}
+            </label>
+            <div class="ios-toggle">
+              <input type="checkbox" id="{{ $prefix }}underline-links">
+            </div>
+          </div>
+
+          <div class="bf-settings-range-row">
+            <div class="flex items-center justify-between">
+              <label for="{{ $prefix }}font-size" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                {{ i18n "a11y.font_size" }}
+              </label>
+              <output
+                id="{{ $prefix }}font-size-value"
+                for="{{ $prefix }}font-size"
+                class="bf-settings-range-value text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                {{ i18n "a11y.font_size_default" }} (16px)
+              </output>
+            </div>
+            <input
+              type="range"
+              id="{{ $prefix }}font-size"
+              class="bf-settings-range"
+              min="12"
+              max="24"
+              step="2"
+              value="16"
+              data-default-label="{{ i18n "a11y.font_size_default" }}"
+              aria-valuetext="{{ i18n "a11y.font_size_default" }} (16px)">
+          </div>
+        </div>
+
+        <div class="bf-settings-footer">
+          <button
+            id="{{ $prefix }}a11y-reset"
+            type="button"
+            class="bf-settings-reset">
+            {{ i18n "a11y.reset" }}
+          </button>
         </div>
       </div>
     </div>
