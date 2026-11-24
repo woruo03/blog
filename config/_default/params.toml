@@ -21,7 +21,7 @@ highlightCurrentMenuArea = true
 smartTOC = true
 smartTOCHideUnfocusedChildren = true
 mainSections = ["posts"]
-description = "woruo03 的技术学习与折腾日常"
+description = "woruo03 的学习笔记与 ACG 相关内容"
 robots = "index, follow"
 
 [seo]

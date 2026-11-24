@@ -24,35 +24,26 @@ showLikes: false
 “只有那份眩目，未曾忘却。”
 {{< /typeit >}}
 
-### 🛠️ 技能与正在探索的方向
+喜欢 CLANNAD、Kanon、AIR 等作品，也喜欢听纯音乐，尤其是 Key 社作品的配乐。
 
-- 🐧 **Linux & 命令行**：日常系统使用、Shell 常用工具与终端工作流
-- 💻 **编程与计算机基础**：C 、C++ 、Python、数据结构
-- 🔌 **硬件与嵌入式探索**：单片机、树莓派 Raspberry Pi 等
-- 🌐 **博客与建站**：Hugo、Blowfish 主题二次定制、Cloudflare CDN
+### 在用和在学的方向
 
----
+- Linux 与命令行：日常用 Fedora，常用命令行和 Shell 工具。
+- 编程与计算机基础：C、C++、Python 和数据结构。
 
-### 💡 为什么写博客
+### 为什么写博客
 
-1. **备忘与查阅**：很多东西不记下来过两周就忘了，记在这里方便随时检索。
-2. **督促自己学习**：能把一个知识点讲清楚，才算真正学会。
-3. **希望能帮到人**：如果我踩过的坑刚好能帮到遇到同样问题的朋友，那就再好不过了。
+主要是为了留个备忘：很多东西不记下来，过两周就忘了，写在这里方便随时翻找。
 
----
+除了技术笔记，也会顺手写点 ACG 相关的内容。
 
-### 🌐 关于本站
+### 关于本站
 
-- **静态引擎**：[Hugo](https://gohugo.io/) (Extended)
-- **前端主题**：[Blowfish](https://blowfish.page/)
-- **托管平台**：[Cloudflare Pages](https://pages.cloudflare.com/) (全球极速 CDN)
-- **评论系统**：[Giscus](https://giscus.app/) (基于 GitHub Discussions)
+本站用 [Hugo](https://gohugo.io/) (Extended) 生成，主题是 [Blowfish](https://blowfish.page/)，托管在 [Cloudflare Pages](https://pages.cloudflare.com/)，评论区用的是基于 GitHub Discussions 的 [Giscus](https://giscus.app/)。
 
----
+### 联系我
 
-### 📫 联系我
+文章里如果发现错误，或者有什么想聊的，随时可以找到我：
 
-如果你在文章中发现错误，或者有想交流的想法，随时欢迎联系我：
-
-- **GitHub**: [woruo03](https://github.com/woruo03)
-- **Email**: {{< email email="woruo03@gmail.com" text="woruo03@gmail.com" subject="来自博客的联系" >}}
+- GitHub：[woruo03](https://github.com/woruo03)
+- Email：{{< email email="woruo03@gmail.com" text="woruo03@gmail.com" subject="来自博客的联系" >}}

@@ -1,6 +1,6 @@
-# woruo03's Blog — 个人技术博客
+# woruo03's Blog — 个人博客
 
-这是我的个人技术博客仓库，主要记录 Linux、嵌入式硬件和计算机日常学习笔记。
+这是我的个人博客仓库，记录学习笔记和 ACG 相关内容。
 
 线上地址：[https://blog.woruo03.com](https://blog.woruo03.com)
 

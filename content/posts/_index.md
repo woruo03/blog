@@ -1,5 +1,5 @@
 ---
 title: "全部文章"
-description: "所有技术文章列表"
+description: "学习笔记与 ACG 相关文章"
 excludeFromSearch: true
 ---
