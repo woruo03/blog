@@ -93,7 +93,9 @@
         } else {
             let signal = fetchOptions.signal;
             const timeoutSignal =
-                "timeout" in AbortSignal ? AbortSignal.timeout(6000) : undefined;
+                "timeout" in AbortSignal
+                    ? AbortSignal.timeout(6000)
+                    : undefined;
             if (timeoutSignal && signal) {
                 signal = AbortSignal.any
                     ? AbortSignal.any([signal, timeoutSignal])

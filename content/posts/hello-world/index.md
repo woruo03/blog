@@ -278,10 +278,10 @@ participant Giscus as Giscus 评论服务
 ### 9.3 状态机图 (State Diagram)
 {{< mermaid >}}
 stateDiagram-v2
-    [*] --> Draft : 撰写初稿 (draft: true)
-    Draft --> Review : 本地预览排版
-    Review --> Published : 去掉 draft 标签并发布
-    Published --> [*]
+[_] --> Draft : 撰写初稿 (draft: true)
+Draft --> Review : 本地预览排版
+Review --> Published : 去掉 draft 标签并发布
+Published --> [_]
 {{< /mermaid >}}
 
 ---
@@ -366,6 +366,7 @@ sudo pacman -S hugo
 也可以直接使用纯 Markdown 的可折叠提示框语法（基于原生 `<details>`，零 JS 开销）：
 
 > [!TIP]- 点击展开完整调试日志示例
+>
 > ```text
 > [    2.418902] usb 1-3: new high-speed USB device number 4 using xhci_hcd
 > [    2.561034] aic_load_fw: firmware loaded successfully

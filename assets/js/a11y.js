@@ -47,7 +47,9 @@ window.A11yPanel = (() => {
         underlineLinks: {
             default: false,
             apply: (enabled) => {
-                const existing = document.getElementById("a11y-underline-links");
+                const existing = document.getElementById(
+                    "a11y-underline-links",
+                );
                 if (enabled && !existing) {
                     const style = document.createElement("style");
                     style.id = "a11y-underline-links";
@@ -107,9 +109,7 @@ window.A11yPanel = (() => {
     const syncControls = (key, value) => {
         const suffix = key.replace(/([A-Z])/g, "-$1").toLowerCase();
         document
-            .querySelectorAll(
-                `[id$="${suffix}"], [id$="${suffix}-select"]`,
-            )
+            .querySelectorAll(`[id$="${suffix}"], [id$="${suffix}-select"]`)
             .forEach((el) => {
                 if (el.type === "checkbox") {
                     el.checked = Boolean(value);
@@ -233,9 +233,11 @@ window.A11yPanel = (() => {
 
     const init = () => {
         applyAll();
-        document.querySelectorAll("dialog[id$='a11y-panel']").forEach((panel) => {
-            initPanel(panel);
-        });
+        document
+            .querySelectorAll("dialog[id$='a11y-panel']")
+            .forEach((panel) => {
+                initPanel(panel);
+            });
     };
 
     // 在首帧前尽早应用字号，减少渲染抖动

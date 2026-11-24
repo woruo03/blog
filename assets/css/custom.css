@@ -364,16 +364,29 @@ html.dark .mermaid .edgeLabel rect {
    智能大纲未聚焦子项首帧防抖：与 initTOC() 初始展开首章保持一致，消除 CLS
    ============================================================ */
 @media (scripting: enabled) {
-    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready) #TableOfContents li ul {
+    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready)
+        #TableOfContents
+        li
+        ul {
         display: none;
     }
-    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready) #TableOfContents > ul > li:first-child > ul {
+    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready)
+        #TableOfContents
+        > ul
+        > li:first-child
+        > ul {
         display: block;
     }
-    #TOCView[data-collapse-unfocused="true"].smart-toc-ready #TableOfContents li ul {
+    #TOCView[data-collapse-unfocused="true"].smart-toc-ready
+        #TableOfContents
+        li
+        ul {
         display: none;
     }
-    #TOCView[data-collapse-unfocused="true"].smart-toc-ready #TableOfContents li ul.toc-open {
+    #TOCView[data-collapse-unfocused="true"].smart-toc-ready
+        #TableOfContents
+        li
+        ul.toc-open {
         display: block;
     }
 }
@@ -392,7 +405,9 @@ html.dark .mermaid .edgeLabel rect {
 /* 1. 顶栏无障碍图标视觉重心与右侧工具区对齐 */
 #desktop-a11y-toggle {
     opacity: 0.8;
-    transition: opacity 150ms ease-out, color 150ms ease-out;
+    transition:
+        opacity 150ms ease-out,
+        color 150ms ease-out;
 }
 
 #desktop-a11y-toggle:hover,
@@ -445,7 +460,9 @@ html.dark .article-link__summary {
 .article-link--card,
 .article-link--related,
 .bf-term-card {
-    transition: border-color 180ms ease-out, transform 180ms ease-out;
+    transition:
+        border-color 180ms ease-out,
+        transform 180ms ease-out;
 }
 
 .article-link--card:hover,
@@ -477,7 +494,9 @@ html.dark .bf-term-card:hover .bf-term-card__title {
     padding: 0.2rem 0.65rem;
     border-radius: 9999px;
     font-variant-numeric: tabular-nums;
-    transition: background-color 180ms ease-out, color 180ms ease-out;
+    transition:
+        background-color 180ms ease-out,
+        color 180ms ease-out;
 }
 
 html.dark .bf-term-card__count {
@@ -501,7 +520,11 @@ html.dark .bf-term-card:hover .bf-term-card__count {
     border: 1px solid rgba(var(--color-neutral-300), 0.8);
     color: rgb(var(--color-neutral-700)) !important;
     text-decoration: none !important;
-    transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out;
+    transition:
+        border-color 150ms ease-out,
+        color 150ms ease-out,
+        background-color 150ms ease-out,
+        transform 150ms ease-out;
 }
 
 html.dark .bf-share-btn {
@@ -544,4 +567,3 @@ html.dark #menu-blur.bf-menu-blur-disabled {
     background-color: rgb(var(--color-neutral-800)) !important;
     border-bottom-color: rgba(var(--color-neutral-700), 0.7);
 }
-

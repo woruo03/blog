@@ -343,10 +343,7 @@ export async function onRequestGet(context) {
             let userLiked = false;
 
             if (vid) {
-                const clientHash = await getClientHash(
-                    vid,
-                    env.STATS_SECRET,
-                );
+                const clientHash = await getClientHash(vid, env.STATS_SECRET);
                 const batchRes = await executeWithSchemaFallback(
                     env.DB,
                     async () => {
