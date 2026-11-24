@@ -406,6 +406,7 @@
         if (likeBtn) {
             let debounceTimer = null;
             let inflightController = null;
+            let inflightTargetLiked = null;
 
             likeBtn.addEventListener("click", () => {
                 hasUserInteracted = true;
@@ -424,18 +425,28 @@
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     debounceTimer = null;
-                    if (isLiked === initialLiked) return; // 快速反悔且归位，无需向网络发送请求
+                    // 若无在途请求且已回到服务端确证状态，无需发出请求；
+                    // 若已有在途请求且当前目标与之不同（如发出 like 后快速反悔），仍需中止旧请求或补发纠偏动作
+                    if (!inflightController && isLiked === initialLiked) return;
+                    if (
+                        inflightController &&
+                        isLiked === inflightTargetLiked
+                    ) {
+                        return;
+                    }
                     const action = isLiked ? "like" : "unlike";
                     const targetLiked = isLiked;
 
                     if (inflightController) {
                         inflightController.abort();
                     }
-                    inflightController = new AbortController();
+                    const controller = new AbortController();
+                    inflightController = controller;
+                    inflightTargetLiked = targetLiked;
 
                     safeFetch("/api/stats", {
                         method: "POST",
-                        signal: inflightController.signal,
+                        signal: controller.signal,
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             id: rawId,
@@ -448,6 +459,16 @@
                             return r.json();
                         })
                         .then((res) => {
+                            if (
+                                inflightController &&
+                                inflightController !== controller
+                            ) {
+                                return;
+                            }
+                            if (inflightController === controller) {
+                                inflightController = null;
+                                inflightTargetLiked = null;
+                            }
                             hasLikedSettled = true;
                             if (res && typeof res.likes === "number") {
                                 confirmedLikes = res.likes;
@@ -485,7 +506,17 @@
                             }
                         })
                         .catch((err) => {
-                            if (err?.name === "AbortError") return; // 主动中止的旧请求不触发回滚
+                            if (
+                                err?.name === "AbortError" ||
+                                (inflightController &&
+                                    inflightController !== controller)
+                            ) {
+                                return; // 主动中止或已被新请求取代，不触发回滚
+                            }
+                            if (inflightController === controller) {
+                                inflightController = null;
+                                inflightTargetLiked = null;
+                            }
                             hasLikedSettled = true;
                             // 网络异常或 429 限流失败时，确定性回滚至最近一次服务端确证状态
                             isLiked = initialLiked;
@@ -502,12 +533,20 @@
 
             // 离开页面或切入后台时，立即同步送出挂起的防抖点赞操作，防止关闭或锁屏丢失数据
             function flushPendingLike() {
-                if (!debounceTimer || isLiked === initialLiked) return;
+                if (!debounceTimer) return;
                 clearTimeout(debounceTimer);
                 debounceTimer = null;
+                if (!inflightController && isLiked === initialLiked) return;
+                if (inflightController && isLiked === inflightTargetLiked) {
+                    return;
+                }
+                if (inflightController) {
+                    inflightController.abort();
+                    inflightController = null;
+                    inflightTargetLiked = null;
+                }
                 const action = isLiked ? "like" : "unlike";
                 const targetLiked = isLiked;
-                initialLiked = targetLiked; // 同步对齐基准，杜绝重返前台时误判吞掉反向操作
                 safeFetch("/api/stats", {
                     method: "POST",
                     keepalive: true,
@@ -523,6 +562,10 @@
                         hasLikedSettled = true;
                         if (res && typeof res.likes === "number") {
                             confirmedLikes = res.likes;
+                            initialLiked =
+                                typeof res.userLiked === "boolean"
+                                    ? res.userLiked
+                                    : targetLiked;
                             if (isLiked === targetLiked) {
                                 currentLikes = confirmedLikes;
                                 likesNodes.forEach((el) =>

@@ -1,5 +1,5 @@
 // assets/js/a11y.js
-// 阅读与外观设置控制面板（桌面端锚定 Popover、移动端居中 Modal，支持可组合封面与滑块同步）
+// 阅读与外观设置控制面板（桌面端锚定 Popover、移动端顶部下拉 Modal，支持可组合封面与滑块同步）
 window.A11yPanel = (() => {
     "use strict";
 
@@ -55,7 +55,7 @@ window.A11yPanel = (() => {
             return;
         }
 
-        const panelW = panel.offsetWidth || 320;
+        const panelW = panel.offsetWidth || 352;
         const panelH = panel.offsetHeight || 400;
         const gap = 12;
         const pad = 12;
@@ -95,14 +95,31 @@ window.A11yPanel = (() => {
 
     const applyRootState = (s) => {
         const root = document.documentElement;
-        root.style.fontSize = s.fontSize === "default" ? "" : s.fontSize;
-        root.dataset.heroBg = s.heroBg ? "on" : "off";
-        root.style.setProperty(
-            "--bf-hero-bg-opacity",
-            String(s.heroBgOpacity / 100),
-        );
-        root.dataset.heroBanner = s.heroBanner;
-        root.dataset.underlineLinks = s.underlineLinks ? "true" : "false";
+        const nextFontSize = s.fontSize === "default" ? "" : s.fontSize;
+        if (root.style.fontSize !== nextFontSize) {
+            root.style.fontSize = nextFontSize;
+        }
+        const nextHeroBg = s.heroBg ? "on" : "off";
+        if (root.dataset.heroBg !== nextHeroBg) {
+            root.dataset.heroBg = nextHeroBg;
+        }
+        const nextOpacity = String(s.heroBgOpacity / 100);
+        if (
+            root.style.getPropertyValue("--bf-hero-bg-opacity") !== nextOpacity
+        ) {
+            root.style.setProperty("--bf-hero-bg-opacity", nextOpacity);
+        }
+        if (root.dataset.heroBanner !== s.heroBanner) {
+            root.dataset.heroBanner = s.heroBanner;
+        }
+        const nextUnderline = s.underlineLinks ? "true" : "false";
+        if (root.dataset.underlineLinks !== nextUnderline) {
+            root.dataset.underlineLinks = nextUnderline;
+        }
+        const nextDisableBlur = s.disableBlur ? "true" : "false";
+        if (root.dataset.disableBlur !== nextDisableBlur) {
+            root.dataset.disableBlur = nextDisableBlur;
+        }
     };
 
     const FEATURES = {
@@ -133,7 +150,7 @@ window.A11yPanel = (() => {
                 if (mode !== "off") {
                     const bannerImg =
                         document.getElementById("hero-banner-image");
-                    if (bannerImg?.dataset.distinctHero === "true") {
+                    if (bannerImg) {
                         bannerImg.loading = "eager";
                         bannerImg.removeAttribute("fetchpriority");
                     }
@@ -144,6 +161,9 @@ window.A11yPanel = (() => {
         disableBlur: {
             default: false,
             apply: (enabled) => {
+                document.documentElement.dataset.disableBlur = enabled
+                    ? "true"
+                    : "false";
                 if (typeof window.setBackgroundBlur !== "function") return;
                 document
                     .querySelectorAll("script[data-blur-id]")
@@ -344,7 +364,6 @@ window.A11yPanel = (() => {
 
     const hydrateDomFeatures = () => {
         const current = getSettings();
-        FEATURES.disableBlur.apply(current.disableBlur);
         FEATURES.zenMode.apply(current.zenMode);
         if (current.heroBanner !== "off") {
             FEATURES.heroBanner.apply(current.heroBanner);
@@ -457,6 +476,12 @@ window.A11yPanel = (() => {
                     });
                 }
                 panel.addEventListener("close", () => syncExpanded(false));
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape" && panel.open) {
+                        panel.close();
+                        toggle?.focus();
+                    }
+                });
                 document.addEventListener("click", (e) => {
                     if (!panel.open) return;
                     if (
@@ -476,6 +501,18 @@ window.A11yPanel = (() => {
                 if (panel.open) {
                     panel.close();
                 } else {
+                    const menuToggle =
+                        document.getElementById("mobile-menu-toggle");
+                    if (menuToggle?.checked) {
+                        menuToggle.checked = false;
+                        document
+                            .querySelectorAll(
+                                'label[role="button"][for="mobile-menu-toggle"]',
+                            )
+                            .forEach((label) => {
+                                label.setAttribute("aria-expanded", "false");
+                            });
+                    }
                     panel.showModal();
                     syncExpanded(true);
                 }
@@ -491,12 +528,16 @@ window.A11yPanel = (() => {
         panel.addEventListener("close", () => {
             pressedOutside = false;
             syncExpanded(false);
-        });
-
-        // 防止模态弹窗开启时按 Esc 误关闭外层移动端菜单
-        panel.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                e.stopPropagation();
+            const isToggleHidden =
+                !toggle ||
+                !toggle.offsetParent ||
+                window.getComputedStyle(toggle).visibility === "hidden";
+            if (isToggleHidden) {
+                document
+                    .querySelector(
+                        'label[role="button"][for="mobile-menu-toggle"]',
+                    )
+                    ?.focus();
             }
         });
 
@@ -512,12 +553,22 @@ window.A11yPanel = (() => {
                 );
             };
             panel.addEventListener("pointerdown", (e) => {
-                pressedOutside = outside(e);
+                if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) {
+                    pressedOutside = false;
+                    return;
+                }
+                pressedOutside = e.target === panel && outside(e);
             });
             panel.addEventListener("pointerup", (e) => {
                 const wasPressedOutside = pressedOutside;
                 pressedOutside = false;
-                if (wasPressedOutside && outside(e)) {
+                if (
+                    wasPressedOutside &&
+                    e.isPrimary &&
+                    (e.pointerType !== "mouse" || e.button === 0) &&
+                    e.target === panel &&
+                    outside(e)
+                ) {
                     panel.close();
                 }
             });

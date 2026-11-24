@@ -22,8 +22,6 @@ showZenMode: true
 featureimage: "https://img.woruo03.com/posts/fedora-aic8800-wifi-bluetooth-driver/mc.jpg"
 ---
 
-{{< katex >}}
-
 手头这枚 USB 网卡是市面上常见的 **AX900M 双频 Wi-Fi 6 + 蓝牙 5.4 迷你网卡**（内置单天线，标称 2.4G 286Mbps + 5.8G 600Mbps，采用爱科微 AIC8800D80 芯片方案）。这类外设通常标榜“免驱”，是因为内部自带了一颗小容量闪存，插上电脑默认识别为一个只读 U 盘，方便 Windows 用户直接运行里面的安装包。
 
 但在 Linux（以内核 `7.3.4-300.fc45.x86_64` 的 Fedora 45 为例）下插入时，系统只会把它当成 U 盘挂载。因为 AIC8800D80 至今没有合并入 Linux 主线内核，系统里既没有自动脱壳切入网卡模式的 udev 规则，也没有内置固件注入模块与 Wi-Fi 驱动（蓝牙虽能被系统自带的 `btusb` 驱动认领，但缺少固件与补丁同样无法正常通信），网卡完全无法联网。

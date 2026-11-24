@@ -11,6 +11,7 @@ slug: "syntax-showcase"
 aliases: ["/posts/hello-world/"]
 showTableOfContents: true
 featureimage: "https://img.woruo03.com/posts/hello-world/rainbow-sea.png"
+imagePosition: "76% 30%"
 ---
 
 {{< katex >}}

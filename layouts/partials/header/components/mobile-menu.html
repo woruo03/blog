@@ -1,5 +1,5 @@
 {{ $mobileMenuStyle := .Site.Params.header.mobileMenuStyle | default "fullscreen" }}
-<div class="mobile-header-row relative flex items-center h-14 gap-4">
+<div class="mobile-header-row flex items-center h-14 gap-4">
   {{ if hugo.IsMultilingual }}
     {{ partial "header/components/translations.html" . }}
   {{ end }}
@@ -53,10 +53,10 @@
       role="dialog"
       aria-modal="true"
       aria-label="{{ i18n "nav.main_menu" }}"
-      style="scrollbar-gutter: stable;"
+      {{ if ne $mobileMenuStyle "dropdown" }}style="scrollbar-gutter: stable;"{{ end }}
       class="z-50 invisible overflow-y-auto opacity-0 transition-[opacity,visibility] duration-300 peer-checked:visible peer-checked:opacity-100
       {{ if eq $mobileMenuStyle "dropdown" }}
-        mobile-menu-style-dropdown absolute end-0 top-[calc(100%+0.75rem)] z-10 w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border border-neutral-200/80 bg-neutral/95 p-5 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95
+        mobile-menu-style-dropdown absolute rounded-2xl border border-neutral-200/80 bg-neutral/95 p-5 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95
       {{ else }}
         fixed inset-0 px-6 py-20 bg-neutral-50/97 dark:bg-neutral-900/99
       {{ end }}
@@ -67,26 +67,31 @@
         role="button"
         aria-expanded="false"
         aria-controls="mobile-menu-dialog"
-        class="{{ if eq $mobileMenuStyle "dropdown" }}absolute end-3 top-3 h-10 w-10 rounded-xl{{ else }}fixed end-8 top-5 z-50 h-12 w-12 rounded-full{{ end }} flex items-center justify-center cursor-pointer select-none bf-icon-color-hover border bf-border-color bf-border-color-hover bg-neutral-50 dark:bg-neutral-900">
+        class="{{ if eq $mobileMenuStyle "dropdown" }}bf-mobile-menu-close absolute h-10 w-10 rounded-xl{{ else }}fixed end-8 top-5 z-50 h-12 w-12 rounded-full{{ end }} flex items-center justify-center cursor-pointer select-none bf-icon-color-hover border bf-border-color bf-border-color-hover bg-neutral-50 dark:bg-neutral-900">
         <span class="sr-only">{{ i18n "nav.close_menu" }}</span>
         {{ partial "icon.html" "xmark" }}
       </label>
       <nav
         aria-label="{{ i18n "nav.mobile_menu" }}"
-        class="{{ if eq $mobileMenuStyle "dropdown" }}mt-10 space-y-3{{ else }}mx-auto max-w-md space-y-6{{ end }}">
+        class="bf-mobile-menu-nav {{ if eq $mobileMenuStyle "dropdown" }}space-y-3{{ else }}mx-auto max-w-md space-y-6{{ end }}">
         {{ template "mobile-main-menu" . }}
         {{ template "mobile-subnavigation" . }}
         {{ template "mobile-footer-components" . }}
       </nav>
     </div>
+    {{ if .Site.Params.enableA11y | default false }}
+      {{ partial "header/components/a11y.html" (dict "prefix" "mobile-menu-" "part" "dialog") }}
+    {{ end }}
   {{ end }}
 </div>
 
 {{ define "mobile-main-menu" }}
   {{ range .Site.Menus.main }}
+    {{/* 仅有图标、无文字名称的菜单项（如 GitHub）统一收纳至底部图标工具栏 */}}
+    {{ if and .Pre (not .Name) (not .HasChildren) }}{{ continue }}{{ end }}
     {{ $submenuId := printf "fullscreen-submenu-%s" (.Identifier | default .Name | anchorize) }}
     {{ $label := or .Name .Title }}
-    <div class="px-2">
+    <div class="bf-mobile-menu-item px-2">
       <div class="flex items-center gap-4">
         <a
           href="{{ .URL }}"
@@ -182,10 +187,33 @@
 {{ end }}
 
 {{ define "mobile-footer-components" }}
-  {{ if .Site.Params.enableA11y | default false }}
-    <div
-      class="flex flex-wrap items-center [&_span]:text-2xl gap-x-6 ps-2 mt-8 pt-8 border-t bf-border-color">
-      {{ partial "header/components/a11y.html" (dict "prefix" "mobile-menu-") }}
+  {{ $iconLinks := slice }}
+  {{ range .Site.Menus.main }}
+    {{ if and .Pre (not .Name) (not .HasChildren) }}
+      {{ $iconLinks = $iconLinks | append . }}
+    {{ end }}
+  {{ end }}
+  {{ $hasA11y := .Site.Params.enableA11y | default false }}
+  {{ if or $iconLinks $hasA11y }}
+    <div class="bf-mobile-menu-toolbar border-t bf-border-color">
+      <div class="bf-mobile-menu-icons">
+        {{ range $iconLinks }}
+          <a
+            href="{{ .URL }}"
+            aria-label="{{ .Title | default .Pre }}"
+            {{ with .Title }}title="{{ . }}"{{ end }}
+            {{ if or (strings.HasPrefix .URL "http:" ) (strings.HasPrefix .URL "https:" ) }}
+              target="_blank"
+              rel="noopener noreferrer"
+            {{ end }}
+            class="bf-mobile-menu-icon bf-icon-color-hover">
+            {{ partial "icon.html" .Pre }}
+          </a>
+        {{ end }}
+        {{ if $hasA11y }}
+          {{ partial "header/components/a11y.html" (dict "prefix" "mobile-menu-" "part" "button") }}
+        {{ end }}
+      </div>
     </div>
   {{ end }}
 {{ end }}

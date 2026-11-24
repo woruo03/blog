@@ -16,6 +16,7 @@ showComments: true # [推荐] 是否开启文末评论区
 # featureimagecaption: "插画来源：[画师名 / Pixiv](https://www.pixiv.net/)" # [可选] 在「设置」切换为「大图」前景封面时显示图注
 # featureimageAspect: "16 / 9" # [可选] 大图模式纵横比占位（防 CLS，默认 16 / 9）
 # imagePosition: "50% 20%" # [可选] 封面裁剪焦点（二次元人物推荐 50% 20% 或 top，防止裁掉头部）
+# imagePositionMobile: "70% 20%" # [可选] 手机窄屏（<768px）单独的封面焦点，未填时沿用 imagePosition
 # imagePositionFeature: "50% 20%" # [可选] 前景横幅（及开启卡片缩略图时）的裁剪焦点，未填时自动继承 imagePosition
 # showCardFeatureImage: false # [可选] 全站卡片默认不显示封面缩略图（list.showCardFeatureImage = false），如需单篇显示可设为 true
 # showHero: false # [可选] 单篇关闭顶部封面

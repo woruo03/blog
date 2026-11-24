@@ -4,6 +4,13 @@
     "use strict";
 
     const activeHandlers = new Map();
+    const supportsScrollTimeline = Boolean(
+        window.CSS &&
+            typeof window.CSS.supports === "function" &&
+            window.CSS.supports(
+                "(animation-timeline: scroll()) and (animation-range: 0% 100%)",
+            ),
+    );
 
     function setBackgroundBlur(
         targetId,
@@ -36,13 +43,18 @@
             return;
         }
 
-        blurElement.style.display = "";
+        if (blurElement.style.display !== "") {
+            blurElement.style.display = "";
+        }
         blurElement.setAttribute("role", "presentation");
         if (isMenuBlur) {
-            blurElement.classList.toggle(
-                "bf-menu-blur-disabled",
-                Boolean(disableBlur),
-            );
+            if (supportsScrollTimeline) {
+                if (blurElement.style.opacity !== "") {
+                    blurElement.style.opacity = "";
+                }
+                activeHandlers.set(targetId, { handler: null, key: stateKey });
+                return;
+            }
         }
 
         let lastOpacity = -1;
@@ -78,19 +90,32 @@
 
     window.setBackgroundBlur = setBackgroundBlur;
 
+    let initialDisableBlur = false;
+    const attrDisableBlur = document.documentElement.dataset.disableBlur;
+    if (attrDisableBlur === "true" || attrDisableBlur === "false") {
+        initialDisableBlur = attrDisableBlur === "true";
+    } else {
+        try {
+            const settings = JSON.parse(
+                localStorage.getItem("a11ySettings") || "{}",
+            );
+            initialDisableBlur = Boolean(settings.disableBlur);
+        } catch (_) {
+            initialDisableBlur = false;
+        }
+    }
+
     document.querySelectorAll("script[data-blur-id]").forEach((script) => {
         const targetId = script.getAttribute("data-blur-id");
         const scrollDivisor = Number(
             script.getAttribute("data-scroll-divisor") || 300,
         );
         const isMenuBlur = targetId === "menu-blur";
-        let settings = {};
-        try {
-            settings = JSON.parse(localStorage.getItem("a11ySettings") || "{}");
-        } catch (_) {
-            settings = {};
-        }
-        const disableBlur = settings.disableBlur || false;
-        setBackgroundBlur(targetId, scrollDivisor, disableBlur, isMenuBlur);
+        setBackgroundBlur(
+            targetId,
+            scrollDivisor,
+            initialDisableBlur,
+            isMenuBlur,
+        );
     });
 })();

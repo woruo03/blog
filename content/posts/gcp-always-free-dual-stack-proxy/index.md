@@ -9,6 +9,7 @@ categories: ["技术实战"]
 slug: "gcp-always-free-dual-stack-reality"
 showTableOfContents: true
 featureimage: "https://img.woruo03.com/posts/gcp-always-free-dual-stack-proxy/hakurei-reimu.jpg"
+imagePosition: "68% 25%"
 ---
 
 Google Cloud Platform (GCP) 的永久免费层（Always Free）中，位于美国指定区域的 `e2-micro` 实例配合标准网络服务层级（Standard Tier），每月提供 200 GB 的免费互联网出站流量。

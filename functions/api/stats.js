@@ -183,7 +183,7 @@ export async function onRequestGet(context) {
     const { request, env } = context;
     const corsHeaders = getCorsHeaders(request, env);
     const url = new URL(request.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get("id")?.trim() ?? null;
     const ids = url.searchParams.get("ids");
     const vid = url.searchParams.get("vid");
 
@@ -196,7 +196,7 @@ export async function onRequestGet(context) {
 
     // 爬虫与自动化工具直接返回空/零数据，杜绝无意义消耗 D1 读配额（禁止进入公共 CDN 缓存污染真实用户）
     if (isBotRequest(request)) {
-        if (ids) {
+        if (ids !== null) {
             return new Response(JSON.stringify({ data: {} }), {
                 headers: {
                     ...corsHeaders,
@@ -466,7 +466,7 @@ export async function onRequestPost(context) {
     }
 
     const contentType = request.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
+    if (!contentType.toLowerCase().includes("application/json")) {
         return new Response(
             JSON.stringify({
                 error: "Unsupported Media Type. Expected application/json",

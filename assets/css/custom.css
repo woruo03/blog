@@ -128,39 +128,126 @@ header .header-spacer {
     height: 3.75rem !important;
 }
 
-/* 2. 顶栏容器内边距与最大宽度与全局 body 容器完全同步 */
+/* 2. 顶栏容器内边距与最大宽度与全局 body 容器完全同步（--bf-header-gutter 同时供移动下拉菜单计算对称宽度） */
 header .header-container {
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
+    --bf-header-gutter: 1.5rem;
+    padding-inline: var(--bf-header-gutter) !important;
+}
+
+/* 消除 Blowfish 默认 .main-menu 的 p-1 pl-0 右侧 4px 偏移，使顶栏与正文字段严格左右对齐 */
+header .header-container > .main-menu {
+    padding-inline: 0 !important;
 }
 
 @media (min-width: 640px) {
     header .header-container {
-        padding-left: 3.5rem !important;
-        padding-right: 3.5rem !important;
+        --bf-header-gutter: 3.5rem;
     }
 }
 
 @media (min-width: 768px) {
     header .header-container {
-        padding-left: 6rem !important;
-        padding-right: 6rem !important;
+        --bf-header-gutter: 6rem;
     }
 }
 
 @media (min-width: 1024px) {
     header .header-container {
+        --bf-header-gutter: 2.5rem;
         max-width: 1440px !important;
-        padding-left: 2.5rem !important;
-        padding-right: 2.5rem !important;
     }
 }
 
 @media (min-width: 1440px) {
     header .header-container {
-        padding-left: 3rem !important;
-        padding-right: 3rem !important;
+        --bf-header-gutter: 3rem;
     }
+}
+
+/* 3. 移动端下拉菜单：以 .header-container 为定位容器，排除桌面端滚动条宽度影响，保证手机与窄桌面窗口左右外边距严格相等 */
+#mobile-menu-dialog.mobile-menu-style-dropdown {
+    inset-block-start: calc(100% + 0.5rem);
+    inset-inline: var(--bf-header-gutter, 1.5rem);
+    inline-size: auto;
+    max-block-size: calc(100vh - 5.5rem);
+    max-block-size: calc(100dvh - 5.5rem);
+    padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    #mobile-menu-dialog.mobile-menu-style-dropdown {
+        inset-inline-start: auto;
+        inset-inline-end: var(--bf-header-gutter, 3.5rem);
+        inline-size: min(22rem, calc(100% - 2 * var(--bf-header-gutter, 3.5rem)));
+    }
+}
+
+/* 内部对称：文字左缘 = 关闭按钮右缘 = 分隔线左右缘 = 1.25rem */
+.mobile-menu-style-dropdown .bf-mobile-menu-close {
+    inset-block-start: 1.25rem;
+    inset-inline-end: 1.25rem;
+}
+
+.mobile-menu-style-dropdown .bf-mobile-menu-nav {
+    margin-block-start: 0.25rem;
+}
+
+.mobile-menu-style-dropdown .bf-mobile-menu-nav > .bf-mobile-menu-item:first-child {
+    padding-inline-end: 3.25rem;
+}
+
+.mobile-menu-style-dropdown .bf-mobile-menu-item {
+    padding-inline: 0;
+}
+
+/* 底部纯图标工具栏（GitHub、设置）：分隔线与面板左右内边距齐平，图标组视觉左对齐且点击区 ≥ 44px */
+.bf-mobile-menu-toolbar {
+    margin-block-start: 1.25rem !important;
+    padding-block-start: 0.75rem;
+    padding-inline: 0.5rem;
+}
+
+.mobile-menu-style-dropdown .bf-mobile-menu-toolbar {
+    padding-inline: 0;
+}
+
+.bf-mobile-menu-icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: -0.625rem; /* 抵消 44px 点击区与 24px 图标之间的留白，不偏移分隔线 */
+    margin-block-end: -0.375rem;
+}
+
+.bf-mobile-menu-icon {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    font-size: 1.5rem;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.bf-mobile-menu-icon:hover {
+    background-color: rgba(var(--color-neutral-500), 0.12);
+}
+
+.bf-mobile-menu-icon:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.bf-mobile-menu-icon:focus-visible {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
+}
+
+html.dark .bf-mobile-menu-icon:focus-visible {
+    outline-color: rgb(var(--color-primary-400));
 }
 
 /* ============================================================
@@ -172,7 +259,7 @@ header .header-container {
     line-height: 1.4 !important;
 }
 
-@media (max-width: 640px) {
+@media (width < 40rem) {
     .typeit-quote {
         min-height: 5.5rem; /* 移动端窄屏容纳 2~3 行折行 */
     }
@@ -271,14 +358,6 @@ html.dark #zen-mode-button:focus-visible {
     outline-color: rgb(var(--color-primary-400));
 }
 
-@media (forced-colors: active) {
-    #button_likes:focus-visible,
-    #zen-mode-button:focus-visible {
-        outline: 2px solid Highlight !important;
-        outline-offset: 2px !important;
-    }
-}
-
 /* ============================================================
    无脚本环境友好优雅降级 (Modern Web Guidance: @media (scripting: none))
    禁用 JS 时，浏览量与点赞骨架屏占位清空并恢复默认继承色，不留空白或闪烁骨架
@@ -324,10 +403,31 @@ html.dark #zen-mode-button:focus-visible {
 /* ============================================================
    原生 <dialog> 设置弹窗与桌面端锚定 Popover (Modern Web Guidance)
    ============================================================ */
+#mobile-menu-dialog.mobile-menu-style-dropdown,
 dialog.bf-a11y-dialog {
-    width: min(320px, calc(100vw - 1.5rem));
-    max-height: calc(100dvh - 5rem);
+    background-color: rgba(var(--color-neutral), 0.95);
+    border-color: rgba(var(--color-neutral-200), 0.8);
+}
+
+html.dark #mobile-menu-dialog.mobile-menu-style-dropdown,
+html.dark dialog.bf-a11y-dialog {
+    background-color: rgba(var(--color-neutral-800), 0.95);
+    border-color: rgba(var(--color-neutral-700), 0.8);
+}
+
+dialog.bf-a11y-dialog {
+    inline-size: min(22rem, calc(100vw - 2 * var(--bf-header-gutter, 1.5rem)));
+    inline-size: min(22rem, calc(100dvw - 2 * var(--bf-header-gutter, 1.5rem)));
+    max-inline-size: none;
+    max-block-size: calc(100vh - 5.5rem);
+    max-block-size: calc(100dvh - 5.5rem);
     overflow-y: auto;
+    contain: layout style;
+    opacity: 0;
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
 }
 
 dialog.bf-a11y-dialog:modal {
@@ -337,21 +437,35 @@ dialog.bf-a11y-dialog:modal {
 dialog.bf-a11y-dialog::backdrop {
     overflow: hidden;
     overscroll-behavior: contain;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(2px);
-}
-
-dialog.bf-settings-popover-desktop[popover]::backdrop {
     background: transparent;
     backdrop-filter: none;
 }
 
-dialog.bf-settings-popover-desktop[popover] {
-    opacity: 0;
-    transition-property: opacity, transform, display, overlay;
-    transition-duration: 180ms;
-    transition-timing-function: ease-out;
-    transition-behavior: allow-discrete;
+dialog.bf-a11y-dialog:not(.bf-settings-popover-desktop) {
+    position: fixed;
+    inset-block: 4.5rem auto;
+    inset-inline: var(--bf-header-gutter, 1.5rem);
+    margin: 0;
+    inline-size: auto;
+}
+
+@media (min-width: 640px) {
+    dialog.bf-a11y-dialog:not(.bf-settings-popover-desktop) {
+        inset-inline-start: auto;
+        inset-inline-end: var(--bf-header-gutter, 3.5rem);
+        inline-size: min(22rem, calc(100vw - 2 * var(--bf-header-gutter, 3.5rem)));
+        inline-size: min(22rem, calc(100dvw - 2 * var(--bf-header-gutter, 3.5rem)));
+    }
+}
+
+dialog.bf-a11y-dialog[open] {
+    opacity: 1;
+}
+
+@starting-style {
+    dialog.bf-a11y-dialog[open] {
+        opacity: 0;
+    }
 }
 
 dialog.bf-settings-popover-desktop[popover]:popover-open {
@@ -365,8 +479,18 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    dialog.bf-settings-popover-desktop[popover] {
+    dialog.bf-a11y-dialog {
         transform: translateY(-6px);
+    }
+
+    dialog.bf-a11y-dialog[open] {
+        transform: translateY(0);
+    }
+
+    @starting-style {
+        dialog.bf-a11y-dialog[open] {
+            transform: translateY(-6px);
+        }
     }
 
     dialog.bf-settings-popover-desktop[popover]:popover-open {
@@ -381,7 +505,7 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    dialog.bf-settings-popover-desktop[popover] {
+    dialog.bf-a11y-dialog {
         transition-duration: 80ms;
     }
 }
@@ -390,7 +514,7 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
     dialog.bf-settings-popover-desktop[popover] {
         inset: auto;
         margin: 0;
-        margin-block-start: 0.75rem;
+        margin-block-start: 0.5rem;
         position-area: block-end span-inline-start;
         position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline;
     }
@@ -402,8 +526,13 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
 }
 
 /* ============================================================
-   Mermaid 暗色模式连线标签对比度修复 (WCAG AA >= 4.5:1)
+   Mermaid 按需懒加载防溢出与暗色模式连线标签对比度修复 (WCAG AA >= 4.5:1)
    ============================================================ */
+pre.mermaid {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 html.dark .mermaid .edgeLabel,
 html.dark .mermaid .edgeLabel p,
 html.dark .mermaid .edgeLabel span {
@@ -602,7 +731,7 @@ html.dark .bf-share-btn:hover {
 }
 
 /* 禁用模糊效果时，顶栏切换为高不透明实底并加细底边线，杜绝目录与正文文字穿透重叠 */
-#menu-blur.bf-menu-blur-disabled {
+html[data-disable-blur="true"] #menu-blur {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-image: none !important;
@@ -610,7 +739,7 @@ html.dark .bf-share-btn:hover {
     border-bottom: 1px solid rgba(var(--color-neutral-300), 0.7);
 }
 
-html.dark #menu-blur.bf-menu-blur-disabled {
+html.dark[data-disable-blur="true"] #menu-blur {
     background-color: rgb(var(--color-neutral-800)) !important;
     border-bottom-color: rgba(var(--color-neutral-700), 0.7);
 }
@@ -637,6 +766,19 @@ html[data-hero-banner="big"] #hero {
 .bf-hero-bg-img {
     opacity: var(--bf-hero-bg-opacity, 0.5);
     transition: opacity 150ms ease-out;
+}
+
+/* 封面裁剪焦点：由 front matter imagePosition / imagePositionMobile 注入的 CSS 变量驱动 */
+.bf-hero-bg-img,
+.bf-hero-banner__img {
+    object-position: var(--bf-hero-pos, 50% 50%);
+}
+
+/* 与 Blowfish 切换移动菜单的 md 断点 (768px) 保持一致 */
+@media (width < 48rem) {
+    .bf-hero-bg-img {
+        object-position: var(--bf-hero-pos-mobile, var(--bf-hero-pos, 50% 50%));
+    }
 }
 
 .bf-hero-bg-scrim {
@@ -709,7 +851,7 @@ html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
     text-decoration: underline;
 }
 
-/* 现代原生 CSS Scroll-Driven Animation：合成层驱动背景渐隐 */
+/* 现代原生 CSS Scroll-Driven Animation：合成层驱动背景渐隐与顶栏磨砂显隐 */
 @supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
     @keyframes bf-hero-scroll-fade {
         from {
@@ -718,6 +860,21 @@ html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
         to {
             opacity: 0;
         }
+    }
+
+    @keyframes bf-menu-blur-scroll {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    #menu-blur {
+        animation: bf-menu-blur-scroll auto linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 80px;
     }
 
     #hero-background[data-scroll-fade="true"] {
@@ -743,12 +900,6 @@ html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
    「设置」面板分组、浓度滑块、分段切换与重置按钮样式
    ============================================================ */
 
-.bf-settings-mobile-label {
-    font-size: 0.9375rem !important;
-    line-height: 1.25 !important;
-    font-weight: 500;
-}
-
 .bf-settings-section {
     display: flex;
     flex-direction: column;
@@ -757,11 +908,11 @@ html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
 
 .bf-settings-section + .bf-settings-section {
     padding-top: 1rem;
-    border-top: 1px solid rgba(var(--color-neutral-300), 0.7);
+    border-top: 1px solid rgb(var(--color-neutral-300));
 }
 
 html.dark .bf-settings-section + .bf-settings-section {
-    border-top-color: rgba(var(--color-neutral-700), 0.7);
+    border-top-color: rgb(var(--color-neutral-700));
 }
 
 .bf-settings-section-title {
@@ -827,14 +978,14 @@ html.dark .bf-settings-range {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.25rem;
     padding: 0.25rem;
-    border-radius: 0.625rem;
-    background-color: rgba(var(--color-neutral-200), 0.8);
-    border: 1px solid rgba(var(--color-neutral-300), 0.75);
+    border-radius: 0.75rem;
+    background-color: rgb(var(--color-neutral-50));
+    border: 1px solid rgb(var(--color-neutral-300));
 }
 
 html.dark .bf-settings-segment {
-    background-color: rgba(var(--color-neutral-900), 0.75);
-    border-color: rgba(var(--color-neutral-700), 0.8);
+    background-color: rgb(var(--color-neutral-900));
+    border-color: rgb(var(--color-neutral-700));
 }
 
 .bf-settings-segment-option {
@@ -843,7 +994,7 @@ html.dark .bf-settings-segment {
     align-items: center;
     justify-content: center;
     padding: 0.375rem 0.5rem;
-    border-radius: 0.45rem;
+    border-radius: 0.5rem;
     font-size: 0.8125rem;
     font-weight: 500;
     color: rgb(var(--color-neutral-600));
@@ -868,14 +1019,14 @@ html.dark .bf-settings-segment-option {
 }
 
 .bf-settings-segment-option:has(input:checked) {
-    background-color: #ffffff;
+    background-color: rgba(var(--color-neutral-200), 0.75);
     color: rgb(var(--color-primary-600));
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
 
 html.dark .bf-settings-segment-option:has(input:checked) {
-    background-color: rgba(var(--color-neutral-700), 0.95);
-    color: rgb(var(--color-primary-300));
+    background-color: rgb(var(--color-neutral-800));
+    color: rgb(var(--color-primary-400));
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
@@ -885,18 +1036,30 @@ html.dark .bf-settings-segment-option:has(input:checked) {
 }
 
 @media (forced-colors: active) {
+    #button_likes:focus-visible,
+    #zen-mode-button:focus-visible {
+        outline: 2px solid Highlight !important;
+        outline-offset: 2px !important;
+    }
+
+    dialog.bf-a11y-dialog,
+    .bf-settings-segment,
+    .bf-settings-reset {
+        border: 1px solid CanvasText;
+    }
+
     .bf-settings-segment-option:has(input:checked) {
         outline: 2px solid Highlight;
     }
 }
 
 .bf-settings-footer {
-    padding-top: 0.875rem;
-    border-top: 1px solid rgba(var(--color-neutral-300), 0.7);
+    padding-top: 1rem;
+    border-top: 1px solid rgb(var(--color-neutral-300));
 }
 
 html.dark .bf-settings-footer {
-    border-top-color: rgba(var(--color-neutral-700), 0.7);
+    border-top-color: rgb(var(--color-neutral-700));
 }
 
 .bf-settings-reset {
@@ -904,14 +1067,14 @@ html.dark .bf-settings-footer {
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 2.375rem;
+    min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
-    border-radius: 0.625rem;
-    font-size: 0.8125rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    color: rgb(var(--color-neutral-600));
-    background-color: rgba(var(--color-neutral-200), 0.55);
-    border: 1px solid rgba(var(--color-neutral-300), 0.8);
+    color: rgb(var(--color-neutral-700));
+    background-color: rgb(var(--color-neutral-50));
+    border: 1px solid rgb(var(--color-neutral-300));
     cursor: pointer;
     transition:
         background-color 150ms ease-out,
@@ -921,21 +1084,21 @@ html.dark .bf-settings-footer {
 }
 
 html.dark .bf-settings-reset {
-    color: rgb(var(--color-neutral-300));
-    background-color: rgba(var(--color-neutral-900), 0.55);
-    border-color: rgba(var(--color-neutral-700), 0.85);
+    color: rgb(var(--color-neutral-200));
+    background-color: rgb(var(--color-neutral-900));
+    border-color: rgb(var(--color-neutral-700));
 }
 
 .bf-settings-reset:hover {
     color: rgb(var(--color-primary-600));
-    border-color: rgba(var(--color-primary-500), 0.75);
-    background-color: rgba(var(--color-primary-500), 0.1);
+    border-color: rgb(var(--color-primary-600));
+    background-color: rgba(var(--color-primary-500), 0.08);
 }
 
 html.dark .bf-settings-reset:hover {
-    color: rgb(var(--color-primary-300));
-    border-color: rgba(var(--color-primary-400), 0.75);
-    background-color: rgba(var(--color-primary-400), 0.14);
+    color: rgb(var(--color-primary-400));
+    border-color: rgb(var(--color-primary-400));
+    background-color: rgba(var(--color-primary-400), 0.12);
 }
 
 @media (prefers-reduced-motion: no-preference) {

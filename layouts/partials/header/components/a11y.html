@@ -1,4 +1,5 @@
 {{- $prefix := .prefix | default "" -}}
+{{- $part := .part | default "all" -}}
 {{- $isDesktopPopover := ne $prefix "mobile-menu-" -}}
 {{- $hasArticleHero := or
   (site.Params.article.showHero | default false)
@@ -9,40 +10,42 @@
   (eq site.Params.term.heroStyle "background")
 -}}
 {{- $shouldDisableBlur := or site.Params.homepage.layoutBackgroundBlur site.Params.article.layoutBackgroundBlur site.Params.list.layoutBackgroundBlur (hasPrefix site.Params.header.layout "fixed") -}}
+{{- if eq $part "all" -}}
 <div class="flex items-center">
+{{- end -}}
+  {{- if or (eq $part "all") (eq $part "button") }}
   <button
     id="{{ $prefix }}a11y-toggle"
     aria-label="{{ i18n "a11y.open_panel" }}"
     title="{{ i18n "a11y.title" }}"
     aria-haspopup="dialog"
     aria-expanded="false"
+    aria-controls="{{ $prefix }}a11y-panel"
     {{- if $isDesktopPopover }}
     popovertarget="{{ $prefix }}a11y-panel"
-    aria-controls="{{ $prefix }}a11y-panel"
     {{- end }}
     type="button"
-    class="flex items-center justify-center{{ if eq $prefix "mobile-menu-" }} gap-2{{ end }} bf-icon-color-hover">
+    class="{{ if eq $prefix "mobile-menu-" }}bf-mobile-menu-icon {{ end }}flex items-center justify-center bf-icon-color-hover">
     {{ partial "icon.html" "settings" }}
-    {{- if eq $prefix "mobile-menu-" -}}
-      <span class="bf-settings-mobile-label">{{ i18n "a11y.title" }}</span>
-    {{- end -}}
   </button>
+  {{- end -}}
 
+  {{- if or (eq $part "all") (eq $part "dialog") }}
   <dialog
     id="{{ $prefix }}a11y-panel"
     {{- if $isDesktopPopover }}
     popover="auto"
-    class="bf-a11y-dialog bf-settings-popover-desktop rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+    class="bf-a11y-dialog bf-settings-popover-desktop rounded-2xl border border-neutral-200/80 bg-neutral/95 p-0 text-neutral-900 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95 dark:text-neutral-100"
     {{- else }}
     closedby="any"
-    class="bf-a11y-dialog m-auto rounded-xl border border-neutral-300 bg-neutral-50 p-0 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+    class="bf-a11y-dialog rounded-2xl border border-neutral-200/80 bg-neutral/95 p-0 text-neutral-900 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95 dark:text-neutral-100"
     {{- end }}
     aria-labelledby="{{ $prefix }}a11y-panel-title">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
+    <div class="p-5">
+      <div class="flex items-center justify-between mb-5">
         <h2
           id="{{ $prefix }}a11y-panel-title"
-          class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          class="text-2xl font-bold tracking-tight text-neutral-700 dark:text-neutral-200">
           {{ i18n "a11y.title" }}
         </h2>
         <button
@@ -53,7 +56,7 @@
           popovertarget="{{ $prefix }}a11y-panel"
           popovertargetaction="hide"
           {{- end }}
-          class="flex items-center justify-center rounded-lg p-1 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 cursor-pointer"
+          class="h-10 w-10 rounded-xl flex items-center justify-center cursor-pointer select-none bf-icon-color-hover border bf-border-color bf-border-color-hover bg-neutral-50 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200"
           aria-label="{{ i18n "a11y.close_panel" }}"
           title="{{ i18n "a11y.close_panel" }}">
           {{ partial "icon.html" "xmark" }}
@@ -66,7 +69,7 @@
             <h3 class="bf-settings-section-title">{{ i18n "a11y.section_visual" }}</h3>
             {{- if $hasArticleHero -}}
               <div class="flex items-center justify-between">
-                <label for="{{ $prefix }}hero-bg" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <label for="{{ $prefix }}hero-bg" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
                   {{ i18n "a11y.hero_bg" }}
                 </label>
                 <div class="ios-toggle">
@@ -76,7 +79,7 @@
 
               <div class="bf-settings-range-row" data-hero-bg-opacity-wrap>
                 <div class="flex items-center justify-between">
-                  <label for="{{ $prefix }}hero-bg-opacity" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  <label for="{{ $prefix }}hero-bg-opacity" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
                     {{ i18n "a11y.hero_bg_opacity" }}
                   </label>
                   <output
@@ -98,7 +101,7 @@
               </div>
 
               <fieldset class="bf-settings-segment-fieldset">
-                <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-200">
                   {{ i18n "a11y.hero_banner" }}
                 </legend>
                 <div class="bf-settings-segment">
@@ -120,7 +123,7 @@
 
             {{- if $shouldDisableBlur -}}
               <div class="flex items-center justify-between">
-                <label for="{{ $prefix }}disable-blur" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <label for="{{ $prefix }}disable-blur" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
                   {{ i18n "a11y.disable_blur" }}
                 </label>
                 <div class="ios-toggle">
@@ -134,7 +137,7 @@
         <div class="bf-settings-section">
           <h3 class="bf-settings-section-title">{{ i18n "a11y.section_reading" }}</h3>
           <div class="flex items-center justify-between">
-            <label for="{{ $prefix }}zen-mode" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            <label for="{{ $prefix }}zen-mode" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
               {{ i18n "a11y.zen_mode" }}
             </label>
             <div class="ios-toggle">
@@ -143,7 +146,7 @@
           </div>
 
           <div class="flex items-center justify-between">
-            <label for="{{ $prefix }}underline-links" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            <label for="{{ $prefix }}underline-links" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
               {{ i18n "a11y.show_link_underline" }}
             </label>
             <div class="ios-toggle">
@@ -153,7 +156,7 @@
 
           <div class="bf-settings-range-row">
             <div class="flex items-center justify-between">
-              <label for="{{ $prefix }}font-size" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <label for="{{ $prefix }}font-size" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
                 {{ i18n "a11y.font_size" }}
               </label>
               <output
@@ -187,5 +190,8 @@
       </div>
     </div>
   </dialog>
+  {{- end -}}
+{{- if eq $part "all" -}}
 </div>
+{{- end -}}
 {{- /* Trim EOF */ -}}

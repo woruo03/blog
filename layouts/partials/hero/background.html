@@ -119,44 +119,8 @@
   {{- $aspect := .Params.featureimageAspect -}}
 
   {{- $bgPosition := $.Params.imagePosition | default site.Params.imagePosition -}}
+  {{- $bgPositionMobile := $.Params.imagePositionMobile | default site.Params.imagePositionMobile -}}
   {{- $bannerPosition := $.Params.imagePositionFeature | default $.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition -}}
-  {{- $sameHeroSrc := and $backgroundURL $bannerURL (eq $backgroundURL $bannerURL) -}}
-
-  {{ if and $backgroundURL $shouldAddHeaderSpace }}
-    <div id="hero" aria-hidden="true" class="h-[150px] md:h-[200px]"></div>
-  {{ end }}
-
-  {{- with $bannerURL -}}
-    <figure id="hero-banner" class="bf-hero-banner">
-      <div class="bf-hero-banner__frame"{{ with $aspect }} style="--bf-hero-aspect: {{ . | safeCSS }};"{{ end }}>
-        <img
-          id="hero-banner-image"
-          src="{{ . }}"
-          alt="{{ $alt }}"
-          {{- if $sameHeroSrc }}
-          loading="eager"
-          {{- else }}
-          loading="lazy"
-          fetchpriority="low"
-          data-distinct-hero="true"
-          {{- end }}
-          decoding="async"
-          {{- with $banner }}
-            {{- if ne .MediaType.SubType "svg" }}
-          width="{{ .Width }}"
-          height="{{ .Height }}"
-            {{- end }}
-          {{- end }}
-          class="bf-hero-banner__img w-full h-full nozoom object-cover"
-          {{ with $bannerPosition }}style="object-position: {{ . | safeCSS }};"{{ end }} />
-      </div>
-      {{- if $caption }}
-        <figcaption class="bf-hero-banner__caption text-sm text-neutral-700 dark:text-neutral-400 text-center">
-          {{ $caption | markdownify }}
-        </figcaption>
-      {{- end }}
-    </figure>
-  {{- end -}}
 
   {{- with $backgroundURL -}}
     <div
@@ -172,7 +136,7 @@
         decoding="async"
         fetchpriority="high"
         class="bf-hero-bg-img nozoom absolute inset-0 w-full h-full object-cover"
-        {{ if $bgPosition }}style="object-position: {{ $bgPosition | safeCSS }};"{{ end }} />
+        {{ if or $bgPosition $bgPositionMobile }}style="{{ with $bgPosition }}--bf-hero-pos: {{ . | safeCSS }};{{ end }}{{ with $bgPositionMobile }}--bf-hero-pos-mobile: {{ . | safeCSS }};{{ end }}"{{ end }} />
       {{ if $isClassic }}
         <div
           class="absolute inset-0 bg-gradient-to-t from-neutral to-transparent mix-blend-normal dark:from-neutral-800"></div>
@@ -209,5 +173,36 @@
           data-fade-distance="500"></script>
       {{ end }}
     {{ end }}
+  {{- end -}}
+
+  {{ if and $backgroundURL $shouldAddHeaderSpace }}
+    <div id="hero" aria-hidden="true" class="h-[150px] md:h-[200px]"></div>
+  {{ end }}
+
+  {{- with $bannerURL -}}
+    <figure id="hero-banner" class="bf-hero-banner">
+      <div class="bf-hero-banner__frame"{{ with $aspect }} style="--bf-hero-aspect: {{ . | safeCSS }};"{{ end }}>
+        <img
+          id="hero-banner-image"
+          src="{{ . }}"
+          alt="{{ $alt }}"
+          loading="lazy"
+          fetchpriority="low"
+          decoding="async"
+          {{- with $banner }}
+            {{- if ne .MediaType.SubType "svg" }}
+          width="{{ .Width }}"
+          height="{{ .Height }}"
+            {{- end }}
+          {{- end }}
+          class="bf-hero-banner__img w-full h-full nozoom object-cover"
+          {{ with $bannerPosition }}style="--bf-hero-pos: {{ . | safeCSS }};"{{ end }} />
+      </div>
+      {{- if $caption }}
+        <figcaption class="bf-hero-banner__caption text-sm text-neutral-700 dark:text-neutral-400 text-center">
+          {{ $caption | markdownify }}
+        </figcaption>
+      {{- end }}
+    </figure>
   {{- end -}}
 {{ end }}

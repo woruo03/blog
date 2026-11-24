@@ -260,8 +260,34 @@
           updateTOC(config)
         }, { passive: true })
 
-        updateTOC(config)
-        tocView?.classList.add('smart-toc-ready')
+        if (document.body) {
+          const zenObserver = new MutationObserver(() => {
+            if (!document.body.classList.contains('zen-mode-enable')) {
+              onScroll()
+            }
+          })
+          zenObserver.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class']
+          })
+        }
+
+        const desktopMq = window.matchMedia('(min-width: 1024px)')
+        const onMediaChange = (e) => {
+          if (e.matches) onScroll()
+        }
+        if (desktopMq.addEventListener) {
+          desktopMq.addEventListener('change', onMediaChange)
+        } else if (desktopMq.addListener) {
+          desktopMq.addListener(onMediaChange)
+        }
+
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            updateTOC(config)
+            tocView?.classList.add('smart-toc-ready')
+          }, 0)
+        })
       }
 
       document.readyState === 'loading'
