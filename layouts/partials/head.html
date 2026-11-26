@@ -30,8 +30,8 @@
   {{ with $metaDescription }}
     <meta name="description" content="{{ . | plainify }}">
   {{ end }}
-  {{ with  .Params.Tags | default .Site.Params.keywords }}
-    <meta name="keywords" content="{{ range . }}{{ . }},{{ end }}">
+  {{ with .Params.Tags | default .Site.Params.keywords }}
+    <meta name="keywords" content="{{ delimit . ", " }}">
   {{ end }}
   {{ with .Params.robots | default .Site.Params.robots }}
     <meta name="robots" content="{{ . }}">
@@ -69,29 +69,60 @@
     {{ end }}
   {{ end }}
 
-  {{/* Social */}}
+  {{/* Social: 优先使用文章自身封面图（含 R2 外链 featureimage）并输出 summary_large_image，无封面时回退 defaultSocialImage */}}
   {{ template "_internal/opengraph.html" . }}
-  {{ template "_internal/twitter_cards.html" . }}
-  {{/* Use defaultSocialImage if feature image does not exist */}}
-  {{ $featureImage := "" }}
-  {{ $pageImages := .Resources.ByType "image" }}
-  {{ range slice "*featured*" "*cover*" "*thumbnail*" }}
-    {{ if not $featureImage }}
-      {{ $featureImage = $pageImages.GetMatch . }}
+  {{ $hasInternalSocialImage := gt (len (.Params.images | default slice)) 0 }}
+  {{ if not $hasInternalSocialImage }}
+    {{ $pageImages := .Resources.ByType "image" }}
+    {{ range slice "*feature*" "*cover*" "*thumbnail*" }}
+      {{ if and (not $hasInternalSocialImage) ($pageImages.GetMatch .) }}
+        {{ $hasInternalSocialImage = true }}
+      {{ end }}
     {{ end }}
   {{ end }}
-  {{ if not $featureImage }}
-    {{ with .Site.Params.defaultSocialImage }}
-      {{ $socialImage := "" }}
+
+  {{ $customSocialImageURL := "" }}
+  {{ $useLargeTwitterCard := false }}
+  {{ if not $hasInternalSocialImage }}
+    {{ with partial "functions/feature-image.html" . }}
       {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
-        {{ $socialImage = resources.GetRemote . }}
+        {{ $customSocialImageURL = . }}
+        {{ $useLargeTwitterCard = true }}
       {{ else }}
-        {{ $socialImage = resources.Get . }}
+        {{ with or ($.Resources.Get .) (resources.Get .) }}
+          {{ $customSocialImageURL = .RelPermalink | absURL }}
+          {{ $useLargeTwitterCard = true }}
+        {{ end }}
       {{ end }}
-      {{ with $socialImage }}
-        <meta name="twitter:image" content="{{ .RelPermalink | absURL }}">
-        <meta property="og:image" content="{{ .RelPermalink | absURL }}">
+    {{ end }}
+    {{ if not $customSocialImageURL }}
+      {{ with .Site.Params.defaultSocialImage }}
+        {{ $socialImage := "" }}
+        {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
+          {{ $socialImage = resources.GetRemote . }}
+        {{ else }}
+          {{ $socialImage = resources.Get . }}
+        {{ end }}
+        {{ with $socialImage }}
+          {{ $customSocialImageURL = .RelPermalink | absURL }}
+        {{ end }}
       {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ if $useLargeTwitterCard }}
+    <meta property="og:image" content="{{ $customSocialImageURL }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ $customSocialImageURL }}">
+    <meta name="twitter:title" content="{{ .Title | plainify | emojify }}">
+    {{ with $metaDescription }}
+      <meta name="twitter:description" content="{{ . | plainify }}">
+    {{ end }}
+  {{ else }}
+    {{ template "_internal/twitter_cards.html" . }}
+    {{ with $customSocialImageURL }}
+      <meta name="twitter:image" content="{{ . }}">
+      <meta property="og:image" content="{{ . }}">
     {{ end }}
   {{ end }}
 
@@ -186,7 +217,7 @@
     src="{{ $jsAppearance.RelPermalink }}"
     integrity="{{ $jsAppearance.Data.Integrity }}"></script>
   {{ partial "language-redirect.html" . }}
-  {{ $isArticle := or (in (site.Params.mainSections | default (slice "posts")) .Type) (in (site.Params.mainSections | default (slice "posts")) .Section) }}
+  {{ $isArticle := partial "functions/is-article.html" . }}
   {{ $showZenMode := cond (isset .Params "showzenmode") .Params.showZenMode (.Site.Params.article.showZenMode | default false) }}
   {{ if and .IsPage $showZenMode }}
     {{ $jsZenMode := resources.Get "js/zen-mode.js" | resources.Minify | resources.Fingerprint $alg }}

@@ -16,11 +16,10 @@ var updateMeta = () => {
 var updateMermaidTheme = () => {
   if (typeof mermaid === "undefined") return;
   const isDark = document.documentElement.classList.contains("dark");
-  const mermaids = document.querySelectorAll("pre.mermaid");
-  mermaids.forEach((el) => {
+  document.querySelectorAll("pre.mermaid").forEach((el) => {
     if (el.getAttribute("data-processed")) {
       el.removeAttribute("data-processed");
-      el.innerHTML = el.getAttribute("data-graph") || "";
+      el.textContent = el.getAttribute("data-graph") || "";
     } else if (!el.hasAttribute("data-graph")) {
       el.setAttribute("data-graph", el.textContent);
     }
@@ -81,17 +80,16 @@ var updateLogo = (targetAppearance) => {
   };
 
   const sitePreference = root.getAttribute("data-default-appearance");
-  const userPreference = getSavedAppearance();
   const autoAppearance = root.getAttribute("data-auto-appearance") === "true";
   const colorSchemeMq =
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 
-  const shouldBeDark =
+  const computePreferredDark = (userPreference) =>
     (sitePreference === "dark" && userPreference === null) ||
     userPreference === "dark" ||
     (autoAppearance && Boolean(colorSchemeMq?.matches) && userPreference !== "light");
 
-  if (shouldBeDark && !root.classList.contains("dark")) {
+  if (computePreferredDark(getSavedAppearance()) && !root.classList.contains("dark")) {
     root.classList.add("dark");
   }
 
@@ -101,15 +99,19 @@ var updateLogo = (targetAppearance) => {
 
   let syncAppearanceTooltip = null;
 
+  const syncAppearanceUI = (includeMeta = true) => {
+    const current = getTargetAppearance();
+    if (includeMeta) updateMeta();
+    updateMermaidTheme();
+    syncAppearanceTooltip?.(current);
+    window.updateLogo?.(current);
+  };
+
   if (autoAppearance && colorSchemeMq?.addEventListener) {
     colorSchemeMq.addEventListener("change", (event) => {
       if (getSavedAppearance() !== null) return;
       root.classList.toggle("dark", event.matches);
-      const nextAppearance = getTargetAppearance();
-      updateMeta();
-      updateMermaidTheme();
-      syncAppearanceTooltip?.(nextAppearance);
-      window.updateLogo?.(nextAppearance);
+      syncAppearanceUI();
     });
   }
 
@@ -128,10 +130,7 @@ var updateLogo = (targetAppearance) => {
       });
     };
 
-    const currentAppearance = getTargetAppearance();
-    window.updateLogo?.(currentAppearance);
-    updateMermaidTheme();
-    syncAppearanceTooltip(currentAppearance);
+    syncAppearanceUI(false);
 
     afterFirstPaint(() => {
       updateMeta();
@@ -150,16 +149,14 @@ var updateLogo = (targetAppearance) => {
       if (!btn) return;
       btn.addEventListener("click", () => {
         root.classList.toggle("dark");
-        const targetAppearance = getTargetAppearance();
-        setSavedAppearance(targetAppearance);
-        updateMeta();
-        updateMermaidTheme();
-        syncAppearanceTooltip(targetAppearance);
-        window.updateLogo?.(targetAppearance);
+        setSavedAppearance(getTargetAppearance());
+        syncAppearanceUI();
       });
       btn.addEventListener("contextmenu", (event) => {
         event.preventDefault();
         removeSavedAppearance();
+        root.classList.toggle("dark", computePreferredDark(null));
+        syncAppearanceUI();
       });
     };
 

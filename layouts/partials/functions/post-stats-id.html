@@ -1,10 +1,22 @@
-{{/* layouts/partials/functions/post-stats-id.html */}} {{/*
-统一计算文章、分类与标签的规范化统计标识符，兼容 Page 对象与 Map 字典入参 */}}
-{{ $page := . }} {{ if reflect.IsMap . }} {{ $page = .context }} {{ end }} {{
-$id := "" }} {{ with $page }} {{ if eq .Kind "taxonomy" }} {{ $id = printf
-"taxonomy_%s" .Page.Data.Plural }} {{ else if eq .Kind "term" }} {{ $id = printf
-"term_%s" .Page.Data.Term }} {{ else if .File }} {{ $path := .File.Path }} {{
-range .AllTranslations }} {{ $path = replace $path (printf ".%s.md" .Lang) ".md"
-}} {{ end }} {{ $id = replace (replace $path "\\" "/") "/" "-" }} {{ else if
-.RelPermalink }} {{ $id = replace (strings.Trim .RelPermalink "/") "/" "-" }} {{
-end }} {{ end }} {{ return $id }}
+{{/* 统一计算文章、分类与标签的规范化统计标识符，兼容 Page 对象与 Map 字典入参 */}}
+{{- $page := . -}}
+{{- if reflect.IsMap . -}}
+  {{- $page = .context -}}
+{{- end -}}
+{{- $id := "" -}}
+{{- with $page -}}
+  {{- if eq .Kind "taxonomy" -}}
+    {{- $id = printf "taxonomy_%s" .Page.Data.Plural -}}
+  {{- else if eq .Kind "term" -}}
+    {{- $id = printf "term_%s" .Page.Data.Term -}}
+  {{- else if .File -}}
+    {{- $path := .File.Path -}}
+    {{- range .AllTranslations -}}
+      {{- $path = replace $path (printf ".%s.md" .Lang) ".md" -}}
+    {{- end -}}
+    {{- $id = replace (replace $path "\\" "/") "/" "-" -}}
+  {{- else if .RelPermalink -}}
+    {{- $id = replace (strings.Trim .RelPermalink "/") "/" "-" -}}
+  {{- end -}}
+{{- end -}}
+{{- return $id -}}

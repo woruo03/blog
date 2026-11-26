@@ -12,7 +12,10 @@ window.A11yPanel = (() => {
             window.CSS.supports("position-area: block-end"),
     );
 
-    const anchoredPopovers = new Set();
+    const panels = [];
+    const anchoredPopovers = [];
+
+    const toKebab = (key) => key.replace(/([A-Z])/g, "-$1").toLowerCase();
 
     const clampOpacity = (value) => {
         const num = Number(value);
@@ -82,59 +85,48 @@ window.A11yPanel = (() => {
     };
 
     const repositionOpenPopovers = () => {
-        if (supportsAnchorPosition || anchoredPopovers.size === 0) return;
+        if (supportsAnchorPosition || anchoredPopovers.length === 0) return;
         anchoredPopovers.forEach(({ panel, toggle }) => {
             const isOpen = supportsPopover
                 ? panel.matches(":popover-open")
                 : panel.open;
-            if (isOpen) {
-                positionPopoverFallback(panel, toggle);
-            }
+            if (isOpen) positionPopoverFallback(panel, toggle);
         });
     };
 
-    const applyRootState = (s) => {
-        const root = document.documentElement;
-        const nextFontSize = s.fontSize === "default" ? "" : s.fontSize;
-        if (root.style.fontSize !== nextFontSize) {
-            root.style.fontSize = nextFontSize;
-        }
-        const nextHeroBg = s.heroBg ? "on" : "off";
-        if (root.dataset.heroBg !== nextHeroBg) {
-            root.dataset.heroBg = nextHeroBg;
-        }
-        const nextOpacity = String(s.heroBgOpacity / 100);
-        if (
-            root.style.getPropertyValue("--bf-hero-bg-opacity") !== nextOpacity
-        ) {
-            root.style.setProperty("--bf-hero-bg-opacity", nextOpacity);
-        }
-        if (root.dataset.heroBanner !== s.heroBanner) {
-            root.dataset.heroBanner = s.heroBanner;
-        }
-        const nextUnderline = s.underlineLinks ? "true" : "false";
-        if (root.dataset.underlineLinks !== nextUnderline) {
-            root.dataset.underlineLinks = nextUnderline;
-        }
-        const nextDisableBlur = s.disableBlur ? "true" : "false";
-        if (root.dataset.disableBlur !== nextDisableBlur) {
-            root.dataset.disableBlur = nextDisableBlur;
+    const setRootDataset = (key, value) => {
+        if (document.documentElement.dataset[key] !== value) {
+            document.documentElement.dataset[key] = value;
         }
     };
 
     const FEATURES = {
         heroBg: {
             default: true,
+            normalize: Boolean,
+            applyRoot: (enabled) =>
+                setRootDataset("heroBg", enabled ? "on" : "off"),
             apply: (enabled) => {
-                document.documentElement.dataset.heroBg = enabled
-                    ? "on"
-                    : "off";
+                setRootDataset("heroBg", enabled ? "on" : "off");
                 window.dispatchEvent(new Event("bf:hero-settings-change"));
             },
         },
-
         heroBgOpacity: {
             default: 50,
+            normalize: clampOpacity,
+            applyRoot: (value) => {
+                const next = String(value / 100);
+                if (
+                    document.documentElement.style.getPropertyValue(
+                        "--bf-hero-bg-opacity",
+                    ) !== next
+                ) {
+                    document.documentElement.style.setProperty(
+                        "--bf-hero-bg-opacity",
+                        next,
+                    );
+                }
+            },
             apply: (value) => {
                 document.documentElement.style.setProperty(
                     "--bf-hero-bg-opacity",
@@ -142,11 +134,12 @@ window.A11yPanel = (() => {
                 );
             },
         },
-
         heroBanner: {
             default: "off",
+            normalize: normalizeBanner,
+            applyRoot: (mode) => setRootDataset("heroBanner", mode),
             apply: (mode) => {
-                document.documentElement.dataset.heroBanner = mode;
+                setRootDataset("heroBanner", mode);
                 if (mode !== "off") {
                     const bannerImg =
                         document.getElementById("hero-banner-image");
@@ -157,33 +150,27 @@ window.A11yPanel = (() => {
                 }
             },
         },
-
         disableBlur: {
             default: false,
+            normalize: Boolean,
+            applyRoot: (enabled) =>
+                setRootDataset("disableBlur", enabled ? "true" : "false"),
             apply: (enabled) => {
-                document.documentElement.dataset.disableBlur = enabled
-                    ? "true"
-                    : "false";
-                if (typeof window.setBackgroundBlur !== "function") return;
-                document
-                    .querySelectorAll("script[data-blur-id]")
-                    .forEach((script) => {
-                        const targetId = script.getAttribute("data-blur-id");
-                        const scrollDivisor = Number(
-                            script.getAttribute("data-scroll-divisor") || 300,
-                        );
-                        window.setBackgroundBlur(
-                            targetId,
-                            scrollDivisor,
-                            enabled,
-                            targetId === "menu-blur",
-                        );
-                    });
+                setRootDataset("disableBlur", enabled ? "true" : "false");
+                if (typeof window.setBackgroundBlurDisabled === "function") {
+                    window.setBackgroundBlurDisabled(enabled);
+                }
             },
         },
-
         fontSize: {
             default: "default",
+            normalize: normalizeFontSize,
+            applyRoot: (size) => {
+                const next = size === "default" ? "" : size;
+                if (document.documentElement.style.fontSize !== next) {
+                    document.documentElement.style.fontSize = next;
+                }
+            },
             apply: (size) => {
                 document.documentElement.style.fontSize =
                     size === "default" ? "" : size;
@@ -192,18 +179,17 @@ window.A11yPanel = (() => {
                 }
             },
         },
-
         underlineLinks: {
             default: false,
-            apply: (enabled) => {
-                document.documentElement.dataset.underlineLinks = enabled
-                    ? "true"
-                    : "false";
-            },
+            normalize: Boolean,
+            applyRoot: (enabled) =>
+                setRootDataset("underlineLinks", enabled ? "true" : "false"),
+            apply: (enabled) =>
+                setRootDataset("underlineLinks", enabled ? "true" : "false"),
         },
-
         zenMode: {
             default: false,
+            normalize: Boolean,
             apply: (enabled) => {
                 if (
                     !document.getElementById("single_header") ||
@@ -211,61 +197,55 @@ window.A11yPanel = (() => {
                 ) {
                     return;
                 }
-                const isActive =
-                    document.body?.classList.contains("zen-mode-enable");
-                if (Boolean(enabled) !== Boolean(isActive)) {
-                    const zenBtn = document.getElementById("zen-mode-button");
-                    if (zenBtn && typeof window._toggleZenMode === "function") {
-                        window._toggleZenMode(zenBtn, {
-                            scrollToHeader: false,
-                        });
-                    }
+                const target = Boolean(enabled);
+                const isActive = Boolean(
+                    document.body?.classList.contains("zen-mode-enable"),
+                );
+                if (target === isActive) return;
+
+                const zenBtn = document.getElementById("zen-mode-button");
+                if (zenBtn && typeof window._toggleZenMode === "function") {
+                    window._toggleZenMode(zenBtn, { scrollToHeader: false });
+                } else {
+                    document.body?.classList.toggle("zen-mode-enable", target);
                 }
             },
         },
     };
 
+    const FEATURE_KEYS = Object.keys(FEATURES);
+    const DEFAULTS = Object.freeze(
+        Object.fromEntries(FEATURE_KEYS.map((k) => [k, FEATURES[k].default])),
+    );
+
     let settings = null;
 
-    const getDefaults = () =>
-        Object.fromEntries(
-            Object.entries(FEATURES).map(([key, config]) => [
-                key,
-                config.default,
-            ]),
-        );
-
     const sanitizeSettings = (raw) => {
-        const defaults = getDefaults();
-        const merged = { ...defaults, ...(raw || {}) };
-
+        const src = raw && typeof raw === "object" ? raw : {};
+        const next = { ...DEFAULTS };
+        FEATURE_KEYS.forEach((key) => {
+            if (key in src) {
+                next[key] = FEATURES[key].normalize(src[key]);
+            }
+        });
         // 兼容旧版 disableImages 偏好迁移
         if (
-            typeof raw?.heroBg !== "boolean" &&
-            typeof raw?.disableImages === "boolean"
+            typeof src.heroBg !== "boolean" &&
+            typeof src.disableImages === "boolean"
         ) {
-            merged.heroBg = !raw.disableImages;
-        } else {
-            merged.heroBg = Boolean(merged.heroBg);
+            next.heroBg = !src.disableImages;
         }
-
-        merged.heroBgOpacity = clampOpacity(merged.heroBgOpacity);
-        merged.heroBanner = normalizeBanner(merged.heroBanner);
-        merged.disableBlur = Boolean(merged.disableBlur);
-        merged.underlineLinks = Boolean(merged.underlineLinks);
-        merged.zenMode = Boolean(merged.zenMode);
-        merged.fontSize = normalizeFontSize(merged.fontSize);
-
-        return merged;
+        return next;
     };
 
     const getSettings = () => {
         if (settings) return settings;
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            settings = sanitizeSettings(JSON.parse(saved || "{}"));
+            settings = sanitizeSettings(
+                JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
+            );
         } catch {
-            settings = getDefaults();
+            settings = { ...DEFAULTS };
         }
         return settings;
     };
@@ -279,138 +259,121 @@ window.A11yPanel = (() => {
     };
 
     const syncControls = (key, value) => {
-        const suffix = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+        panels.forEach((entry) => {
+            const ctrl = entry.controls[key];
+            if (!ctrl) return;
 
-        if (key === "heroBanner") {
-            document
-                .querySelectorAll(`input[type="radio"][name$="${suffix}"]`)
-                .forEach((radio) => {
+            if (key === "heroBanner") {
+                ctrl.radios.forEach((radio) => {
                     radio.checked = radio.value === value;
                 });
-            return;
-        }
+                return;
+            }
 
-        if (key === "heroBgOpacity" || key === "fontSize") {
-            const isFont = key === "fontSize";
-            const num = isFont ? fontSizeToNumber(value) : value;
-            let text = `${value}%`;
+            if (key === "heroBgOpacity" || key === "fontSize") {
+                const isFont = key === "fontSize";
+                const num = isFont ? fontSizeToNumber(value) : value;
+                const defaultLabel = ctrl.input.dataset.defaultLabel || "默认";
+                const text = isFont
+                    ? value === "default"
+                        ? `${defaultLabel} (16px)`
+                        : value
+                    : `${value}%`;
+                ctrl.input.value = String(num);
+                ctrl.input.setAttribute("aria-valuetext", text);
+                if (ctrl.output) ctrl.output.textContent = text;
+                return;
+            }
 
-            document.querySelectorAll(`[id$="${suffix}"]`).forEach((input) => {
-                if (isFont) {
-                    const defaultLabel = input.dataset.defaultLabel || "默认";
-                    text =
-                        value === "default" ? `${defaultLabel} (16px)` : value;
+            if (ctrl.input?.type === "checkbox") {
+                ctrl.input.checked = Boolean(value);
+            }
+
+            if (key === "heroBg") {
+                const active = Boolean(value);
+                if (entry.opacityWrap) {
+                    entry.opacityWrap.classList.toggle("is-disabled", !active);
                 }
-                input.value = String(num);
-                input.setAttribute("aria-valuetext", text);
-            });
-
-            document
-                .querySelectorAll(`[id$="${suffix}-value"]`)
-                .forEach((output) => {
-                    output.textContent = text;
-                });
-            return;
-        }
-
-        document.querySelectorAll(`[id$="${suffix}"]`).forEach((el) => {
-            if (el.type === "checkbox") {
-                el.checked = Boolean(value);
+                const opacityCtrl = entry.controls.heroBgOpacity;
+                if (opacityCtrl?.input) {
+                    opacityCtrl.input.disabled = !active;
+                }
             }
         });
-
-        if (key === "heroBg") {
-            const active = Boolean(value);
-            document
-                .querySelectorAll("[data-hero-bg-opacity-wrap]")
-                .forEach((wrap) => {
-                    wrap.classList.toggle("is-disabled", !active);
-                });
-            document
-                .querySelectorAll('[id$="hero-bg-opacity"]')
-                .forEach((input) => {
-                    input.disabled = !active;
-                });
-        }
     };
 
     const syncAllControls = () => {
         const current = getSettings();
-        Object.entries(current).forEach(([key, value]) => {
-            syncControls(key, value);
-        });
+        FEATURE_KEYS.forEach((key) => syncControls(key, current[key]));
     };
 
     const setSetting = (key, value, { persist = true } = {}) => {
+        const feature = FEATURES[key];
+        if (!feature) return;
         const current = getSettings();
-        current[key] = value;
-        settings = sanitizeSettings(current);
-        if (persist) {
-            persistSettings(settings);
-        }
-        FEATURES[key]?.apply(settings[key]);
-        syncControls(key, settings[key]);
+        const normalized = feature.normalize(value);
+        current[key] = normalized;
+        if (persist) persistSettings(current);
+        feature.apply(normalized);
+        syncControls(key, normalized);
     };
 
     const updateSetting = (key, value) =>
         setSetting(key, value, { persist: true });
 
-    const applyAll = () => {
-        const current = getSettings();
-        Object.entries(current).forEach(([key, value]) => {
-            FEATURES[key]?.apply(value);
-        });
-    };
-
-    const hydrateDomFeatures = () => {
-        const current = getSettings();
-        FEATURES.zenMode.apply(current.zenMode);
-        if (current.heroBanner !== "off") {
-            FEATURES.heroBanner.apply(current.heroBanner);
-        }
-    };
-
     const resetSettings = () => {
-        settings = getDefaults();
+        settings = { ...DEFAULTS };
         persistSettings(settings);
-        applyAll();
+        FEATURE_KEYS.forEach((key) => FEATURES[key].apply(settings[key]));
         syncAllControls();
     };
 
     const initPanel = (panel) => {
         const prefix = panel.id.replace("a11y-panel", "");
+        const controls = {};
 
-        Object.keys(FEATURES).forEach((key) => {
-            const elementId = `${prefix}${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
-
+        FEATURE_KEYS.forEach((key) => {
+            const elementId = `${prefix}${toKebab(key)}`;
             if (key === "heroBanner") {
-                panel
-                    .querySelectorAll(`input[type="radio"][name="${elementId}"]`)
-                    .forEach((radio) => {
-                        radio.addEventListener("change", (e) => {
-                            if (e.target.checked) {
-                                updateSetting(key, e.target.value);
-                            }
-                        });
+                const radios = Array.from(
+                    panel.querySelectorAll(
+                        `input[type="radio"][name="${elementId}"]`,
+                    ),
+                );
+                if (radios.length === 0) return;
+                controls[key] = { radios };
+                radios.forEach((radio) => {
+                    radio.addEventListener("change", (e) => {
+                        if (e.target.checked) updateSetting(key, e.target.value);
                     });
+                });
                 return;
             }
 
-            const element = document.getElementById(elementId);
-            if (!element) return;
+            const input = document.getElementById(elementId);
+            if (!input) return;
 
-            if (element.type === "range") {
-                element.addEventListener("input", (e) => {
+            if (input.type === "range") {
+                const output = document.getElementById(`${elementId}-value`);
+                controls[key] = { input, output };
+                input.addEventListener("input", (e) => {
                     setSetting(key, e.target.value, { persist: false });
                 });
-                element.addEventListener("change", (e) => {
+                input.addEventListener("change", (e) => {
                     updateSetting(key, e.target.value);
                 });
-            } else if (element.type === "checkbox") {
-                element.addEventListener("change", (e) => {
+            } else if (input.type === "checkbox") {
+                controls[key] = { input };
+                input.addEventListener("change", (e) => {
                     updateSetting(key, e.target.checked);
                 });
             }
+        });
+
+        panels.push({
+            panel,
+            controls,
+            opacityWrap: panel.querySelector("[data-hero-bg-opacity-wrap]"),
         });
 
         const toggle = document.getElementById(`${prefix}a11y-toggle`);
@@ -419,31 +382,23 @@ window.A11yPanel = (() => {
         const isPopover = panel.hasAttribute("popover");
 
         const syncExpanded = (open) => {
-            if (toggle) {
-                toggle.setAttribute("aria-expanded", String(open));
-            }
+            toggle?.setAttribute("aria-expanded", String(open));
         };
 
-        if (resetBtn) {
-            resetBtn.addEventListener("click", resetSettings);
-        }
+        resetBtn?.addEventListener("click", resetSettings);
 
         if (isPopover) {
             if (!supportsAnchorPosition) {
-                anchoredPopovers.add({ panel, toggle });
+                anchoredPopovers.push({ panel, toggle });
             }
 
             if (supportsPopover) {
                 let returnFocusOnClose = false;
-                if (closeBtn) {
-                    closeBtn.addEventListener("click", () => {
-                        returnFocusOnClose = true;
-                    });
-                }
+                closeBtn?.addEventListener("click", () => {
+                    returnFocusOnClose = true;
+                });
                 panel.addEventListener("keydown", (e) => {
-                    if (e.key === "Escape") {
-                        returnFocusOnClose = true;
-                    }
+                    if (e.key === "Escape") returnFocusOnClose = true;
                 });
                 panel.addEventListener("toggle", (e) => {
                     const open = e.newState === "open";
@@ -457,24 +412,20 @@ window.A11yPanel = (() => {
                     }
                 });
             } else {
-                // 不支持原生 Popover API 的极旧浏览器非模态降级
-                if (toggle) {
-                    toggle.addEventListener("click", () => {
-                        if (panel.open) {
-                            panel.close();
-                        } else {
-                            panel.show();
-                            syncExpanded(true);
-                            positionPopoverFallback(panel, toggle);
-                        }
-                    });
-                }
-                if (closeBtn) {
-                    closeBtn.addEventListener("click", () => {
+                // 不支持原生 Popover API 的旧浏览器非模态降级
+                toggle?.addEventListener("click", () => {
+                    if (panel.open) {
                         panel.close();
-                        toggle?.focus();
-                    });
-                }
+                    } else {
+                        panel.show();
+                        syncExpanded(true);
+                        positionPopoverFallback(panel, toggle);
+                    }
+                });
+                closeBtn?.addEventListener("click", () => {
+                    panel.close();
+                    toggle?.focus();
+                });
                 panel.addEventListener("close", () => syncExpanded(false));
                 document.addEventListener("keydown", (e) => {
                     if (e.key === "Escape" && panel.open) {
@@ -483,8 +434,8 @@ window.A11yPanel = (() => {
                     }
                 });
                 document.addEventListener("click", (e) => {
-                    if (!panel.open) return;
                     if (
+                        !panel.open ||
                         panel.contains(e.target) ||
                         toggle?.contains(e.target)
                     ) {
@@ -496,32 +447,27 @@ window.A11yPanel = (() => {
             return;
         }
 
-        if (toggle) {
-            toggle.addEventListener("click", () => {
-                if (panel.open) {
-                    panel.close();
-                } else {
-                    const menuToggle =
-                        document.getElementById("mobile-menu-toggle");
-                    if (menuToggle?.checked) {
-                        menuToggle.checked = false;
-                        document
-                            .querySelectorAll(
-                                'label[role="button"][for="mobile-menu-toggle"]',
-                            )
-                            .forEach((label) => {
-                                label.setAttribute("aria-expanded", "false");
-                            });
-                    }
-                    panel.showModal();
-                    syncExpanded(true);
-                }
-            });
-        }
+        toggle?.addEventListener("click", () => {
+            if (panel.open) {
+                panel.close();
+                return;
+            }
+            const menuToggle = document.getElementById("mobile-menu-toggle");
+            if (menuToggle?.checked) {
+                menuToggle.checked = false;
+                document
+                    .querySelectorAll(
+                        'label[role="button"][for="mobile-menu-toggle"]',
+                    )
+                    .forEach((label) => {
+                        label.setAttribute("aria-expanded", "false");
+                    });
+            }
+            panel.showModal();
+            syncExpanded(true);
+        });
 
-        if (closeBtn) {
-            closeBtn.addEventListener("click", () => panel.close());
-        }
+        closeBtn?.addEventListener("click", () => panel.close());
 
         let pressedOutside = false;
 
@@ -543,7 +489,7 @@ window.A11yPanel = (() => {
 
         // 为不支持 <dialog closedby="any"> 的浏览器（如 Safari）提供外部点击轻关闭降级
         if (!("closedBy" in HTMLDialogElement.prototype)) {
-            const outside = (e) => {
+            const isOutside = (e) => {
                 const r = panel.getBoundingClientRect();
                 return (
                     e.clientX < r.left ||
@@ -553,11 +499,11 @@ window.A11yPanel = (() => {
                 );
             };
             panel.addEventListener("pointerdown", (e) => {
-                if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) {
-                    pressedOutside = false;
-                    return;
-                }
-                pressedOutside = e.target === panel && outside(e);
+                pressedOutside =
+                    e.isPrimary &&
+                    (e.pointerType !== "mouse" || e.button === 0) &&
+                    e.target === panel &&
+                    isOutside(e);
             });
             panel.addEventListener("pointerup", (e) => {
                 const wasPressedOutside = pressedOutside;
@@ -567,7 +513,7 @@ window.A11yPanel = (() => {
                     e.isPrimary &&
                     (e.pointerType !== "mouse" || e.button === 0) &&
                     e.target === panel &&
-                    outside(e)
+                    isOutside(e)
                 ) {
                     panel.close();
                 }
@@ -579,7 +525,11 @@ window.A11yPanel = (() => {
     };
 
     const init = () => {
-        hydrateDomFeatures();
+        const current = getSettings();
+        FEATURES.zenMode.apply(current.zenMode);
+        if (current.heroBanner !== "off") {
+            FEATURES.heroBanner.apply(current.heroBanner);
+        }
         document
             .querySelectorAll("dialog[id$='a11y-panel']")
             .forEach(initPanel);
@@ -603,10 +553,11 @@ window.A11yPanel = (() => {
     };
 
     // 首帧前仅写入 <html> 状态属性，零 DOM 查询、零重排、零阻塞
-    applyRootState(getSettings());
+    const initial = getSettings();
+    FEATURE_KEYS.forEach((key) => FEATURES[key].applyRoot?.(initial[key]));
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
+        document.addEventListener("DOMContentLoaded", init, { once: true });
     } else {
         init();
     }

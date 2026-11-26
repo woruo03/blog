@@ -11,10 +11,7 @@
       {{ $featured = resources.GetRemote . }}
     {{ end }}
   {{ else }}
-    {{ $featured = $page.Resources.Get . }}
-    {{ if not $featured }}
-      {{ $featured = resources.Get . }}
-    {{ end }}
+    {{ $featured = or ($page.Resources.Get .) (resources.Get .) }}
   {{ end }}
 {{ end }}
 
@@ -82,21 +79,15 @@
   {{ if $backgroundURL }}
     {{ $bannerURL = $backgroundURL }}
     {{ $banner = $background }}
-  {{ else if $background }}
-    {{ $banner = $background }}
   {{ end }}
 {{ end }}
 
 {{ if not $bannerURL }}
   {{ with $banner }}
-    {{ if and $background (eq . $background) $backgroundURL }}
-      {{ $bannerURL = $backgroundURL }}
-    {{ else }}
-      {{ $bannerURL = .RelPermalink }}
-      {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
-        {{ $size := site.Store.Get "backgroundImageWidth" }}
-        {{ $bannerURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
-      {{ end }}
+    {{ $bannerURL = .RelPermalink }}
+    {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
+      {{ $size := site.Store.Get "backgroundImageWidth" }}
+      {{ $bannerURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
     {{ end }}
   {{ end }}
 {{ end }}
@@ -109,13 +100,10 @@
   {{ $shouldAddHeaderSpace := cond (isset $.Params "layoutbackgroundheaderspace") $.Params.layoutBackgroundHeaderSpace (cond (isset $scopeParams "layoutbackgroundheaderspace") $scopeParams.layoutBackgroundHeaderSpace true) }}
   {{ $blurStyle := $.Params.layoutBackgroundBlurStyle | default ($scopeParams.layoutBackgroundBlurStyle | default "fade") }}
   {{ $isClassic := eq $blurStyle "classic" }}
+  {{ $alg := site.Params.fingerprintAlgorithm | default "sha512" }}
 
-  {{ $caption := "" }}
-  {{ if .Params.featureimagecaption }}
-    {{- $caption = .Params.featureimagecaption -}}
-  {{ end }}
-  {{- $alt := .Page.Title -}}
-  {{- with .Page.Params.alt }}{{ $alt = . }}{{ end -}}
+  {{- $caption := .Params.featureimagecaption | default "" -}}
+  {{- $alt := .Page.Params.alt | default .Page.Title -}}
   {{- $aspect := .Params.featureimageAspect -}}
 
   {{- $bgPosition := $.Params.imagePosition | default site.Params.imagePosition -}}
@@ -153,8 +141,7 @@
           id="background-blur"
           aria-hidden="true"
           class="fixed opacity-0 inset-x-0 top-0 h-full single_hero_background nozoom backdrop-blur-xl bg-neutral-100/75 dark:bg-neutral-800/60"></div>
-        {{ $backgroundBlur := resources.Get "js/background-blur.js" }}
-        {{ $backgroundBlur = $backgroundBlur | resources.Minify | resources.Fingerprint ($.Site.Params.fingerprintAlgorithm | default "sha512") }}
+        {{ $backgroundBlur := resources.Get "js/background-blur.js" | resources.Minify | resources.Fingerprint $alg }}
         <script
           defer
           type="text/javascript"
@@ -162,8 +149,7 @@
           integrity="{{ $backgroundBlur.Data.Integrity }}"
           data-blur-id="background-blur"></script>
       {{ else }}
-        {{ $heroFade := resources.Get "js/hero-scroll-fade.js" }}
-        {{ $heroFade = $heroFade | resources.Minify | resources.Fingerprint ($.Site.Params.fingerprintAlgorithm | default "sha512") }}
+        {{ $heroFade := resources.Get "js/hero-scroll-fade.js" | resources.Minify | resources.Fingerprint $alg }}
         <script
           defer
           type="text/javascript"

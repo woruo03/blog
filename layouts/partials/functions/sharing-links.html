@@ -1,24 +1,24 @@
 {{/* 统一解析当前页分享栏开关与平台列表，返回 dict: enabled (bool), links (slice) */}}
-{{ $isArticle := or (in (site.Params.mainSections | default (slice "posts")) .Type) (in (site.Params.mainSections | default (slice "posts")) .Section) }}
-{{ $enabled := false }}
-{{ $links := slice }}
-{{ if isset .Params "sharinglinks" }}
-  {{ $raw := .Params.sharingLinks }}
-  {{ if reflect.IsSlice $raw }}
-    {{ $enabled = true }}
-    {{ $links = $raw }}
-  {{ else if eq $raw true }}
-    {{ $enabled = true }}
-    {{ $siteLinks := site.Params.article.sharingLinks }}
-    {{ if reflect.IsSlice $siteLinks }}
-      {{ $links = $siteLinks }}
-    {{ end }}
-  {{ end }}
-{{ else if and .IsPage $isArticle }}
-  {{ $siteLinks := site.Params.article.sharingLinks }}
-  {{ if reflect.IsSlice $siteLinks }}
-    {{ $enabled = gt (len $siteLinks) 0 }}
-    {{ $links = $siteLinks }}
-  {{ end }}
-{{ end }}
-{{ return (dict "enabled" $enabled "links" $links) }}
+{{- $isArticle := partial "functions/is-article.html" . -}}
+{{- $enabled := false -}}
+{{- $links := slice -}}
+{{- if isset .Params "sharinglinks" -}}
+  {{- $raw := .Params.sharingLinks -}}
+  {{- if reflect.IsSlice $raw -}}
+    {{- $enabled = true -}}
+    {{- $links = $raw -}}
+  {{- else if eq $raw true -}}
+    {{- $enabled = true -}}
+    {{- with site.Params.article.sharingLinks -}}
+      {{- if reflect.IsSlice . }}{{ $links = . }}{{ end -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if and .IsPage $isArticle -}}
+  {{- with site.Params.article.sharingLinks -}}
+    {{- if reflect.IsSlice . -}}
+      {{- $enabled = gt (len .) 0 -}}
+      {{- $links = . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "enabled" $enabled "links" $links) -}}

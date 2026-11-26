@@ -237,19 +237,6 @@ header .header-container > .main-menu {
     background-color: rgba(var(--color-neutral-500), 0.12);
 }
 
-.bf-mobile-menu-icon:focus:not(:focus-visible) {
-    outline: none;
-}
-
-.bf-mobile-menu-icon:focus-visible {
-    outline: 2px solid rgb(var(--color-primary-500));
-    outline-offset: 2px;
-}
-
-html.dark .bf-mobile-menu-icon:focus-visible {
-    outline-color: rgb(var(--color-primary-400));
-}
-
 /* ============================================================
    打字机组件防抖与排版优化 (消除 CLS 高度跳变，内联文本与光标自适应)
    ============================================================ */
@@ -342,19 +329,35 @@ html.dark #button_likes:hover {
     }
 }
 
+/* 统一键盘焦点无障碍环（移除鼠标点击白框，保持所有交互控件亮/暗焦点色一致） */
 #button_likes:focus:not(:focus-visible),
-#zen-mode-button:focus:not(:focus-visible) {
+#zen-mode-button:focus:not(:focus-visible),
+.bf-mobile-menu-icon:focus:not(:focus-visible),
+dialog.bf-a11y-dialog button:focus:not(:focus-visible) {
     outline: none;
+    box-shadow: none;
 }
 
 #button_likes:focus-visible,
-#zen-mode-button:focus-visible {
+#zen-mode-button:focus-visible,
+.bf-mobile-menu-icon:focus-visible,
+.bf-share-btn:focus-visible,
+.bf-settings-range:focus-visible,
+dialog.bf-a11y-dialog button:focus-visible,
+.ios-toggle:has(input:focus-visible),
+.bf-settings-segment-option:has(input:focus-visible) {
     outline: 2px solid rgb(var(--color-primary-500));
     outline-offset: 2px;
 }
 
 html.dark #button_likes:focus-visible,
-html.dark #zen-mode-button:focus-visible {
+html.dark #zen-mode-button:focus-visible,
+html.dark .bf-mobile-menu-icon:focus-visible,
+html.dark .bf-share-btn:focus-visible,
+html.dark .bf-settings-range:focus-visible,
+html.dark dialog.bf-a11y-dialog button:focus-visible,
+html.dark .ios-toggle:has(input:focus-visible),
+html.dark .bf-settings-segment-option:has(input:focus-visible) {
     outline-color: rgb(var(--color-primary-400));
 }
 
@@ -398,7 +401,7 @@ html.dark #zen-mode-button:focus-visible {
         }
 
         #reading-progress {
-            animation: grow-reading-progress auto linear;
+            animation: grow-reading-progress auto linear both;
             animation-timeline: scroll(root block);
         }
     }
@@ -524,11 +527,6 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
     }
 }
 
-.ios-toggle:has(input:focus-visible) {
-    outline: 2px solid rgb(var(--color-primary-500));
-    outline-offset: 2px;
-}
-
 /* ============================================================
    Mermaid 按需懒加载防溢出与暗色模式连线标签对比度修复 (WCAG AA >= 4.5:1)
    ============================================================ */
@@ -553,25 +551,14 @@ html.dark .mermaid .edgeLabel rect {
    智能大纲未聚焦子项首帧防抖：与 initTOC() 初始展开首章保持一致，消除 CLS
    ============================================================ */
 @media (scripting: enabled) {
-    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready)
-        #TableOfContents
-        li
-        ul {
+    #TOCView[data-collapse-unfocused="true"] #TableOfContents li ul {
         display: none;
     }
     #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready)
         #TableOfContents
         > ul
         > li:first-child
-        > ul {
-        display: block;
-    }
-    #TOCView[data-collapse-unfocused="true"].smart-toc-ready
-        #TableOfContents
-        li
-        ul {
-        display: none;
-    }
+        > ul,
     #TOCView[data-collapse-unfocused="true"].smart-toc-ready
         #TableOfContents
         li
@@ -602,17 +589,6 @@ html.dark .mermaid .edgeLabel rect {
 #desktop-a11y-toggle:hover,
 #desktop-a11y-toggle:focus-visible {
     opacity: 1;
-}
-
-/* 2. 原生 <dialog> 关闭按钮移除鼠标点击焦点白框，保留键盘 :focus-visible 焦点环 */
-dialog.bf-a11y-dialog button:focus:not(:focus-visible) {
-    outline: none;
-    box-shadow: none;
-}
-
-dialog.bf-a11y-dialog button:focus-visible {
-    outline: 2px solid rgb(var(--color-primary-400));
-    outline-offset: 2px;
 }
 
 html.dark #breadcrumbs-trail a {
@@ -730,11 +706,6 @@ html.dark .bf-share-btn:hover {
 
 .bf-share-btn:active {
     transform: scale(0.97);
-}
-
-.bf-share-btn:focus-visible {
-    outline: 2px solid rgb(var(--color-primary-400));
-    outline-offset: 2px;
 }
 
 .bf-share-action {
@@ -1064,8 +1035,6 @@ html.dark .bf-settings-range {
 }
 
 .bf-settings-range:focus-visible {
-    outline: 2px solid rgb(var(--color-primary-500));
-    outline-offset: 2px;
     border-radius: 0.25rem;
 }
 
@@ -1139,15 +1108,15 @@ html.dark .bf-settings-segment-option:has(input:checked) {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.bf-settings-segment-option:has(input:focus-visible) {
-    outline: 2px solid rgb(var(--color-primary-500));
-    outline-offset: 2px;
-}
-
 @media (forced-colors: active) {
     #button_likes:focus-visible,
     #zen-mode-button:focus-visible,
-    .bf-share-btn:focus-visible {
+    .bf-mobile-menu-icon:focus-visible,
+    .bf-share-btn:focus-visible,
+    .bf-settings-range:focus-visible,
+    dialog.bf-a11y-dialog button:focus-visible,
+    .ios-toggle:has(input:focus-visible),
+    .bf-settings-segment-option:has(input:focus-visible) {
         outline: 2px solid Highlight !important;
         outline-offset: 2px !important;
     }

@@ -18,29 +18,33 @@
         return;
     }
 
-    let rafId = null;
-
-    function updateReadingProgress() {
-        rafId = null;
+    function init() {
         const bar = document.getElementById("reading-progress");
         if (!bar) return;
 
-        const scrollable =
-            document.documentElement.scrollHeight - window.innerHeight;
-        const ratio =
-            scrollable > 0
-                ? Math.min(1, Math.max(0, window.scrollY / scrollable))
-                : 0;
-        bar.style.transform = "scaleX(" + ratio + ")";
-    }
+        let rafId = null;
+        let lastRatio = -1;
 
-    function requestUpdate() {
-        if (rafId !== null) return;
-        rafId = window.requestAnimationFrame(updateReadingProgress);
-    }
+        function updateReadingProgress() {
+            rafId = null;
+            const scrollable =
+                document.documentElement.scrollHeight - window.innerHeight;
+            const ratio =
+                scrollable > 0
+                    ? Math.min(1, Math.max(0, window.scrollY / scrollable))
+                    : 0;
+            const rounded = Math.round(ratio * 1000) / 1000;
+            if (rounded !== lastRatio) {
+                lastRatio = rounded;
+                bar.style.transform = `scaleX(${rounded})`;
+            }
+        }
 
-    function init() {
-        if (!document.getElementById("reading-progress")) return;
+        function requestUpdate() {
+            if (rafId !== null) return;
+            rafId = window.requestAnimationFrame(updateReadingProgress);
+        }
+
         window.addEventListener("scroll", requestUpdate, { passive: true });
         window.addEventListener("resize", requestUpdate, { passive: true });
         if (document.readyState !== "complete") {
