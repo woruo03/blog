@@ -1,3 +1,4 @@
+{{/* 专注阅读按钮：aria 与设置面板状态同步由 zen-mode-sync.js 合并进 zen-mode.bundle.js 处理 */}}
 <button
   type="button"
   id="zen-mode-button"
@@ -9,40 +10,3 @@
   aria-label="{{ i18n "article.zen_mode_title.enable" }}">
   <span class="inline-block">{{ partial "icon.html" "expand" }}</span>
 </button>
-
-<script>
-  (function () {
-    "use strict";
-
-    const btn = document.getElementById("zen-mode-button");
-    if (!btn) return;
-
-    // 原生 <button> 已内建 Enter 与 Space 触发，只需响应式同步无障碍状态与持久化面板开关
-    const observer = new MutationObserver(function () {
-      const isZen = document.body.classList.contains("zen-mode-enable");
-      btn.setAttribute("aria-pressed", isZen ? "true" : "false");
-      const currentTitle = btn.getAttribute(isZen ? "data-title-i18n-enable" : "data-title-i18n-disable");
-      if (currentTitle) {
-        btn.setAttribute("aria-label", currentTitle);
-        btn.setAttribute("title", currentTitle);
-      }
-      if (
-        window.A11yPanel &&
-        typeof window.A11yPanel.getSettings === "function" &&
-        typeof window.A11yPanel.updateSetting === "function"
-      ) {
-        if (Boolean(window.A11yPanel.getSettings().zenMode) !== isZen) {
-          window.A11yPanel.updateSetting("zenMode", isZen);
-        }
-      } else {
-        document.querySelectorAll('[id$="zen-mode"]').forEach(function (cb) {
-          if (cb.type === "checkbox") {
-            cb.checked = isZen;
-          }
-        });
-      }
-    });
-
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-  })();
-</script>

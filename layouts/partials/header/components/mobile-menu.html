@@ -11,12 +11,8 @@
       aria-label="{{ i18n "footer.dark_appearance" }}"
       title="{{ i18n "footer.dark_appearance" }}"
       class="flex items-center justify-center text-neutral-900 hover:text-primary-600 dark:text-neutral-200 dark:hover:text-primary-400">
-      <div class="dark:hidden">
-        {{ partial "icon.html" "moon" }}
-      </div>
-      <div class="hidden dark:block">
-        {{ partial "icon.html" "sun" }}
-      </div>
+      <div class="dark:hidden">{{ partial "icon.html" "moon" }}</div>
+      <div class="hidden dark:block">{{ partial "icon.html" "sun" }}</div>
     </button>
   {{ end }}
 
@@ -31,11 +27,7 @@
     </button>
   {{ end }}
 
-  {{ if or
-    .Site.Menus.main
-    .Site.Menus.subnavigation
-    .Site.Params.enableA11y
-  }}
+  {{ if or .Site.Menus.main .Site.Menus.subnavigation .Site.Params.enableA11y }}
     <input type="checkbox" id="mobile-menu-toggle" autocomplete="off" class="hidden peer">
     <label
       for="mobile-menu-toggle"
@@ -74,9 +66,7 @@
       <nav
         aria-label="{{ i18n "nav.mobile_menu" }}"
         class="bf-mobile-menu-nav {{ if eq $mobileMenuStyle "dropdown" }}space-y-3{{ else }}mx-auto max-w-md space-y-6{{ end }}">
-        {{ template "mobile-main-menu" . }}
-        {{ template "mobile-subnavigation" . }}
-        {{ template "mobile-footer-components" . }}
+        {{ partial "header/components/mobile-menu-nav.html" . }}
       </nav>
     </div>
     {{ if .Site.Params.enableA11y | default false }}
@@ -84,136 +74,3 @@
     {{ end }}
   {{ end }}
 </div>
-
-{{ define "mobile-main-menu" }}
-  {{ range .Site.Menus.main }}
-    {{/* 仅有图标、无文字名称的菜单项（如 GitHub）统一收纳至底部图标工具栏 */}}
-    {{ if and .Pre (not .Name) (not .HasChildren) }}{{ continue }}{{ end }}
-    {{ $submenuId := printf "fullscreen-submenu-%s" (.Identifier | default .Name | anchorize) }}
-    {{ $label := or .Name .Title }}
-    <div class="bf-mobile-menu-item px-2">
-      <div class="flex items-center gap-4">
-        <a
-          href="{{ .URL }}"
-          {{ with or .Name .Title .Pre }}aria-label="{{ . }}"{{ end }}
-          {{ if or (strings.HasPrefix .URL "http:" ) (strings.HasPrefix .URL "https:" ) }}
-            target="_blank"
-            rel="noopener noreferrer"
-          {{ end }}
-          class="flex grow items-center gap-4 group bf-icon-color-hover text-neutral-700 dark:text-neutral-200">
-          {{ if .Pre }}
-            <span class="flex items-center justify-center h-8 w-8 text-2xl">
-              {{ partial "icon.html" .Pre }}
-            </span>
-          {{ end }}
-          {{ if $label }}
-            <span title="{{ .Title }}" class="text-2xl font-bold tracking-tight">
-              {{ $label | markdownify }}
-            </span>
-          {{ end }}
-        </a>
-        {{ if .HasChildren }}
-          <label
-            for="{{ $submenuId }}"
-            tabindex="0"
-            role="button"
-            aria-expanded="true"
-            aria-label="{{ i18n "nav.toggle_submenu" }}"
-            class="ms-auto flex items-center justify-center h-10 w-10 cursor-pointer rounded-lg bf-icon-color-hover border bf-border-color bf-border-color-hover">
-            {{ partial "icon.html" "chevron-down" }}
-          </label>
-        {{ end }}
-      </div>
-
-      {{ if .HasChildren }}
-        <input checked type="checkbox" id="{{ $submenuId }}" autocomplete="off" class="hidden peer/full">
-
-        <div
-          class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 peer-checked/full:grid-rows-[1fr]">
-          <div class="overflow-hidden">
-            <div class="ms-7 mt-4">
-              {{ range .Children }}
-                {{ $childLabel := or .Name .Title }}
-                <a
-                  href="{{ .URL }}"
-                  {{ with or .Name .Title .Pre }}aria-label="{{ . }}"{{ end }}
-                  {{ if or (strings.HasPrefix .URL "http:" ) (strings.HasPrefix .URL "https:" ) }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  {{ end }}
-                  class="flex items-center gap-3 p-2 group bf-icon-color-hover text-neutral-700 dark:text-neutral-200">
-                  {{ if .Pre }}
-                    <span class="flex items-center justify-center h-5 w-5">
-                      {{ partial "icon.html" .Pre }}
-                    </span>
-                  {{ end }}
-                  {{ if $childLabel }}
-                    <span title="{{ .Title }}" class="text-lg">
-                      {{ $childLabel | markdownify }}
-                    </span>
-                  {{ end }}
-                </a>
-              {{ end }}
-            </div>
-          </div>
-        </div>
-      {{ end }}
-    </div>
-  {{ end }}
-{{ end }}
-
-{{ define "mobile-subnavigation" }}
-  {{ if .Site.Menus.subnavigation }}
-    <div class="flex flex-wrap gap-4 mt-8 pt-8 border-t bf-border-color">
-      {{ range .Site.Menus.subnavigation }}
-        <a
-          href="{{ .URL }}"
-          {{ with or .Name .Title .Pre }}aria-label="{{ . }}"{{ end }}
-          {{ if or (strings.HasPrefix .URL "http:" ) (strings.HasPrefix .URL "https:" ) }}
-            target="_blank"
-            rel="noopener noreferrer"
-          {{ end }}
-          class="inline-flex items-center gap-2 px-2 py-2 bf-icon-color-hover rounded-full text-sm">
-          {{ if .Pre }}
-            <span class="flex items-center justify-center h-4 w-4">
-              {{ partial "icon.html" .Pre }}
-            </span>
-          {{ end }}
-          <span title="{{ .Title }}">{{ (or .Name .Title) | markdownify }}</span>
-        </a>
-      {{ end }}
-    </div>
-  {{ end }}
-{{ end }}
-
-{{ define "mobile-footer-components" }}
-  {{ $iconLinks := slice }}
-  {{ range .Site.Menus.main }}
-    {{ if and .Pre (not .Name) (not .HasChildren) }}
-      {{ $iconLinks = $iconLinks | append . }}
-    {{ end }}
-  {{ end }}
-  {{ $hasA11y := .Site.Params.enableA11y | default false }}
-  {{ if or $iconLinks $hasA11y }}
-    <div class="bf-mobile-menu-toolbar border-t bf-border-color">
-      <div class="bf-mobile-menu-icons">
-        {{ range $iconLinks }}
-          <a
-            href="{{ .URL }}"
-            aria-label="{{ .Title | default .Pre }}"
-            {{ with .Title }}title="{{ . }}"{{ end }}
-            {{ if or (strings.HasPrefix .URL "http:" ) (strings.HasPrefix .URL "https:" ) }}
-              target="_blank"
-              rel="noopener noreferrer"
-            {{ end }}
-            class="bf-mobile-menu-icon bf-icon-color-hover">
-            {{ partial "icon.html" .Pre }}
-          </a>
-        {{ end }}
-        {{ if $hasA11y }}
-          {{ partial "header/components/a11y.html" (dict "prefix" "mobile-menu-" "part" "button") }}
-        {{ end }}
-      </div>
-    </div>
-  {{ end }}
-{{ end }}

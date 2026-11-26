@@ -1,0 +1,109 @@
+/* ============================================================
+   全局宽屏容器、正文阅读布局、专注模式 (ZenMode) 与零重排阅读进度条
+   ============================================================ */
+
+/* 1. 全局容器自适应扩展：从 1280px 扩展到 1440px，精简过大内边距 */
+@media (min-width: 1024px) {
+    body {
+        max-width: 1440px !important;
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+}
+
+@media (min-width: 1440px) {
+    body {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
+}
+
+/* 2. 正常阅读模式（未开启 ZenMode）：标题、内容列（含正文/分享/相关文章）与底部（翻页/Giscus）严格等宽 */
+body:not(.zen-mode-enable) #single_header,
+body:not(.zen-mode-enable) #content-column,
+body:not(.zen-mode-enable) article footer {
+    max-width: 56rem !important;
+}
+
+body:not(.zen-mode-enable) #single_header,
+body:not(.zen-mode-enable) article footer {
+    width: 100% !important;
+}
+
+body:not(.zen-mode-enable) #content-column {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body:not(.zen-mode-enable) .article-content {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media (min-width: 1024px) {
+    body:not(.zen-mode-enable) #content-column {
+        flex: 1 1 0%;
+    }
+
+    body:not(.zen-mode-enable) #toc-column {
+        flex: 0 0 18rem;
+        max-width: 18rem !important;
+    }
+
+    /* 1024px–1279px 含目录页时，让标题与底部跟随内容列可用宽度缩放，保持上下 0px 偏差 */
+    body:not(.zen-mode-enable) article:has(#toc-column) #single_header,
+    body:not(.zen-mode-enable) article:has(#toc-column) footer {
+        max-width: min(56rem, calc(100% - 18rem)) !important;
+    }
+}
+
+/* 3. 专注模式 (ZenMode)：折叠右侧大纲，正文、标题与底部全宽舒展 */
+body.zen-mode-enable #toc-column,
+body.zen-mode-enable .toc,
+body.zen-mode-enable .toc-right,
+body.zen-mode-enable .toc-inside {
+    display: none !important;
+}
+
+body.zen-mode-enable #content-column {
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+}
+
+body.zen-mode-enable #single_header,
+body.zen-mode-enable .article-content,
+body.zen-mode-enable article footer {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* 4. 现代零重排阅读进度条：合成层 transform: scaleX() + CSS Scroll-Driven Animation */
+#reading-progress {
+    width: 100% !important;
+    height: 2px !important;
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+        @keyframes grow-reading-progress {
+            from {
+                transform: scaleX(0);
+            }
+            to {
+                transform: scaleX(1);
+            }
+        }
+
+        #reading-progress {
+            animation: grow-reading-progress auto linear both;
+            animation-timeline: scroll(root block);
+        }
+    }
+}
+
+/* 5. 显式链接下划线（静态属性选择器驱动，替代动态注入 <style>） */
+html[data-underline-links="true"] a {
+    text-decoration: underline !important;
+}

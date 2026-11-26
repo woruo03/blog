@@ -1,0 +1,92 @@
+{{/* 解析文章/页面背景图与前景横幅图资源，返回 dict: backgroundURL, bannerURL, banner */}}
+{{- $page := . -}}
+{{- $disableImageOptimization := site.Store.Get "disableImageOptimization" -}}
+{{- $featured := "" -}}
+{{- $featuredURL := "" -}}
+
+{{- with partial "functions/feature-image.html" $page -}}
+  {{- if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") -}}
+    {{- if site.Params.hotlinkFeatureImage -}}
+      {{- $featuredURL = . -}}
+    {{- else -}}
+      {{- $featured = resources.GetRemote . -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $featured = or ($page.Resources.Get .) (resources.Get .) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $images := $page.Resources.ByType "image" -}}
+
+{{/* === Background Image === */}}
+{{- $background := $images.GetMatch "*background*" -}}
+{{- $backgroundURL := "" -}}
+
+{{- if not $background -}}
+  {{- if $featuredURL -}}
+    {{- $backgroundURL = $featuredURL -}}
+  {{- else if $featured -}}
+    {{- $background = $featured -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not (or $background $backgroundURL) -}}
+  {{- range slice "*feature*" "*cover*" "*thumbnail*" -}}
+    {{- if not $background }}{{ $background = $images.GetMatch . }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if and (not (or $background $backgroundURL)) (not (site.Params.backgroundCanvas | default false)) -}}
+  {{- $default := site.Store.Get "defaultBackgroundImage" -}}
+  {{- if $default.url -}}
+    {{- $backgroundURL = $default.url -}}
+  {{- else if $default.obj -}}
+    {{- $background = $default.obj -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not $backgroundURL -}}
+  {{- with $background -}}
+    {{- $backgroundURL = .RelPermalink -}}
+    {{- if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) -}}
+      {{- $size := site.Store.Get "backgroundImageWidth" -}}
+      {{- $backgroundURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* === Foreground Banner Image === */}}
+{{- $banner := $featured -}}
+{{- $bannerURL := $featuredURL -}}
+
+{{- if not (or $banner $bannerURL) -}}
+  {{- range slice "*feature*" "*cover*" "*thumbnail*" "*background*" -}}
+    {{- if not $banner }}{{ $banner = $images.GetMatch . }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not (or $banner $bannerURL) -}}
+  {{- $default := site.Store.Get "defaultFeaturedImage" -}}
+  {{- if $default.url -}}
+    {{- $bannerURL = $default.url -}}
+  {{- else if $default.obj -}}
+    {{- $banner = $default.obj -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if and (not (or $banner $bannerURL)) $backgroundURL -}}
+  {{- $bannerURL = $backgroundURL -}}
+  {{- $banner = $background -}}
+{{- end -}}
+
+{{- if not $bannerURL -}}
+  {{- with $banner -}}
+    {{- $bannerURL = .RelPermalink -}}
+    {{- if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) -}}
+      {{- $size := site.Store.Get "backgroundImageWidth" -}}
+      {{- $bannerURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return (dict "backgroundURL" $backgroundURL "bannerURL" $bannerURL "banner" $banner) -}}

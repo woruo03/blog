@@ -25,7 +25,7 @@
     popovertarget="{{ $prefix }}a11y-panel"
     {{- end }}
     type="button"
-    class="{{ if eq $prefix "mobile-menu-" }}bf-mobile-menu-icon {{ end }}flex items-center justify-center bf-icon-color-hover">
+    class="{{ if not $isDesktopPopover }}bf-mobile-menu-icon {{ end }}flex items-center justify-center bf-icon-color-hover">
     {{ partial "icon.html" "settings" }}
   </button>
   {{- end -}}
@@ -68,122 +68,53 @@
           <div class="bf-settings-section">
             <h3 class="bf-settings-section-title">{{ i18n "a11y.section_visual" }}</h3>
             {{- if $hasArticleHero -}}
-              <div class="flex items-center justify-between">
-                <label for="{{ $prefix }}hero-bg" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                  {{ i18n "a11y.hero_bg" }}
-                </label>
-                <div class="ios-toggle">
-                  <input type="checkbox" id="{{ $prefix }}hero-bg" checked>
-                </div>
-              </div>
-
-              <div class="bf-settings-range-row" data-hero-bg-opacity-wrap>
-                <div class="flex items-center justify-between">
-                  <label for="{{ $prefix }}hero-bg-opacity" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                    {{ i18n "a11y.hero_bg_opacity" }}
-                  </label>
-                  <output
-                    id="{{ $prefix }}hero-bg-opacity-value"
-                    for="{{ $prefix }}hero-bg-opacity"
-                    class="bf-settings-range-value text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    50%
-                  </output>
-                </div>
-                <input
-                  type="range"
-                  id="{{ $prefix }}hero-bg-opacity"
-                  class="bf-settings-range"
-                  min="15"
-                  max="90"
-                  step="5"
-                  value="50"
-                  aria-valuetext="50%">
-              </div>
-
+              {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%shero-bg" $prefix) "label" (i18n "a11y.hero_bg") "checked" true) }}
+              {{ partial "header/components/a11y-range.html" (dict
+                "id" (printf "%shero-bg-opacity" $prefix)
+                "label" (i18n "a11y.hero_bg_opacity")
+                "min" 15 "max" 90 "step" 5 "value" 50
+                "displayValue" "50%"
+                "wrapAttr" "data-hero-bg-opacity-wrap"
+              ) }}
               <fieldset class="bf-settings-segment-fieldset">
                 <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-200">
                   {{ i18n "a11y.hero_banner" }}
                 </legend>
                 <div class="bf-settings-segment">
-                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-off">
-                    <input type="radio" id="{{ $prefix }}hero-banner-off" name="{{ $prefix }}hero-banner" value="off" checked>
-                    <span>{{ i18n "a11y.hero_banner_off" }}</span>
-                  </label>
-                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-basic">
-                    <input type="radio" id="{{ $prefix }}hero-banner-basic" name="{{ $prefix }}hero-banner" value="basic">
-                    <span>{{ i18n "a11y.hero_banner_basic" }}</span>
-                  </label>
-                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-big">
-                    <input type="radio" id="{{ $prefix }}hero-banner-big" name="{{ $prefix }}hero-banner" value="big">
-                    <span>{{ i18n "a11y.hero_banner_big" }}</span>
-                  </label>
+                  {{- range slice
+                    (dict "val" "off" "label" (i18n "a11y.hero_banner_off") "checked" true)
+                    (dict "val" "basic" "label" (i18n "a11y.hero_banner_basic") "checked" false)
+                    (dict "val" "big" "label" (i18n "a11y.hero_banner_big") "checked" false)
+                  -}}
+                    <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-{{ .val }}">
+                      <input type="radio" id="{{ $prefix }}hero-banner-{{ .val }}" name="{{ $prefix }}hero-banner" value="{{ .val }}"{{ if .checked }} checked{{ end }}>
+                      <span>{{ .label }}</span>
+                    </label>
+                  {{- end -}}
                 </div>
               </fieldset>
             {{- end -}}
-
             {{- if $shouldDisableBlur -}}
-              <div class="flex items-center justify-between">
-                <label for="{{ $prefix }}disable-blur" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                  {{ i18n "a11y.disable_blur" }}
-                </label>
-                <div class="ios-toggle">
-                  <input type="checkbox" id="{{ $prefix }}disable-blur">
-                </div>
-              </div>
+              {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%sdisable-blur" $prefix) "label" (i18n "a11y.disable_blur")) }}
             {{- end -}}
           </div>
         {{- end -}}
 
         <div class="bf-settings-section">
           <h3 class="bf-settings-section-title">{{ i18n "a11y.section_reading" }}</h3>
-          <div class="flex items-center justify-between">
-            <label for="{{ $prefix }}zen-mode" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-              {{ i18n "a11y.zen_mode" }}
-            </label>
-            <div class="ios-toggle">
-              <input type="checkbox" id="{{ $prefix }}zen-mode">
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between">
-            <label for="{{ $prefix }}underline-links" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-              {{ i18n "a11y.show_link_underline" }}
-            </label>
-            <div class="ios-toggle">
-              <input type="checkbox" id="{{ $prefix }}underline-links">
-            </div>
-          </div>
-
-          <div class="bf-settings-range-row">
-            <div class="flex items-center justify-between">
-              <label for="{{ $prefix }}font-size" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                {{ i18n "a11y.font_size" }}
-              </label>
-              <output
-                id="{{ $prefix }}font-size-value"
-                for="{{ $prefix }}font-size"
-                class="bf-settings-range-value text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                {{ i18n "a11y.font_size_default" }} (16px)
-              </output>
-            </div>
-            <input
-              type="range"
-              id="{{ $prefix }}font-size"
-              class="bf-settings-range"
-              min="12"
-              max="24"
-              step="2"
-              value="16"
-              data-default-label="{{ i18n "a11y.font_size_default" }}"
-              aria-valuetext="{{ i18n "a11y.font_size_default" }} (16px)">
-          </div>
+          {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%szen-mode" $prefix) "label" (i18n "a11y.zen_mode")) }}
+          {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%sunderline-links" $prefix) "label" (i18n "a11y.show_link_underline")) }}
+          {{ partial "header/components/a11y-range.html" (dict
+            "id" (printf "%sfont-size" $prefix)
+            "label" (i18n "a11y.font_size")
+            "min" 12 "max" 24 "step" 2 "value" 16
+            "displayValue" (printf "%s (16px)" (i18n "a11y.font_size_default"))
+            "defaultLabel" (i18n "a11y.font_size_default")
+          ) }}
         </div>
 
         <div class="bf-settings-footer">
-          <button
-            id="{{ $prefix }}a11y-reset"
-            type="button"
-            class="bf-settings-reset">
+          <button id="{{ $prefix }}a11y-reset" type="button" class="bf-settings-reset">
             {{ i18n "a11y.reset" }}
           </button>
         </div>
