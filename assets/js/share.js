@@ -5,13 +5,18 @@
     "use strict";
 
     const timers = new WeakMap();
+    const rafIds = new WeakMap();
     let lastMessage = "";
 
     function report(button, ok, rawMessage) {
         const tip = button.nextElementSibling;
         clearTimeout(timers.get(button));
+        const pendingRaf = rafIds.get(button);
+        if (pendingRaf) window.cancelAnimationFrame(pendingRaf);
+
         button.removeAttribute("data-copied");
         button.removeAttribute("data-failed");
+        if (tip) tip.textContent = "";
 
         let message = rawMessage;
         if (message === lastMessage) {
@@ -19,26 +24,22 @@
         }
         lastMessage = message;
 
-        if (tip) {
-            tip.textContent = "";
-            void tip.offsetWidth;
-        }
-        button.setAttribute(ok ? "data-copied" : "data-failed", "");
-
-        if (tip) {
-            window.requestAnimationFrame(function () {
-                tip.textContent = message;
-            });
-        }
+        // 下一帧写入状态与提示文本，既避免同步强制重排（offsetWidth），又能重新触发淡入过渡与读屏播报
+        rafIds.set(
+            button,
+            window.requestAnimationFrame(() => {
+                rafIds.delete(button);
+                button.setAttribute(ok ? "data-copied" : "data-failed", "");
+                if (tip) tip.textContent = message;
+            }),
+        );
 
         timers.set(
             button,
-            window.setTimeout(function () {
+            window.setTimeout(() => {
                 button.removeAttribute("data-copied");
                 button.removeAttribute("data-failed");
-                if (tip) {
-                    tip.textContent = "";
-                }
+                if (tip) tip.textContent = "";
             }, 2000),
         );
     }
@@ -89,7 +90,7 @@
     if ("CommandEvent" in window) {
         document.addEventListener(
             "command",
-            function (event) {
+            (event) => {
                 if (
                     event.command === "--copy-link" ||
                     event.command === "--native-share"
@@ -100,8 +101,10 @@
             true,
         );
     } else {
-        document.addEventListener("click", function (event) {
-            if (event.defaultPrevented) return;
+        document.addEventListener("click", (event) => {
+            if (event.defaultPrevented || !(event.target instanceof Element)) {
+                return;
+            }
             const button = event.target.closest(
                 'button[command="--copy-link"], button[command="--native-share"]',
             );

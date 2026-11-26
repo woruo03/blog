@@ -24,9 +24,8 @@
 {{ end }}
 
 {{ $page := $target }}
-{{ $featureImageHover := site.Params.list.featureImageHover | default false }}
-{{ if isset $target.Params "featureimagehover" }}{{ $featureImageHover = $target.Params.featureImageHover }}{{ end }}
-{{ $featureImagePosition := $target.Params.imagePositionFeature | default site.Params.imagePositionFeature | default site.Params.imagePosition }}
+{{ $featureImageHover := cond (isset $target.Params "featureimagehover") $target.Params.featureImageHover (site.Params.list.featureImageHover | default false) }}
+{{ $featureImagePosition := $target.Params.imagePositionFeature | default $target.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition }}
 {{ $featuredURL := partial "functions/card-feature-image.html" $page }}
 
 <article class="article-link--shortcode group {{ $cardClasses }}">

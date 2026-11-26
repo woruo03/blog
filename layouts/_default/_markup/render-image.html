@@ -70,7 +70,7 @@
 <figure
   {{- range $k, $v := .Attributes -}}
     {{- if and $v (ne $k "width") (ne $k "height") -}}
-      {{- printf " %s=%q" $k ($v | transform.HTMLEscape) | safeHTMLAttr -}}
+      {{- printf ` %s="%s"` $k ($v | htmlEscape) | safeHTMLAttr -}}
     {{- end -}}
   {{- end -}}>
   {{- if and (not $isRemote) $resource -}}

@@ -1,9 +1,8 @@
 {{/* Determine the correct context and scope */}}
-{{/* This allows for different logic depending on where the partial is called */}}
 {{ $context := . }}
 {{ $scope := default nil }}
 
-{{ if (reflect.IsMap . ) }}
+{{ if reflect.IsMap . }}
   {{ $context = .context }}
   {{ $scope = cond (not .scope) nil .scope }}
 {{ end }}
@@ -13,21 +12,15 @@
 
   {{/* Gather partials for this context */}}
   {{ $shouldShowDate := .Params.showDate | default (site.Params.article.showDate | default true) }}
-
-  {{ if (.Params.showDateOnlyInArticle | default (site.Params.article.showDateOnlyInArticle | default false)) }}
-    {{ if (ne $scope "single") }}
-      {{/* only takes effect when not called directly in the header of single.html */}}
-      {{ $shouldShowDate = false }}
-    {{ end }}
+  {{ if and (.Params.showDateOnlyInArticle | default (site.Params.article.showDateOnlyInArticle | default false)) (ne $scope "single") }}
+    {{ $shouldShowDate = false }}
   {{ end }}
 
   {{ if $shouldShowDate }}
     {{ $meta.Add "partials" (slice (partial "meta/date.html" .Date)) }}
   {{ end }}
 
-  {{ if and (.Params.showDateUpdated | default (site.Params.article.showDateUpdated | default false)) (ne (partial
-    "functions/date.html" .Date) (partial "functions/date.html" .Lastmod)) (gt (.Lastmod | time.Format "2006") 1)
-  }}
+  {{ if and (.Params.showDateUpdated | default (site.Params.article.showDateUpdated | default false)) (not .Lastmod.IsZero) (ne (partial "functions/date.html" .Date) (partial "functions/date.html" .Lastmod)) }}
     {{ $meta.Add "partials" (slice (partial "meta/date-updated.html" .Lastmod)) }}
   {{ end }}
 
@@ -39,33 +32,10 @@
     {{ $meta.Add "partials" (slice (partial "meta/reading-time.html" .)) }}
   {{ end }}
 
-  {{/* 判定当前内容是否属于博客主文章板块 (posts) */}}
-  {{ $isArticle := or (in (site.Params.mainSections | default (slice "posts")) .Type) (in (site.Params.mainSections | default (slice "posts")) .Section) }}
-
-  {{/* 仅在满足范围条件时计算并挂载浏览量与点赞 */}}
-  {{ $showViews := false }}
-  {{ $showLikes := false }}
-
-  {{ if eq $scope "single" }}
-    {{ if $isArticle }}
-      {{ $showViews = cond (isset .Params "showviews") .Params.showViews (site.Params.article.showViews | default false) }}
-      {{ $showLikes = cond (isset .Params "showlikes") .Params.showLikes (site.Params.article.showLikes | default false) }}
-    {{ else }}
-      {{/* 关于、友链等独立页面默认不展示，除非 Front Matter 显式启用 */}}
-      {{ $showViews = .Params.showViews | default false }}
-      {{ $showLikes = .Params.showLikes | default false }}
-    {{ end }}
-  {{ else }}
-    {{ if $isArticle }}
-      {{/* 列表与首页卡片：遵循 list 配置展示只读统计，支持单篇 Front Matter 独立覆盖 */}}
-      {{ $showViews = cond (isset .Params "showviews") .Params.showViews (site.Params.list.showViews | default false) }}
-      {{ $showLikes = cond (isset .Params "showlikes") .Params.showLikes (site.Params.list.showLikes | default false) }}
-    {{ else }}
-      {{/* 非文章卡片默认不展示统计 */}}
-      {{ $showViews = .Params.showViews | default false }}
-      {{ $showLikes = .Params.showLikes | default false }}
-    {{ end }}
-  {{ end }}
+  {{ $isArticle := partial "functions/is-article.html" . }}
+  {{ $scopeCfg := cond (eq $scope "single") site.Params.article site.Params.list }}
+  {{ $showViews := cond (isset .Params "showviews") .Params.showViews (and $isArticle ($scopeCfg.showViews | default false)) }}
+  {{ $showLikes := cond (isset .Params "showlikes") .Params.showLikes (and $isArticle ($scopeCfg.showLikes | default false)) }}
 
   {{ if and (not .Params.externalURL) $showViews }}
     {{ $meta.Add "partials" (slice (partial "meta/views.html" .)) }}
@@ -80,18 +50,15 @@
     {{ $meta.Add "partials" (slice (partial "meta/edit.html" .)) }}
   {{ end }}
 
-  {{/* ZenMode 小图标已移至主标题末尾，此处不再加入元数据切片，确保尾随无多余小圆点与图标 */}}
+  {{/* ZenMode 按钮已移至主标题末尾，此处不再加入元数据切片 */}}
 
   {{ $metaPartials := $meta.Get "partials" }}
-  {{ $showDraft := and (eq $scope "single") (and .Draft site.Params.article.showDraftLabel) }}
+  {{ $showDraft := and (eq $scope "single") .Draft site.Params.article.showDraftLabel }}
   {{ if or $metaPartials $showDraft }}
     <div class="flex flex-row flex-wrap items-center">
-      {{/* Output partials */}}
       {{ with $metaPartials }}
         {{ delimit . "<span class=\"px-2 text-primary-500\">&middot;</span>" | safeHTML }}
       {{ end }}
-
-      {{/* Output draft label */}}
       {{ if $showDraft }}
         <span class="ps-2">{{ partial "badge.html" (i18n "article.draft" | emojify) }}</span>
       {{ end }}
@@ -102,7 +69,7 @@
     {{ with $context.GetTerms "authors" }}
       <div class="flex flex-row flex-wrap items-center">
         {{ range $i, $a := . }}
-          {{ if not (eq $i 0) }},&nbsp;{{ end }}
+          {{ if ne $i 0 }},&nbsp;{{ end }}
           <a href="{{ $a.RelPermalink }}" class="relative">{{ $a.LinkTitle }}</a>
         {{ end }}
       </div>
@@ -111,29 +78,28 @@
 
   {{/* Output taxonomies */}}
   {{ if .Params.showTaxonomies | default (site.Params.article.showTaxonomies | default false) }}
+    {{ $showCategories := $context.Params.showCategories | default (site.Params.article.showCategories | default true) }}
+    {{ $useSecondaryColor := $context.Params.showCategoriesInSecondaryColor | default (site.Params.article.showCategoriesInSecondaryColor | default false) }}
+    {{ $showTags := $context.Params.showTags | default (site.Params.article.showTags | default true) }}
     {{ $taxBadges := slice }}
-    {{ range $taxonomy, $terms := site.Taxonomies }}
-      {{ if (gt (len ($context.GetTerms $taxonomy)) 0) }}
-        {{ range $context.GetTerms $taxonomy }}
-          {{ if (or (eq $taxonomy "authors") (eq $taxonomy "series")) }}
-            {{/* Ignore authors and series, since they are handled in other places */}}
-            {{ continue }}
-          {{ else if (eq $taxonomy "categories") }}
-            {{ if .Params.showCategories | default (site.Params.article.showCategories | default true) }}
-              {{ $useSecondaryColor := .Params.showCategoriesInSecondaryColor | default (site.Params.article.showCategoriesInSecondaryColor | default false) }}
-              {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" (dict "linkTitle" .LinkTitle "useSecondaryColor" $useSecondaryColor)) }}
-              {{ $taxBadges = $taxBadges | append $badge }}
-            {{ end }}
-          {{ else if (eq $taxonomy "tags") }}
-            {{ if .Params.showTags | default (site.Params.article.showTags | default true) }}
-              {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" .LinkTitle) }}
-              {{ $taxBadges = $taxBadges | append $badge }}
-            {{ end }}
-          {{ else }}
-            {{ $badge := printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink (partial "badge.html" .LinkTitle) }}
-            {{ $taxBadges = $taxBadges | append $badge }}
-          {{ end }}
+    {{ range $taxonomy, $_ := site.Taxonomies }}
+      {{ if or (eq $taxonomy "authors") (eq $taxonomy "series") }}
+        {{ continue }}
+      {{ end }}
+      {{ if and (eq $taxonomy "categories") (not $showCategories) }}
+        {{ continue }}
+      {{ end }}
+      {{ if and (eq $taxonomy "tags") (not $showTags) }}
+        {{ continue }}
+      {{ end }}
+      {{ range $context.GetTerms $taxonomy }}
+        {{ $badgeContent := "" }}
+        {{ if eq $taxonomy "categories" }}
+          {{ $badgeContent = partial "badge.html" (dict "linkTitle" .LinkTitle "useSecondaryColor" $useSecondaryColor) }}
+        {{ else }}
+          {{ $badgeContent = partial "badge.html" .LinkTitle }}
         {{ end }}
+        {{ $taxBadges = $taxBadges | append (printf `<a class="relative mt-[0.5rem] me-2" href="%s">%s</a>` .RelPermalink $badgeContent) }}
       {{ end }}
     {{ end }}
     {{ with $taxBadges }}

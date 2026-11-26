@@ -1,0 +1,61 @@
+{{/* 共享文章卡片渲染基座，由 card.html 与 card-related.html 传入样式类名委托调用 */}}
+{{- $page := .page -}}
+{{- $articleClass := .articleClass | default "article-link--card" -}}
+{{- $thumbClass := .thumbClass | default "thumbnail_card" -}}
+{{- $thumbnailAspectRatio := replaceRE "[^0-9.]" "" (site.Params.thumbnailAspectRatio | default "1.5") -}}
+{{- if eq $thumbnailAspectRatio "" }}{{ $thumbnailAspectRatio = "1.5" }}{{ end -}}
+{{- $featureImageHover := cond (isset $page.Params "featureimagehover") $page.Params.featureImageHover (site.Params.list.featureImageHover | default false) -}}
+{{- $featureImagePosition := $page.Params.imagePositionFeature | default $page.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition -}}
+{{- $featuredURL := partial "functions/card-feature-image.html" $page -}}
+
+<article
+  class="{{ $articleClass }} group relative min-h-full min-w-full overflow-hidden rounded-lg border border-neutral-300/80 bg-white/85 dark:border-neutral-600/80 dark:bg-neutral-900/80">
+  {{ with $featuredURL }}
+    <div
+      class="flex-none relative overflow-hidden {{ $thumbClass }}"
+      style="--thumbnail-aspect-ratio: {{ $thumbnailAspectRatio }}">
+      <img
+        src="{{ . }}"
+        alt="{{ $page.Title }}"
+        loading="lazy"
+        decoding="async"
+        class="nozoom not-prose absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] {{ if $featureImageHover }}group-hover:scale-[1.03]{{ end }}"
+        {{ with $featureImagePosition }}style="object-position: {{ . | safeCSS }};"{{ end }} />
+    </div>
+  {{ end }}
+  {{ if and $page.Draft site.Params.article.showDraftLabel }}
+    <span class="absolute top-0 right-0 m-2">
+      {{ partial "badge.html" (i18n "article.draft" | emojify) }}
+    </span>
+  {{ end }}
+  <div class="p-4">
+    <header>
+      <a
+        {{ with $page.Params.externalUrl }}
+          href="{{ . }}" target="_blank" rel="external"
+        {{ else }}
+          href="{{ $page.RelPermalink }}"
+        {{ end }}
+        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
+        <h2>
+          {{ $page.Title | emojify }}
+          {{ if $page.Params.externalUrl }}
+            <span class="cursor-default align-top text-xs text-neutral-400 dark:text-neutral-500">
+              <span class="rtl:hidden">&#8599;</span>
+              <span class="ltr:hidden">&#8598;</span>
+            </span>
+          {{ end }}
+        </h2>
+      </a>
+    </header>
+    <div class="text-sm text-neutral-500 dark:text-neutral-400">
+      {{ partial "article-meta/basic.html" $page }}
+    </div>
+    {{ if $page.Params.showSummary | default (site.Params.list.showSummary | default false) }}
+      <div class="article-link__summary prose dark:prose-invert mt-1 line-clamp-5">
+        {{ $page.Summary | plainify }}
+      </div>
+    {{ end }}
+  </div>
+  <div class="px-6 pt-4 pb-2"></div>
+</article>

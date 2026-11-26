@@ -21,7 +21,9 @@
 {{ $hasDynamicTax := and $isSingle (gt (len $taxData) 0) }}
 
 {{ if or $parentCrumb $hasDynamicTax }}
-<nav aria-label="{{ i18n "article.breadcrumbs" | default "面包屑导航" }}" class="print:hidden">
+<nav
+  aria-label="{{ i18n "article.breadcrumbs" | default "面包屑导航" }}"
+  class="print:hidden"{{ if not $parentCrumb }} hidden{{ end }}>
   <ol
     id="breadcrumbs-trail"
     class="flex flex-wrap items-center text-sm text-neutral-500 dark:text-neutral-400"
@@ -56,19 +58,25 @@
     if (!trail || !trail.dataset.taxonomies) return;
 
     let referrerPath = "";
-    try {
-      if (document.referrer) {
+    if (document.referrer) {
+      try {
         const refUrl = new URL(document.referrer);
         if (refUrl.origin === window.location.origin) {
           referrerPath = safeDecode(refUrl.pathname);
-          sessionStorage.setItem("blog_breadcrumb_ref", referrerPath);
+          try {
+            sessionStorage.setItem("blog_breadcrumb_ref", referrerPath);
+          } catch (_) {}
         } else {
-          sessionStorage.removeItem("blog_breadcrumb_ref");
+          try {
+            sessionStorage.removeItem("blog_breadcrumb_ref");
+          } catch (_) {}
         }
-      } else {
+      } catch (_) {}
+    } else {
+      try {
         referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
     if (!referrerPath) return;
 
     let taxData = {};
@@ -84,7 +92,10 @@
 
     const [, tax, slug] = match;
     const target = (taxData[tax] || []).find((t) => {
-      const tSlug = safeDecode(t.url).replace(new RegExp(`^\\/${tax}\\/|\\/$`, "g"), "");
+      const tSlug = safeDecode(t.url).replace(
+        new RegExp(`^\\/${tax}\\/|\\/$`, "g"),
+        "",
+      );
       return tSlug.toLowerCase() === slug.toLowerCase();
     });
 
@@ -104,6 +115,7 @@
 
       li.append(a, span);
       trail.replaceChildren(li);
+      trail.closest("nav")?.removeAttribute("hidden");
     }
   })();
 </script>

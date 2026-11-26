@@ -1,8 +1,7 @@
-{{/* Extend footer: 加载文章统计与点赞交互脚本 */}} {{ $statsJs := resources.Get
-"js/stats.js" | resources.Minify | resources.Fingerprint
-(site.Params.fingerprintAlgorithm | default "sha512") }}
+{{/* Extend footer: 加载文章统计与点赞交互脚本 */}}
+{{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
+{{- $statsJs := resources.Get "js/stats.js" | resources.Minify | resources.Fingerprint $alg -}}
 <script
-    src="{{ $statsJs.RelPermalink }}"
-    integrity="{{ $statsJs.Data.Integrity }}"
-    defer
-></script>
+  src="{{ $statsJs.RelPermalink }}"
+  integrity="{{ $statsJs.Data.Integrity }}"
+  defer></script>

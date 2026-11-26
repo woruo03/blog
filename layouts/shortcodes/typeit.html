@@ -1,6 +1,5 @@
-{{- $rawContent := split (trim .Inner "\r\n") "\n" -}}
 {{- $content := slice -}}
-{{- range $rawContent -}}
+{{- range split (trim .Inner "\r\n") "\n" -}}
   {{- $line := trim . "\r\n " -}}
   {{- if ne $line "" -}}
     {{- $content = $content | append $line -}}
@@ -8,30 +7,24 @@
 {{- end -}}
 
 {{- $initialString := .Get "initialString" | default "" -}}
-{{- $speed := .Get "speed" | default 50 -}}
-{{- $deleteSpeed := .Get "deleteSpeed" | default 25 -}}
-{{- $lifeLike := .Get "lifeLike" | default true -}}
-{{- $startDelay := .Get "startDelay" | default 200 -}}
-{{- $breakLines := .Get "breakLines" | default false -}}
-{{- $waitUntilVisible := .Get "waitUntilVisible" | default true -}}
-{{- $loop := .Get "loop" | default true -}}
-{{- $pause := .Get "pause" | default (.Get "nextStringDelay" | default 2500) -}}
-{{- $delayBetween := .Get "delayBetween" | default 200 -}}
-{{- $randomLines := .Get "randomLines" | default false -}}
-{{- $classList := slice -}}
-{{- with .Get "class" -}}
-  {{- $classList = $classList | append . -}}
-{{- end -}}
+{{- $speed := int (.Get "speed" | default 50) -}}
+{{- $deleteSpeed := int (.Get "deleteSpeed" | default 25) -}}
+{{- $lifeLike := ne (printf "%v" (.Get "lifeLike" | default true)) "false" -}}
+{{- $startDelay := int (.Get "startDelay" | default 200) -}}
+{{- $breakLines := eq (printf "%v" (.Get "breakLines" | default false)) "true" -}}
+{{- $waitUntilVisible := ne (printf "%v" (.Get "waitUntilVisible" | default true)) "false" -}}
+{{- $loop := ne (printf "%v" (.Get "loop" | default true)) "false" -}}
+{{- $pause := int (.Get "pause" | default (.Get "nextStringDelay" | default 2500)) -}}
+{{- $delayBetween := int (.Get "delayBetween" | default 200) -}}
+{{- $randomLines := eq (printf "%v" (.Get "randomLines" | default false)) "true" -}}
 {{- $tag := .Get "tag" | default "div" -}}
-
-{{ $id := delimit (slice "typeit" (partial "functions/uid.html" .)) "-" }}
-
-{{- $attrs := printf `id="%v"` $id -}}
-{{- with $classList -}}
-  {{- $attrs = delimit $classList " " | printf `%v class="%v"` $attrs -}}
+{{- $id := printf "typeit-%s" (partial "functions/uid.html" .) -}}
+{{- $attrs := printf `id="%s"` ($id | htmlEscape) -}}
+{{- with .Get "class" -}}
+  {{- $attrs = printf `%s class="%s"` $attrs (. | htmlEscape) -}}
 {{- end -}}
 
-{{ printf `<%v %v>%s</%v>` $tag $attrs $initialString $tag | safeHTML }}
+{{ printf `<%s %s>%s</%s>` $tag $attrs $initialString $tag | safeHTML }}
 
 <script>
   (function () {
@@ -80,18 +73,18 @@
         [textList[i], textList[j]] = [textList[j], textList[i]];
       }
       {{ end }}
+      const breakLines = {{ $breakLines }};
       const instance = new TypeIt("#{{ $id }}", {
         speed: {{ $speed }},
         deleteSpeed: {{ $deleteSpeed }},
         lifeLike: {{ $lifeLike }},
         startDelay: {{ $startDelay }},
-        breakLines: {{ $breakLines }},
+        breakLines,
         waitUntilVisible: {{ $waitUntilVisible }},
         loop: {{ $loop }},
         loopDelay: [{{ $delayBetween }}, {{ $pause }}]
       });
 
-      const breakLines = {{ $breakLines }};
       textList.forEach(function (str, idx) {
         instance.type(str);
         if (idx < textList.length - 1) {
@@ -109,7 +102,7 @@
     }
 
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", run);
+      document.addEventListener("DOMContentLoaded", run, { once: true });
     } else {
       run();
     }
