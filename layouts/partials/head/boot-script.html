@@ -1,6 +1,12 @@
-{{/* 零阻塞首帧防闪烁内联启动脚本：位于样式表之前，在首次绘制前同步应用深色模式、color-scheme 与设置根属性 */}}
+{{/* 零阻塞首帧防闪烁内联启动脚本：位于样式表之前，在首次绘制前同步应用深色模式、color-scheme、配色主题与设置根属性 */}}
 {{- $enableA11y := site.Params.enableA11y | default false -}}
-<script>
+{{- $schemes := cond $enableA11y (partialCached "functions/color-schemes.html" .Site .Site.Language.Lang) (dict) -}}
+<script
+  {{- if $enableA11y }}
+  id="bf-boot-script"
+  data-default-scheme="{{ $schemes.default }}"
+  data-schemes="{{ delimit $schemes.names "," }}"
+  {{- end }}>
   (function () {
     var r = document.documentElement;
     var up = null;
@@ -20,6 +26,14 @@
     try {
       var raw = JSON.parse(localStorage.getItem("a11ySettings") || "{}");
       if (raw && typeof raw === "object") {
+        var cur = document.currentScript || document.getElementById("bf-boot-script");
+        var defScheme = (cur && cur.dataset.defaultScheme) || "blowfish";
+        var allowed = ((cur && cur.dataset.schemes) || defScheme).split(",");
+        var rawScheme = typeof raw.colorScheme === "string" ? raw.colorScheme.trim().toLowerCase() : "";
+        if (rawScheme === "ocean") rawScheme = "blowfish";
+        if (rawScheme && rawScheme !== defScheme && allowed.indexOf(rawScheme) !== -1) {
+          r.dataset.colorScheme = rawScheme;
+        }
         var heroBg = typeof raw.heroBg === "boolean" ? raw.heroBg : (typeof raw.disableImages === "boolean" ? !raw.disableImages : true);
         var opNum = Number(raw.heroBgOpacity);
         var op = Number.isFinite(opNum) ? Math.min(90, Math.max(15, Math.round(opNum))) : 50;

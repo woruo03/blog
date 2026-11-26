@@ -137,6 +137,11 @@ var updateLogo = (targetAppearance) => {
     syncAppearanceUI();
   });
 
+  window.addEventListener("bf:color-scheme-change", () => {
+    updateMeta();
+    updateMermaidTheme();
+  });
+
   window.addEventListener("DOMContentLoaded", () => {
     const switcher = document.getElementById("appearance-switcher");
     const switcherMobile = document.getElementById("appearance-switcher-mobile");

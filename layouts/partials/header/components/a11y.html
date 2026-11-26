@@ -10,6 +10,7 @@
   (eq site.Params.term.heroStyle "background")
 -}}
 {{- $shouldDisableBlur := or site.Params.homepage.layoutBackgroundBlur site.Params.article.layoutBackgroundBlur site.Params.list.layoutBackgroundBlur (hasPrefix site.Params.header.layout "fixed") -}}
+{{- $schemes := partialCached "functions/color-schemes.html" site site.Language.Lang -}}
 {{- if eq $part "all" -}}
 <div class="flex items-center">
 {{- end -}}
@@ -63,40 +64,43 @@
       </div>
 
       <div class="space-y-5">
-        {{- if or $hasArticleHero $shouldDisableBlur -}}
-          <div class="bf-settings-section">
-            <h3 class="bf-settings-section-title">{{ i18n "a11y.section_visual" }}</h3>
-            {{- if $hasArticleHero -}}
-              {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%shero-bg" $prefix) "label" (i18n "a11y.hero_bg") "checked" true) }}
-              {{ partial "header/components/a11y-range.html" (dict
-                "id" (printf "%shero-bg-opacity" $prefix)
-                "label" (i18n "a11y.hero_bg_opacity")
-                "min" 15 "max" 90 "step" 5 "value" 50
-                "displayValue" "50%"
-              ) }}
-              <fieldset class="bf-settings-segment-fieldset">
-                <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                  {{ i18n "a11y.hero_banner" }}
-                </legend>
-                <div class="bf-settings-segment">
-                  {{- range slice
-                    (dict "val" "off" "label" (i18n "a11y.hero_banner_off") "checked" true)
-                    (dict "val" "basic" "label" (i18n "a11y.hero_banner_basic") "checked" false)
-                    (dict "val" "big" "label" (i18n "a11y.hero_banner_big") "checked" false)
-                  -}}
-                    <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-{{ .val }}">
-                      <input type="radio" id="{{ $prefix }}hero-banner-{{ .val }}" name="{{ $prefix }}hero-banner" value="{{ .val }}"{{ if .checked }} checked{{ end }}>
-                      <span>{{ .label }}</span>
-                    </label>
-                  {{- end -}}
-                </div>
-              </fieldset>
-            {{- end -}}
-            {{- if $shouldDisableBlur -}}
-              {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%sdisable-blur" $prefix) "label" (i18n "a11y.disable_blur")) }}
-            {{- end -}}
-          </div>
-        {{- end -}}
+        <div class="bf-settings-section">
+          <h3 class="bf-settings-section-title">{{ i18n "a11y.section_visual" }}</h3>
+          {{ partial "header/components/a11y-scheme-select.html" (dict
+            "id" (printf "%scolor-scheme" $prefix)
+            "label" (i18n "a11y.color_scheme")
+            "schemes" $schemes
+          ) }}
+          {{- if $hasArticleHero -}}
+            {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%shero-bg" $prefix) "label" (i18n "a11y.hero_bg") "checked" true) }}
+            {{ partial "header/components/a11y-range.html" (dict
+              "id" (printf "%shero-bg-opacity" $prefix)
+              "label" (i18n "a11y.hero_bg_opacity")
+              "min" 15 "max" 90 "step" 5 "value" 50
+              "displayValue" "50%"
+            ) }}
+            <fieldset class="bf-settings-segment-fieldset">
+              <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                {{ i18n "a11y.hero_banner" }}
+              </legend>
+              <div class="bf-settings-segment">
+                {{- range slice
+                  (dict "val" "off" "label" (i18n "a11y.hero_banner_off") "checked" true)
+                  (dict "val" "basic" "label" (i18n "a11y.hero_banner_basic") "checked" false)
+                  (dict "val" "big" "label" (i18n "a11y.hero_banner_big") "checked" false)
+                -}}
+                  <label class="bf-settings-segment-option" for="{{ $prefix }}hero-banner-{{ .val }}">
+                    <input type="radio" id="{{ $prefix }}hero-banner-{{ .val }}" name="{{ $prefix }}hero-banner" value="{{ .val }}"{{ if .checked }} checked{{ end }}>
+                    <span>{{ .label }}</span>
+                  </label>
+                {{- end -}}
+              </div>
+            </fieldset>
+          {{- end -}}
+          {{- if $shouldDisableBlur -}}
+            {{ partial "header/components/a11y-toggle.html" (dict "id" (printf "%sdisable-blur" $prefix) "label" (i18n "a11y.disable_blur")) }}
+          {{- end -}}
+        </div>
 
         <div class="bf-settings-section">
           <h3 class="bf-settings-section-title">{{ i18n "a11y.section_reading" }}</h3>

@@ -4,10 +4,12 @@
 import {
     FEATURE_KEYS,
     FEATURES,
+    STORAGE_KEY,
     applyInitialRootState,
     fontSizeToNumber,
     getSettings,
     persistSettings,
+    reloadSettingsFromStorage,
     resetAllSettings,
     setFontSizeChangeHook,
 } from "./settings.js";
@@ -51,6 +53,11 @@ function syncControls(key, value) {
             ctrl.input.value = String(num);
             ctrl.input.setAttribute("aria-valuetext", text);
             if (ctrl.output) ctrl.output.textContent = text;
+            return;
+        }
+
+        if (ctrl.input?.tagName === "SELECT") {
+            if (ctrl.input.value !== value) ctrl.input.value = value;
             return;
         }
 
@@ -124,6 +131,11 @@ function initPanel(panel) {
             input.addEventListener("change", (e) => {
                 updateSetting(key, e.target.value);
             });
+        } else if (input.tagName === "SELECT") {
+            controls[key] = { input };
+            input.addEventListener("change", (e) => {
+                updateSetting(key, e.target.value);
+            });
         } else if (input.type === "checkbox") {
             controls[key] = { input };
             input.addEventListener("change", (e) => {
@@ -152,6 +164,12 @@ function init() {
     document.querySelectorAll("dialog[id$='a11y-panel']").forEach(initPanel);
     syncAllControls();
     setupViewportSync();
+
+    window.addEventListener("storage", (event) => {
+        if (event.key !== STORAGE_KEY && event.key !== null) return;
+        reloadSettingsFromStorage();
+        syncAllControls();
+    });
 }
 
 // 首帧前仅写入 <html> 状态属性，零 DOM 查询、零重排、零阻塞

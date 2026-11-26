@@ -1,8 +1,18 @@
 // assets/js/a11y/settings.js
 // 阅读与外观设置状态管理、字段规范化与特性副作用应用
 
-const STORAGE_KEY = "a11ySettings";
+export const STORAGE_KEY = "a11ySettings";
 const ALLOWED_BANNERS = new Set(["off", "basic", "big"]);
+const SCHEME_ALIASES = { ocean: "blowfish" };
+
+const bootScript = document.getElementById("bf-boot-script");
+export const DEFAULT_COLOR_SCHEME =
+    bootScript?.dataset.defaultScheme || "blowfish";
+const ALLOWED_SCHEMES = new Set(
+    (bootScript?.dataset.schemes || DEFAULT_COLOR_SCHEME)
+        .split(",")
+        .filter(Boolean),
+);
 
 let onFontSizeChange = null;
 let settings = null;
@@ -10,6 +20,12 @@ let settings = null;
 export function setFontSizeChangeHook(fn) {
     onFontSizeChange = fn;
 }
+
+export const normalizeColorScheme = (value) => {
+    const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+    const mapped = SCHEME_ALIASES[raw] || raw;
+    return ALLOWED_SCHEMES.has(mapped) ? mapped : DEFAULT_COLOR_SCHEME;
+};
 
 export const clampOpacity = (value) => {
     const num = Number(value);
@@ -41,6 +57,16 @@ const setRootDataset = (key, value) => {
     }
 };
 
+const applyColorSchemeRoot = (scheme) => {
+    const root = document.documentElement;
+    if (!scheme || scheme === DEFAULT_COLOR_SCHEME) {
+        if ("colorScheme" in root.dataset) {
+            delete root.dataset.colorScheme;
+        }
+    } else if (root.dataset.colorScheme !== scheme) {
+        root.dataset.colorScheme = scheme;
+    }
+};
 const applyHeroBgRoot = (enabled) =>
     setRootDataset("heroBg", enabled ? "on" : "off");
 const applyHeroOpacityRoot = (value) => {
@@ -66,6 +92,19 @@ const applyUnderlineRoot = (enabled) =>
     setRootDataset("underlineLinks", enabled ? "true" : "false");
 
 export const FEATURES = {
+    colorScheme: {
+        default: DEFAULT_COLOR_SCHEME,
+        normalize: normalizeColorScheme,
+        applyRoot: applyColorSchemeRoot,
+        apply: (scheme) => {
+            applyColorSchemeRoot(scheme);
+            window.dispatchEvent(
+                new CustomEvent("bf:color-scheme-change", {
+                    detail: { scheme },
+                }),
+            );
+        },
+    },
     heroBg: {
         default: true,
         normalize: Boolean,
@@ -200,5 +239,24 @@ export function resetAllSettings() {
     settings = { ...DEFAULTS };
     persistSettings(settings);
     FEATURE_KEYS.forEach((key) => FEATURES[key].apply(settings[key]));
+    return settings;
+}
+
+export function reloadSettingsFromStorage() {
+    let next;
+    try {
+        next = sanitizeSettings(
+            JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
+        );
+    } catch {
+        next = { ...DEFAULTS };
+    }
+    const prev = settings;
+    settings = next;
+    FEATURE_KEYS.forEach((key) => {
+        if (!prev || prev[key] !== next[key]) {
+            FEATURES[key].apply(next[key]);
+        }
+    });
     return settings;
 }

@@ -1,0 +1,25 @@
+{{/* 设置面板主题配色下拉选择复用组件（原生 <select> + appearance: base-select 渐进增强） */}}
+{{- $id := .id -}}
+{{- $label := .label -}}
+{{- $schemes := .schemes -}}
+<div class="bf-settings-select-row">
+  <label for="{{ $id }}" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+    {{ $label }}
+  </label>
+  <select id="{{ $id }}" name="{{ $id }}" class="bf-settings-select">
+    <button>
+      <selectedcontent></selectedcontent>
+    </button>
+    {{- range $schemes.list }}
+      {{- $isDefault := eq .name $schemes.default -}}
+      <option value="{{ .name }}"{{ if $isDefault }} selected{{ end }}>
+        <span class="bf-scheme-swatches" aria-hidden="true">
+          <span class="bf-scheme-dot" style="background-color: rgb({{ .primary }})"></span>
+          <span class="bf-scheme-dot" style="background-color: rgb({{ .secondary }})"></span>
+          <span class="bf-scheme-dot" style="background-color: rgb({{ .neutral }})"></span>
+        </span>
+        <span class="bf-scheme-label">{{ .label }}{{ if $isDefault }}（{{ i18n "a11y.scheme_default" }}）{{ end }}</span>
+      </option>
+    {{- end }}
+  </select>
+</div>

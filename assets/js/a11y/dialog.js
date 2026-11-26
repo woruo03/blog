@@ -103,6 +103,15 @@ export function setupViewportSync() {
     );
 }
 
+const isOpenSelect = (el) => {
+    if (!(el instanceof HTMLSelectElement)) return false;
+    try {
+        return el.matches(":open");
+    } catch {
+        return false;
+    }
+};
+
 export function bindPanelLifecycle({ panel, toggle, closeBtn, resetBtn, onReset }) {
     const syncExpanded = (open) => {
         toggle?.setAttribute("aria-expanded", String(open));
@@ -120,7 +129,9 @@ export function bindPanelLifecycle({ panel, toggle, closeBtn, resetBtn, onReset 
                 returnFocusOnClose = true;
             });
             panel.addEventListener("keydown", (e) => {
-                if (e.key === "Escape") returnFocusOnClose = true;
+                if (e.key === "Escape" && !isOpenSelect(e.target)) {
+                    returnFocusOnClose = true;
+                }
             });
             if (!supportsAnchorPosition) {
                 panel.addEventListener("beforetoggle", (e) => {
