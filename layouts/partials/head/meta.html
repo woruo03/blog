@@ -1,0 +1,67 @@
+{{- $page := .page -}}
+{{- $metaDescription := .description -}}
+{{- with $page -}}
+  <meta charset="utf-8">
+  {{ with .Site.Language.Params.htmlCode | default .Site.Language.Locale }}
+    <meta http-equiv="content-language" content="{{ . }}">
+  {{ end }}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  {{/* Title */}}
+  {{ if .IsHome }}
+    <title>{{ .Site.Title | emojify }}</title>
+    <meta name="title" content="{{ .Site.Title | emojify }}">
+  {{ else }}
+    <title>{{ .Title | plainify | emojify }} &middot; {{ .Site.Title | emojify }}</title>
+    <meta name="title" content="{{ .Title | plainify | emojify }} &middot; {{ .Site.Title | emojify }}">
+  {{ end }}
+
+  {{/* Metadata */}}
+  {{ with $metaDescription }}
+    <meta name="description" content="{{ . | plainify }}">
+  {{ end }}
+  {{ with .Params.Tags | default .Site.Params.keywords }}
+    <meta name="keywords" content="{{ delimit . ", " }}">
+  {{ end }}
+  {{ with .Params.robots | default .Site.Params.robots }}
+    <meta name="robots" content="{{ . }}">
+  {{ end }}
+  <link rel="canonical" href="{{ .Permalink }}">
+  {{ if .IsTranslated }}
+    {{ range .AllTranslations }}
+      {{ $hreflang := .Language.Locale | default .Language.Lang }}
+      {{ if $hreflang }}
+        <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ .Permalink }}">
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ range .AlternativeOutputFormats }}
+    {{ printf `<link rel="%s" type="%s" href="%s" title="%s" />` .Rel .MediaType.Type .RelPermalink ($.Site.Title | emojify) | safeHTML }}
+  {{ end }}
+  {{ with site.Home.OutputFormats.Get "LLMS" }}
+    <link rel="describedby" href="{{ .RelPermalink }}">
+  {{ end }}
+
+  {{/* Author & Rel=Me */}}
+  {{ with .Site.Params.Author.name }}
+    <meta name="author" content="{{ . }}">
+  {{ end }}
+  {{ with .Site.Params.Author.links }}
+    {{ range . }}
+      {{ range $_, $url := . }}
+        {{ if not (strings.HasPrefix $url "mailto:") }}
+          <link href="{{ $url }}" rel="me">
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{/* Site Verification */}}
+  {{ with .Site.Params.verification.google }}<meta name="google-site-verification" content="{{ . }}">{{ end }}
+  {{ with .Site.Params.verification.bing }}<meta name="msvalidate.01" content="{{ . }}">{{ end }}
+  {{ with .Site.Params.verification.pinterest }}<meta name="p:domain_verify" content="{{ . }}">{{ end }}
+  {{ with .Site.Params.verification.yandex }}<meta name="yandex-verification" content="{{ . }}">{{ end }}
+  {{ with .Site.Params.verification.fediverse }}<meta name="fediverse:creator" content="{{ . }}">{{ end }}
+{{- end -}}

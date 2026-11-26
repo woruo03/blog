@@ -1,0 +1,279 @@
+/* ============================================================
+   文章交互组件：浏览量/点赞、卡片与分类药丸、面包屑与底部分享栏
+   ============================================================ */
+
+/* 1. 文章元数据浏览量与点赞排版与色彩 */
+.article-meta-stat {
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+    line-height: 1 !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.article-meta-stat .icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+
+.article-meta-stat .icon svg {
+    display: block !important;
+    height: 0.72em !important;
+    height: 1cap !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+.article-meta-stat .icon-eye {
+    opacity: 0.8;
+}
+
+.article-meta-stat span[id^="views_"],
+.article-meta-stat span[id^="likes_"] {
+    min-width: 2ch;
+}
+
+.article-meta-stat .icon-heart-static,
+#button_likes.liked #button_likes_icon,
+#button_likes.liked {
+    color: #ef4444 !important;
+}
+
+html.dark .article-meta-stat .icon-heart-static,
+html.dark #button_likes.liked #button_likes_icon,
+html.dark #button_likes.liked {
+    color: #f87171 !important;
+}
+
+#button_likes:hover #button_likes_icon,
+#button_likes:hover {
+    color: #dc2626 !important;
+}
+
+html.dark #button_likes:hover #button_likes_icon,
+html.dark #button_likes:hover {
+    color: #fca5a5 !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    #button_likes:hover #button_likes_icon {
+        transform: scale(1.2);
+    }
+}
+
+/* 2. 面包屑暗色下划线与卡片/分类药丸质感 */
+html.dark #breadcrumbs-trail a {
+    text-decoration-color: rgba(var(--color-neutral-600), 1);
+}
+
+.article-link__summary {
+    font-size: 0.875rem !important;
+    line-height: 1.65 !important;
+    margin-top: 0.75rem !important;
+    color: rgb(var(--color-neutral-600)) !important;
+}
+
+html.dark .article-link__summary {
+    color: rgb(var(--color-neutral-400)) !important;
+}
+
+.article-link--card > div:last-child,
+.article-link--related > div:last-child {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+.article-link--card,
+.article-link--related,
+.bf-term-card {
+    transition:
+        border-color 180ms ease-out,
+        transform 180ms ease-out;
+}
+
+.article-link--card:hover,
+.article-link--related:hover,
+.bf-term-card:hover {
+    border-color: rgba(var(--color-primary-400), 0.75) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .article-link--card:hover,
+    .article-link--related:hover,
+    .bf-term-card:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.bf-term-card:hover .bf-term-card__title {
+    color: rgb(var(--color-primary-600));
+}
+
+html.dark .bf-term-card:hover .bf-term-card__title {
+    color: rgb(var(--color-primary-400));
+}
+
+.bf-term-card__count {
+    background-color: rgba(var(--color-neutral-200), 0.75);
+    color: rgb(var(--color-neutral-600));
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-variant-numeric: tabular-nums;
+    transition:
+        background-color 180ms ease-out,
+        color 180ms ease-out;
+}
+
+html.dark .bf-term-card__count {
+    background-color: rgba(var(--color-neutral-800), 0.9);
+    color: rgb(var(--color-neutral-400));
+}
+
+.bf-term-card:hover .bf-term-card__count {
+    background-color: rgba(var(--color-primary-500), 0.14);
+    color: rgb(var(--color-primary-600));
+}
+
+html.dark .bf-term-card:hover .bf-term-card__count {
+    background-color: rgba(var(--color-primary-400), 0.16);
+    color: rgb(var(--color-primary-300));
+}
+
+/* 3. 文章底部分享栏与状态提示气泡 */
+.bf-share-btn {
+    min-inline-size: 2.25rem;
+    min-block-size: 2.25rem;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(var(--color-neutral-300), 0.8);
+    color: rgb(var(--color-neutral-700)) !important;
+    text-decoration: none !important;
+    transition:
+        border-color 150ms ease-out,
+        color 150ms ease-out,
+        background-color 150ms ease-out,
+        transform 150ms ease-out;
+}
+
+html.dark .bf-share-btn {
+    background-color: rgba(var(--color-neutral-900), 0.65);
+    border-color: rgba(var(--color-neutral-700), 0.85);
+    color: rgb(var(--color-neutral-300)) !important;
+}
+
+.bf-share-btn:hover {
+    border-color: rgba(var(--color-primary-500), 0.75);
+    color: rgb(var(--color-primary-600)) !important;
+    background-color: rgba(var(--color-primary-500), 0.08);
+}
+
+html.dark .bf-share-btn:hover {
+    border-color: rgba(var(--color-primary-400), 0.75);
+    color: rgb(var(--color-primary-300)) !important;
+    background-color: rgba(var(--color-primary-400), 0.12);
+}
+
+.bf-share-btn:active {
+    transform: scale(0.97);
+}
+
+.bf-share-action {
+    position: relative;
+    display: inline-flex;
+}
+
+/* 显式保留 HTML hidden 属性语义，避免 display: inline-flex 覆盖导致空白占位 */
+.bf-share-action[hidden] {
+    display: none;
+}
+
+.bf-share-icon-default {
+    display: inline-flex;
+}
+
+.bf-share-icon-copied,
+.bf-share-btn[data-copied] .bf-share-icon-default {
+    display: none;
+}
+
+.bf-share-btn[data-copied] .bf-share-icon-copied {
+    display: inline-flex;
+}
+
+.bf-share-btn[data-copied] {
+    border-color: rgba(21, 128, 61, 0.75);
+    color: #15803d !important;
+    background-color: rgba(21, 128, 61, 0.1);
+}
+
+html.dark .bf-share-btn[data-copied] {
+    border-color: rgba(74, 222, 128, 0.75);
+    color: #4ade80 !important;
+    background-color: rgba(74, 222, 128, 0.14);
+}
+
+.bf-share-btn[data-failed] {
+    border-color: rgba(185, 28, 28, 0.75);
+    color: #b91c1c !important;
+    background-color: rgba(185, 28, 28, 0.08);
+}
+
+html.dark .bf-share-btn[data-failed] {
+    border-color: rgba(248, 113, 113, 0.75);
+    color: #f87171 !important;
+    background-color: rgba(248, 113, 113, 0.14);
+}
+
+.bf-share-tip {
+    position: absolute;
+    inset-block-end: calc(100% + 0.5rem);
+    inset-inline-start: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 20;
+    background-color: rgba(var(--color-neutral), 0.96);
+    border: 1px solid rgba(var(--color-neutral-300), 0.9);
+    color: rgb(var(--color-neutral-800));
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    transition:
+        opacity 150ms ease-out,
+        transform 150ms ease-out;
+}
+
+html.dark .bf-share-tip {
+    background-color: rgba(var(--color-neutral-800), 0.96);
+    border-color: rgba(var(--color-neutral-600), 0.9);
+    color: rgb(var(--color-neutral-100));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.bf-share-btn:is([data-copied], [data-failed]) + .bf-share-tip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.bf-share-btn[data-failed] + .bf-share-tip {
+    border-color: rgba(185, 28, 28, 0.75);
+    color: #b91c1c;
+}
+
+html.dark .bf-share-btn[data-failed] + .bf-share-tip {
+    border-color: rgba(248, 113, 113, 0.75);
+    color: #fca5a5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bf-share-tip {
+        transform: translateX(-50%);
+        transition: opacity 150ms ease-out;
+    }
+}

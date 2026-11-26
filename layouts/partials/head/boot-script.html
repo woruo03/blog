@@ -1,0 +1,44 @@
+{{/* 零阻塞首帧防闪烁内联启动脚本：在首次绘制前同步应用深色模式与设置根属性，0 网络往返 */}}
+{{- $enableA11y := site.Params.enableA11y | default false -}}
+<script>
+  (function () {
+    var r = document.documentElement;
+    try {
+      var sp = r.getAttribute("data-default-appearance");
+      var up = localStorage.getItem("appearance");
+      if ((sp === "dark" && up === null) || up === "dark") {
+        r.classList.add("dark");
+      }
+      if (
+        r.getAttribute("data-auto-appearance") === "true" &&
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches &&
+        up !== "light"
+      ) {
+        r.classList.add("dark");
+      }
+      {{- if $enableA11y }}
+      var raw = JSON.parse(localStorage.getItem("a11ySettings") || "{}");
+      if (raw && typeof raw === "object") {
+        var heroBg = typeof raw.heroBg === "boolean" ? raw.heroBg : (typeof raw.disableImages === "boolean" ? !raw.disableImages : true);
+        var opNum = Number(raw.heroBgOpacity);
+        var op = Number.isFinite(opNum) ? Math.min(90, Math.max(15, Math.round(opNum))) : 50;
+        var banner = raw.heroBanner === "basic" || raw.heroBanner === "big" ? raw.heroBanner : "off";
+        var fs = raw.fontSize;
+        if (fs && fs !== "default") {
+          var p = parseInt(String(fs), 10);
+          if (Number.isFinite(p)) {
+            var snapped = 12 + Math.round((Math.min(24, Math.max(12, p)) - 12) / 2) * 2;
+            if (snapped !== 16) r.style.fontSize = snapped + "px";
+          }
+        }
+        r.dataset.heroBg = heroBg ? "on" : "off";
+        r.style.setProperty("--bf-hero-bg-opacity", String(op / 100));
+        r.dataset.heroBanner = banner;
+        r.dataset.underlineLinks = raw.underlineLinks ? "true" : "false";
+        r.dataset.disableBlur = raw.disableBlur ? "true" : "false";
+      }
+      {{- end }}
+    } catch (_) {}
+  })();
+</script>

@@ -1,65 +1,17 @@
 {{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
 
-{{/* Mermaid: 按需懒加载（距视口 400px 内才拉取包并渲染，避免阻塞首屏与主线程） */}}
+{{/* Mermaid: 按需懒加载（距视口 400px 内才拉取打包资源并渲染） */}}
 {{ if .Page.HasShortcode "mermaid" }}
   {{ $mermaidLib := resources.Get "lib/mermaid/mermaid.min.js" }}
   {{ $mermaidConfig := resources.Get "js/mermaid.js" | resources.Minify }}
   {{ $mermaidJS := slice $mermaidLib $mermaidConfig | resources.Concat "js/mermaid.bundle.js" | resources.Fingerprint $alg }}
-  <script>
-    (function () {
-      "use strict";
-      var loaded = false;
-      var loadMermaid = function () {
-        if (loaded) return;
-        loaded = true;
-        document.querySelectorAll("pre.mermaid").forEach(function (el) {
-          if (!el.hasAttribute("data-graph")) {
-            el.setAttribute("data-graph", el.textContent);
-          }
-        });
-        var s = document.createElement("script");
-        s.src = {{ $mermaidJS.RelPermalink }};
-        s.integrity = {{ $mermaidJS.Data.Integrity }};
-        s.async = true;
-        s.onload = function () {
-          if (typeof window.updateMermaidTheme === "function") {
-            window.updateMermaidTheme();
-          } else if (typeof window.mermaid !== "undefined") {
-            window.mermaid.run();
-          }
-        };
-        s.onerror = function () {
-          s.remove();
-        };
-        document.head.appendChild(s);
-      };
-      var observeMermaid = function () {
-        var targets = document.querySelectorAll("pre.mermaid");
-        if (!targets.length) return;
-        if (!("IntersectionObserver" in window)) {
-          loadMermaid();
-          return;
-        }
-        var observer = new IntersectionObserver(
-          function (entries) {
-            if (entries.some(function (entry) { return entry.isIntersecting; })) {
-              observer.disconnect();
-              loadMermaid();
-            }
-          },
-          { rootMargin: "400px 0px" }
-        );
-        targets.forEach(function (el) {
-          observer.observe(el);
-        });
-      };
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", observeMermaid, { once: true });
-      } else {
-        observeMermaid();
-      }
-    })();
-  </script>
+  {{ $mermaidLazy := resources.Get "js/mermaid-lazy.js" | resources.Minify | resources.Fingerprint $alg }}
+  <script
+    defer
+    src="{{ $mermaidLazy.RelPermalink }}"
+    integrity="{{ $mermaidLazy.Data.Integrity }}"
+    data-mermaid-src="{{ $mermaidJS.RelPermalink }}"
+    data-mermaid-integrity="{{ $mermaidJS.Data.Integrity }}"></script>
 {{ end }}
 
 {{/* Chart */}}
@@ -83,10 +35,12 @@
   {{ end }}
 {{ end }}
 
-{{/* TypeIt */}}
+{{/* TypeIt: 库与统一初始化器合并为单一指纹包 */}}
 {{ if .Page.HasShortcode "typeit" }}
-  {{ $typeitLib := resources.Get "lib/typeit/typeit.umd.js" | resources.Fingerprint $alg }}
-  <script defer src="{{ $typeitLib.RelPermalink }}" integrity="{{ $typeitLib.Data.Integrity }}"></script>
+  {{ $typeitLib := resources.Get "lib/typeit/typeit.umd.js" }}
+  {{ $typeitRunner := resources.Get "js/typeit-runner.js" | resources.Minify }}
+  {{ $typeitBundle := slice $typeitLib $typeitRunner | resources.Concat "js/typeit.bundle.js" | resources.Fingerprint $alg }}
+  <script defer src="{{ $typeitBundle.RelPermalink }}" integrity="{{ $typeitBundle.Data.Integrity }}"></script>
 {{ end }}
 
 {{/* Packery */}}
@@ -142,61 +96,4 @@
   {{ with resources.Get "js/shortcodes/tabs.js" | minify | resources.Fingerprint $alg }}
     <script defer src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" crossorigin="anonymous"></script>
   {{ end }}
-{{ end }}
-
-{{/* Firebase */}}
-{{ if site.Params.firebase.apiKey }}
-  {{ $firebase := resources.Get "js/firebase.js" | resources.Minify | resources.Fingerprint $alg }}
-  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <script>
-    (function () {
-      var load = function () {
-        import("{{ $firebase.RelPermalink }}");
-      };
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(load, { timeout: 4000 });
-      } else {
-        window.addEventListener("load", function () {
-          setTimeout(load, 1500);
-        });
-      }
-    })();
-  </script>
-
-  {{ if in (slice "page" "section") .Kind }}
-    {{ $translations := .AllTranslations }}
-    {{ with .File }}
-      {{ $path := .Path }}
-      {{ range $translations }}
-        {{ $path = replace $path (print "." .Lang ".md") ".md" }}
-      {{ end }}
-      {{ partial "inline/firebase-config.html" (dict "views" (printf "views_%s" $path) "likes" (printf "likes_%s" $path)) }}
-    {{ end }}
-  {{ else if eq .Kind "term" }}
-    {{ partial "inline/firebase-config.html" (dict "views" (printf "views_term_%s" .Data.Term) "likes" (printf "likes_term_%s" .Data.Term)) }}
-  {{ else if eq .Kind "taxonomy" }}
-    {{ partial "inline/firebase-config.html" (dict "views" (printf "views_taxonomy_%s" .Data.Plural) "likes" (printf "likes_taxonomy_%s" .Data.Plural)) }}
-  {{ else if eq .Kind "home" }}
-    {{ partial "inline/firebase-config.html" (dict "views" "views_home" "likes" "likes_home") }}
-  {{ end }}
-{{ end }}
-
-{{ define "_partials/inline/firebase-config.html" }}
-<script
-  id="firebase-config"
-  type="application/json"
-  data-views="{{ .views }}"
-  data-likes="{{ .likes }}">
-  {
-    "config": {
-      "apiKey": "{{ site.Params.firebase.apiKey }}",
-      "authDomain": "{{ site.Params.firebase.authDomain }}",
-      "projectId": "{{ site.Params.firebase.projectId }}",
-      "storageBucket": "{{ site.Params.firebase.storageBucket }}",
-      "messagingSenderId": "{{ site.Params.firebase.messagingSenderId }}",
-      "appId": "{{ site.Params.firebase.appId }}",
-      "measurementId": "{{ site.Params.firebase.measurementId }}"
-    }
-  }
-</script>
 {{ end }}

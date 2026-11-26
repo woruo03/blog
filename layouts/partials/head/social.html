@@ -1,0 +1,60 @@
+{{/* 社交分享元信息：优先使用文章封面图（含 R2 featureimage）并输出 summary_large_image，无封面时回退 defaultSocialImage */}}
+{{- $page := .page -}}
+{{- $metaDescription := .description -}}
+{{- with $page -}}
+  {{ template "_internal/opengraph.html" . }}
+  {{ $hasInternalSocialImage := gt (len (.Params.images | default slice)) 0 }}
+  {{ if not $hasInternalSocialImage }}
+    {{ $pageImages := .Resources.ByType "image" }}
+    {{ range slice "*feature*" "*cover*" "*thumbnail*" }}
+      {{ if and (not $hasInternalSocialImage) ($pageImages.GetMatch .) }}
+        {{ $hasInternalSocialImage = true }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ $customSocialImageURL := "" }}
+  {{ $useLargeTwitterCard := false }}
+  {{ if not $hasInternalSocialImage }}
+    {{ with partial "functions/feature-image.html" . }}
+      {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
+        {{ $customSocialImageURL = . }}
+        {{ $useLargeTwitterCard = true }}
+      {{ else }}
+        {{ with or ($page.Resources.Get .) (resources.Get .) }}
+          {{ $customSocialImageURL = .RelPermalink | absURL }}
+          {{ $useLargeTwitterCard = true }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+    {{ if not $customSocialImageURL }}
+      {{ with .Site.Params.defaultSocialImage }}
+        {{ $socialImage := "" }}
+        {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
+          {{ $socialImage = resources.GetRemote . }}
+        {{ else }}
+          {{ $socialImage = resources.Get . }}
+        {{ end }}
+        {{ with $socialImage }}
+          {{ $customSocialImageURL = .RelPermalink | absURL }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ if $useLargeTwitterCard }}
+    <meta property="og:image" content="{{ $customSocialImageURL }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ $customSocialImageURL }}">
+    <meta name="twitter:title" content="{{ .Title | plainify | emojify }}">
+    {{ with $metaDescription }}
+      <meta name="twitter:description" content="{{ . | plainify }}">
+    {{ end }}
+  {{ else }}
+    {{ template "_internal/twitter_cards.html" . }}
+    {{ with $customSocialImageURL }}
+      <meta name="twitter:image" content="{{ . }}">
+      <meta property="og:image" content="{{ . }}">
+    {{ end }}
+  {{ end }}
+{{- end -}}

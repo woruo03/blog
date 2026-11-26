@@ -1,0 +1,9 @@
+{{/* 设置面板开关行复用组件 */}}
+<div class="flex items-center justify-between">
+  <label for="{{ .id }}" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+    {{ .label }}
+  </label>
+  <div class="ios-toggle">
+    <input type="checkbox" id="{{ .id }}"{{ if .checked }} checked{{ end }}>
+  </div>
+</div>

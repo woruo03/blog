@@ -1,0 +1,29 @@
+{{/* 样式合并打包：配色方案 + Blowfish 主样式 + 7 个有序自定义模块 + 图片缩放样式 -> 单一 main.bundle.css */}}
+{{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
+{{- $cssResources := slice -}}
+{{- $schemeName := site.Params.colorScheme | default "blowfish" -}}
+{{- $cssScheme := resources.Get (printf "css/schemes/%s.css" (lower $schemeName)) | default (resources.Get "css/schemes/blowfish.css") -}}
+{{- $cssResources = $cssResources | append $cssScheme -}}
+{{- $cssResources = $cssResources | append (resources.Get "css/compiled/main.css") -}}
+{{- range slice
+  "css/custom/layout.css"
+  "css/custom/header-menu.css"
+  "css/custom/toc.css"
+  "css/custom/hero.css"
+  "css/custom/settings-dialog.css"
+  "css/custom/article-widgets.css"
+  "css/custom/content-a11y.css"
+-}}
+  {{- with resources.Get . -}}
+    {{- $cssResources = $cssResources | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- if not (site.Params.disableImageZoom | default false) -}}
+  {{- $cssResources = $cssResources | append (resources.Get "lib/zoom/style.css") -}}
+{{- end -}}
+{{- $bundleCSS := $cssResources | resources.Concat "css/main.bundle.css" | resources.Minify | resources.Fingerprint $alg -}}
+<link
+  type="text/css"
+  rel="stylesheet"
+  href="{{ $bundleCSS.RelPermalink }}"
+  integrity="{{ $bundleCSS.Data.Integrity }}">
