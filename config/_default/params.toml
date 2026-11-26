@@ -3,7 +3,7 @@
 # ============================================================
 
 # ---- 外观 ----
-colorScheme = "ocean"
+colorScheme = "blowfish" # 与 ocean 色值完全一致，前端兼容 ocean 别名
 defaultAppearance = "dark"
 autoSwitchAppearance = true
 

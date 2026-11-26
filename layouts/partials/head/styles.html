@@ -1,9 +1,23 @@
-{{/* 样式合并打包：配色方案 + Blowfish 主样式 + 7 个有序自定义模块 + 图片缩放样式 -> 单一 main.bundle.css */}}
+{{/* 样式合并打包：默认配色 + 其余 Blowfish 原生配色（属性选择器） + Blowfish 主样式 + 7 个有序自定义模块 + 图片缩放样式 -> 单一 main.bundle.css */}}
 {{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
+{{- $enableA11y := site.Params.enableA11y | default false -}}
+{{- $schemes := partialCached "functions/color-schemes.html" .Site .Site.Language.Lang -}}
 {{- $cssResources := slice -}}
-{{- $schemeName := site.Params.colorScheme | default "blowfish" -}}
-{{- $cssScheme := resources.Get (printf "css/schemes/%s.css" (lower $schemeName)) | default (resources.Get "css/schemes/blowfish.css") -}}
-{{- $cssResources = $cssResources | append $cssScheme -}}
+{{- $extraSchemes := slice -}}
+{{- range $schemes.list -}}
+  {{- if eq .name $schemes.default -}}
+    {{- $cssResources = $cssResources | append .resource -}}
+  {{- else if $enableA11y -}}
+    {{- $scoped := replaceRE `:root\b` (printf `:root[data-color-scheme="%s"]` .name) .resource.Content -}}
+    {{- $extraSchemes = $extraSchemes | append $scoped -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $cssResources -}}
+  {{- $cssResources = $cssResources | append (resources.Get "css/schemes/blowfish.css") -}}
+{{- end -}}
+{{- if $extraSchemes -}}
+  {{- $cssResources = $cssResources | append (resources.FromString "css/schemes-extra.css" (delimit $extraSchemes "\n")) -}}
+{{- end -}}
 {{- $cssResources = $cssResources | append (resources.Get "css/compiled/main.css") -}}
 {{- range slice
   "css/custom/layout.css"

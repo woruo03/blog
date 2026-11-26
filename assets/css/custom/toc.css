@@ -23,10 +23,10 @@
     top: -6.5rem !important; /* -104px */
 }
 
-/* 3. 当前阅读章节 Sky 蓝高亮强调 */
+/* 3. 当前阅读章节高亮强调（跟随当前主题主色变量） */
 #TableOfContents a.active,
 .toc a.active {
-    color: #0284c7 !important;
+    color: rgb(var(--color-primary-600)) !important;
     font-weight: 600 !important;
     text-decoration-line: underline;
     text-decoration-thickness: 2px;
@@ -35,7 +35,7 @@
 
 html.dark #TableOfContents a.active,
 html.dark .toc a.active {
-    color: #38bdf8 !important;
+    color: rgb(var(--color-primary-400)) !important;
 }
 
 /* 4. 未聚焦子项首帧防抖：与 smart-toc.js 初始展开首章保持一致，消除 CLS */

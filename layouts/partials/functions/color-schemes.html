@@ -1,0 +1,69 @@
+{{- /*
+  单一数据源：扫描 css/schemes/*.css 收集全部不重复的 Blowfish 原生配色方案，
+  自动去重 ocean -> blowfish 别名、将站点默认配色置顶并提取三色预览 RGB。
+*/ -}}
+{{- $aliases := dict "ocean" "blowfish" -}}
+{{- $ignore := slice "ocean" -}}
+
+{{- $rawDefault := lower (site.Params.colorScheme | default "blowfish") -}}
+{{- $defaultScheme := index $aliases $rawDefault | default $rawDefault -}}
+
+{{- $matched := newScratch -}}
+{{- $sortedNames := slice -}}
+{{- range resources.Match "css/schemes/*.css" -}}
+  {{- $name := lower (path.BaseName .Name) -}}
+  {{- if in $ignore $name -}}
+    {{- continue -}}
+  {{- end -}}
+  {{- $matched.Set $name . -}}
+  {{- $sortedNames = $sortedNames | append $name -}}
+{{- end -}}
+{{- $sortedNames = sort ($sortedNames | uniq) -}}
+
+{{- if not ($matched.Get $defaultScheme) -}}
+  {{- $defaultScheme = "blowfish" -}}
+{{- end -}}
+
+{{- $orderedNames := slice -}}
+{{- if $matched.Get $defaultScheme -}}
+  {{- $orderedNames = $orderedNames | append $defaultScheme -}}
+{{- end -}}
+{{- range $sortedNames -}}
+  {{- if ne . $defaultScheme -}}
+    {{- $orderedNames = $orderedNames | append . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $items := slice -}}
+{{- range $name := $orderedNames -}}
+  {{- $res := $matched.Get $name -}}
+  {{- $content := $res.Content -}}
+  {{- $primary := "59, 130, 246" -}}
+  {{- with findRESubmatch `--color-primary-500\s*:\s*([^;]+);` $content 1 -}}
+    {{- $primary = strings.TrimSpace (index (index . 0) 1) -}}
+  {{- end -}}
+  {{- $secondary := "6, 182, 212" -}}
+  {{- with findRESubmatch `--color-secondary-500\s*:\s*([^;]+);` $content 1 -}}
+    {{- $secondary = strings.TrimSpace (index (index . 0) 1) -}}
+  {{- end -}}
+  {{- $neutral := "100, 116, 139" -}}
+  {{- with findRESubmatch `--color-neutral-500\s*:\s*([^;]+);` $content 1 -}}
+    {{- $neutral = strings.TrimSpace (index (index . 0) 1) -}}
+  {{- end -}}
+  {{- $i18nKey := printf "a11y.scheme_%s" (replace $name "-" "_") -}}
+  {{- $label := i18n $i18nKey | default (strings.Title (replace $name "-" " ")) -}}
+  {{- $items = $items | append (dict
+    "name" $name
+    "label" $label
+    "resource" $res
+    "primary" $primary
+    "secondary" $secondary
+    "neutral" $neutral
+  ) -}}
+{{- end -}}
+
+{{- return (dict
+  "default" $defaultScheme
+  "names" $orderedNames
+  "list" $items
+) -}}

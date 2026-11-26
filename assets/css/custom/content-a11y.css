@@ -52,6 +52,7 @@ html.dark .mermaid .edgeLabel rect {
     #button_likes,
     #zen-mode-button,
     .bf-mobile-menu-icon,
+    .bf-settings-select,
     dialog.bf-a11y-dialog button
 ):focus:not(:focus-visible) {
     outline: none;
@@ -64,6 +65,7 @@ html.dark .mermaid .edgeLabel rect {
     .bf-mobile-menu-icon,
     .bf-share-btn,
     .bf-settings-range,
+    .bf-settings-select,
     dialog.bf-a11y-dialog button
 ):focus-visible,
 :is(.ios-toggle, .bf-settings-segment-option):has(input:focus-visible) {
@@ -83,13 +85,20 @@ html.dark .mermaid .edgeLabel rect {
 
     dialog.bf-a11y-dialog,
     .bf-settings-segment,
+    .bf-settings-select,
+    .bf-settings-select::picker(select),
     .bf-settings-reset,
     .bf-share-tip {
         border: 1px solid CanvasText;
     }
 
-    .bf-settings-segment-option:has(input:checked) {
+    .bf-settings-segment-option:has(input:checked),
+    .bf-settings-select option:checked {
         outline: 2px solid Highlight;
+    }
+
+    .bf-scheme-dot {
+        border-color: CanvasText;
     }
 }
 
