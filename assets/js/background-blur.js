@@ -107,7 +107,7 @@
             window.addEventListener("scroll", requestBlurUpdate, {
                 passive: true,
             });
-            updateBlur();
+            requestBlurUpdate();
         }
 
         function setBackgroundBlurDisabled(disabled) {

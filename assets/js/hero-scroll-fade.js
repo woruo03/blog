@@ -64,5 +64,5 @@
         lastOpacity = -1;
         update();
     });
-    update();
+    requestUpdate();
 })();

@@ -17,14 +17,16 @@
     {{- $mainSections := site.Params.mainSections | default (slice "posts") -}}
     {{- $recentLimit := site.Params.homepage.showRecentItems | default 5 -}}
     {{- range first $recentLimit (where site.RegularPages "Type" "in" $mainSections) -}}
-      {{- if and (not $usesMedia) (strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin) -}}
+      {{- if strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin -}}
         {{- $usesMedia = true -}}
+        {{- break -}}
       {{- end -}}
     {{- end -}}
   {{- else if and $showCardFeatureImage (not $.IsPage) -}}
     {{- range $.RegularPages -}}
-      {{- if and (not $usesMedia) (strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin) -}}
+      {{- if strings.HasPrefix (partial "functions/feature-image.html" . | default "") $origin -}}
         {{- $usesMedia = true -}}
+        {{- break -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}

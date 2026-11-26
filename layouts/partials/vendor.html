@@ -30,9 +30,9 @@
   {{ $katexRenderLib := resources.Get "lib/katex/auto-render.min.js" }}
   {{ $katexJS := slice $katexLib $katexRenderLib | resources.Concat "js/katex.bundle.js" | resources.Fingerprint $alg }}
   <script defer type="text/javascript" src="{{ $katexJS.RelPermalink }}" integrity="{{ $katexJS.Data.Integrity }}" id="katex-render"></script>
-  {{ range resources.Match "lib/katex/fonts/*" }}
-    <!-- {{ .RelPermalink }} -->
-  {{ end }}
+  {{- range resources.Match "lib/katex/fonts/*" -}}
+    {{- .Publish -}}
+  {{- end -}}
 {{ end }}
 
 {{/* TypeIt: 库与统一初始化器合并为单一指纹包 */}}

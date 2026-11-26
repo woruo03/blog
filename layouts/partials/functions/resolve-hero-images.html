@@ -32,7 +32,10 @@
 
 {{- if not (or $background $backgroundURL) -}}
   {{- range slice "*feature*" "*cover*" "*thumbnail*" -}}
-    {{- if not $background }}{{ $background = $images.GetMatch . }}{{ end -}}
+    {{- with $images.GetMatch . -}}
+      {{- $background = . -}}
+      {{- break -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 
@@ -61,7 +64,10 @@
 
 {{- if not (or $banner $bannerURL) -}}
   {{- range slice "*feature*" "*cover*" "*thumbnail*" "*background*" -}}
-    {{- if not $banner }}{{ $banner = $images.GetMatch . }}{{ end -}}
+    {{- with $images.GetMatch . -}}
+      {{- $banner = . -}}
+      {{- break -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 

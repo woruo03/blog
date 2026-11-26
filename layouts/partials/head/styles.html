@@ -22,6 +22,7 @@
   {{- $cssResources = $cssResources | append (resources.Get "lib/zoom/style.css") -}}
 {{- end -}}
 {{- $bundleCSS := $cssResources | resources.Concat "css/main.bundle.css" | resources.Minify | resources.Fingerprint $alg -}}
+<style>@layer properties,theme,base,components,utilities;@layer components{.icon svg{width:1em;height:1em}}@layer utilities{.hidden{display:none}.invisible{visibility:hidden}}</style>
 <link
   type="text/css"
   rel="stylesheet"

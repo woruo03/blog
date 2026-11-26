@@ -1,23 +1,23 @@
-{{/* 零阻塞首帧防闪烁内联启动脚本：在首次绘制前同步应用深色模式与设置根属性，0 网络往返 */}}
+{{/* 零阻塞首帧防闪烁内联启动脚本：位于样式表之前，在首次绘制前同步应用深色模式、color-scheme 与设置根属性 */}}
 {{- $enableA11y := site.Params.enableA11y | default false -}}
 <script>
   (function () {
     var r = document.documentElement;
+    var up = null;
     try {
-      var sp = r.getAttribute("data-default-appearance");
-      var up = localStorage.getItem("appearance");
-      if ((sp === "dark" && up === null) || up === "dark") {
-        r.classList.add("dark");
-      }
-      if (
-        r.getAttribute("data-auto-appearance") === "true" &&
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches &&
-        up !== "light"
-      ) {
-        r.classList.add("dark");
-      }
-      {{- if $enableA11y }}
+      up = localStorage.getItem("appearance");
+    } catch (_) {}
+    var sp = r.getAttribute("data-default-appearance");
+    var auto = r.getAttribute("data-auto-appearance") === "true";
+    var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+    var isDark =
+      up === "dark" ||
+      (up !== "light" && (auto && mq ? mq.matches : sp === "dark"));
+    if (isDark) r.classList.add("dark");
+    var csMeta = document.querySelector('meta[name="color-scheme"]');
+    if (csMeta) csMeta.content = up === "dark" || up === "light" ? up : "dark light";
+    {{- if $enableA11y }}
+    try {
       var raw = JSON.parse(localStorage.getItem("a11ySettings") || "{}");
       if (raw && typeof raw === "object") {
         var heroBg = typeof raw.heroBg === "boolean" ? raw.heroBg : (typeof raw.disableImages === "boolean" ? !raw.disableImages : true);
@@ -38,7 +38,7 @@
         r.dataset.underlineLinks = raw.underlineLinks ? "true" : "false";
         r.dataset.disableBlur = raw.disableBlur ? "true" : "false";
       }
-      {{- end }}
     } catch (_) {}
+    {{- end }}
   })();
 </script>

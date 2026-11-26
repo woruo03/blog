@@ -52,23 +52,13 @@ dialog.bf-a11y-dialog:not(.bf-settings-popover-desktop) {
     }
 }
 
-/* 保留 [open] 与 :popover-open 独立规则，避免不支持 :popover-open 的旧浏览器丢弃整条选择器 */
-dialog.bf-a11y-dialog[open] {
+/* 使用 :is() 容错选择器合并 [open] 与 :popover-open，不支持 :popover-open 的旧浏览器仍保留 [open] */
+dialog.bf-a11y-dialog:is([open], :popover-open) {
     opacity: 1;
 }
 
 @starting-style {
-    dialog.bf-a11y-dialog[open] {
-        opacity: 0;
-    }
-}
-
-dialog.bf-settings-popover-desktop[popover]:popover-open {
-    opacity: 1;
-}
-
-@starting-style {
-    dialog.bf-settings-popover-desktop[popover]:popover-open {
+    dialog.bf-a11y-dialog:is([open], :popover-open) {
         opacity: 0;
     }
 }
@@ -78,22 +68,12 @@ dialog.bf-settings-popover-desktop[popover]:popover-open {
         transform: translateY(-6px);
     }
 
-    dialog.bf-a11y-dialog[open] {
+    dialog.bf-a11y-dialog:is([open], :popover-open) {
         transform: translateY(0);
     }
 
     @starting-style {
-        dialog.bf-a11y-dialog[open] {
-            transform: translateY(-6px);
-        }
-    }
-
-    dialog.bf-settings-popover-desktop[popover]:popover-open {
-        transform: translateY(0);
-    }
-
-    @starting-style {
-        dialog.bf-settings-popover-desktop[popover]:popover-open {
+        dialog.bf-a11y-dialog:is([open], :popover-open) {
             transform: translateY(-6px);
         }
     }
@@ -150,7 +130,7 @@ html.dark .bf-settings-section-title {
     transition: opacity 150ms ease-out;
 }
 
-.bf-settings-range-row.is-disabled {
+.bf-settings-range-row:has(input:disabled) {
     opacity: 0.45;
     pointer-events: none;
 }

@@ -29,7 +29,10 @@
   {{- if not (or $featured $featuredURL) -}}
     {{- $images := $page.Resources.ByType "image" -}}
     {{- range slice "*feature*" "*cover*" "*thumbnail*" -}}
-      {{- if not $featured }}{{ $featured = $images.GetMatch . }}{{ end -}}
+      {{- with $images.GetMatch . -}}
+        {{- $featured = . -}}
+        {{- break -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 

@@ -7,8 +7,9 @@
   {{ if not $hasInternalSocialImage }}
     {{ $pageImages := .Resources.ByType "image" }}
     {{ range slice "*feature*" "*cover*" "*thumbnail*" }}
-      {{ if and (not $hasInternalSocialImage) ($pageImages.GetMatch .) }}
+      {{ if $pageImages.GetMatch . }}
         {{ $hasInternalSocialImage = true }}
+        {{ break }}
       {{ end }}
     {{ end }}
   {{ end }}

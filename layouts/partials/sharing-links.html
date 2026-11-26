@@ -1,10 +1,8 @@
 {{ $sharing := partial "functions/sharing-links.html" . }}
 {{ if $sharing.enabled }}
   {{ $links := hugo.Data.sharing }}
-  {{ $pageURL := urlquery $.Permalink }}
-  {{ $pageTitle := urlquery $.Title }}
-  {{ $mastodonURL := replace $pageURL "+" "%20" }}
-  {{ $mastodonTitle := replace $pageTitle "+" "%20" }}
+  {{ $pageURL := replace (urlquery $.Permalink) "+" "%20" }}
+  {{ $pageTitle := replace (urlquery $.Title) "+" "%20" }}
   <section
     id="article-sharing"
     class="flex flex-row flex-wrap justify-center gap-2 pt-4 text-xl print:hidden"
@@ -17,7 +15,7 @@
     <span class="bf-share-action bf-share-copy-wrap">
       <button
         type="button"
-        class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2 transition-colors"
+        class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2"
         command="--copy-link"
         commandfor="article-sharing"
         title="{{ i18n "sharing.copy_link" }}"
@@ -30,7 +28,7 @@
     <span class="bf-share-action" data-native-share-wrap hidden>
       <button
         type="button"
-        class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2 transition-colors"
+        class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2"
         command="--native-share"
         commandfor="article-sharing"
         title="{{ i18n "sharing.native_share" }}"
@@ -41,11 +39,14 @@
     </span>
     {{ range $sharing.links }}
       {{ with index $links . }}
+        {{- $isMailto := strings.HasPrefix .url "mailto:" -}}
         <a
-          class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2 transition-colors"
+          class="bf-share-btn inline-flex items-center justify-center rounded-lg p-2"
+          {{- if not $isMailto }}
           target="_blank"
           rel="noopener noreferrer"
-          href="{{ if eq .icon "mastodon" }}{{ printf .url $mastodonURL $mastodonTitle | safeURL }}{{ else }}{{ printf .url $pageURL $pageTitle | safeURL }}{{ end }}"
+          {{- end }}
+          href="{{ printf .url $pageURL $pageTitle | safeURL }}"
           title="{{ i18n .title }}"
           aria-label="{{ i18n .title }}">
           <span aria-hidden="true">{{ partial "icon.html" .icon }}</span>

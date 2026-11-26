@@ -35,26 +35,25 @@
     min-width: 2ch;
 }
 
+:root {
+    --bf-heart-color: #ef4444;
+    --bf-heart-hover: #dc2626;
+}
+
+:root.dark {
+    --bf-heart-color: #f87171;
+    --bf-heart-hover: #fca5a5;
+}
+
 .article-meta-stat .icon-heart-static,
 #button_likes.liked #button_likes_icon,
 #button_likes.liked {
-    color: #ef4444 !important;
-}
-
-html.dark .article-meta-stat .icon-heart-static,
-html.dark #button_likes.liked #button_likes_icon,
-html.dark #button_likes.liked {
-    color: #f87171 !important;
+    color: var(--bf-heart-color) !important;
 }
 
 #button_likes:hover #button_likes_icon,
 #button_likes:hover {
-    color: #dc2626 !important;
-}
-
-html.dark #button_likes:hover #button_likes_icon,
-html.dark #button_likes:hover {
-    color: #fca5a5 !important;
+    color: var(--bf-heart-hover) !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -77,12 +76,6 @@ html.dark #breadcrumbs-trail a {
 
 html.dark .article-link__summary {
     color: rgb(var(--color-neutral-400)) !important;
-}
-
-.article-link--card > div:last-child,
-.article-link--related > div:last-child {
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
 }
 
 .article-link--card,
@@ -175,8 +168,10 @@ html.dark .bf-share-btn:hover {
     background-color: rgba(var(--color-primary-400), 0.12);
 }
 
-.bf-share-btn:active {
-    transform: scale(0.97);
+@media (prefers-reduced-motion: no-preference) {
+    .bf-share-btn:active {
+        transform: scale(0.97);
+    }
 }
 
 .bf-share-action {

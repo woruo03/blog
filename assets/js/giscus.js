@@ -13,6 +13,7 @@
                 : "light";
 
         let lastTheme = "";
+        let giscusReady = false;
 
         function loadGiscus() {
             if (container.dataset.loaded === "true") return;
@@ -33,6 +34,7 @@
         }
 
         function syncGiscusTheme() {
+            if (!giscusReady) return;
             const nextTheme = getTheme();
             if (nextTheme === lastTheme) return;
             const iframe = document.querySelector("iframe.giscus-frame");
@@ -71,6 +73,7 @@
                 typeof event.data === "object" &&
                 "giscus" in event.data
             ) {
+                giscusReady = true;
                 syncGiscusTheme();
             }
         });

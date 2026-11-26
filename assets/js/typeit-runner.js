@@ -17,6 +17,7 @@
             return;
         }
         const strings = Array.isArray(cfg.strings) ? cfg.strings : [];
+        if (strings.length === 0) return;
         if (reducedMotion || typeof window.TypeIt === "undefined") {
             fillStaticFallback(el, strings);
             return;
@@ -34,7 +35,7 @@
         const delayBetween = Number(cfg.delayBetween ?? 200);
         const breakLines = Boolean(cfg.breakLines);
 
-        const instance = new window.TypeIt(`#${el.id}`, {
+        const instance = new window.TypeIt(el, {
             speed: Number(cfg.speed ?? 50),
             deleteSpeed: Number(cfg.deleteSpeed ?? 25),
             lifeLike: cfg.lifeLike !== false,

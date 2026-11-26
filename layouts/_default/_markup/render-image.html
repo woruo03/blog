@@ -24,15 +24,22 @@
   {{- $alt := .alt -}}
   {{- $originalWidth := $imgObj.Width -}}
 
-  {{- $img800 := $imgObj.Resize "800x" -}}
+  {{- $img800 := $imgObj -}}
+  {{- with try ($imgObj.Resize "800x") -}}
+    {{- with .Value }}{{ $img800 = . }}{{ end -}}
+  {{- end -}}
   {{- $imgMax := $imgObj -}}
   {{- $maxWidth := $originalWidth -}}
   {{- if gt $originalWidth 1280 -}}
-    {{- $imgMax = $imgObj.Resize "1280x" -}}
-    {{- $maxWidth = 1280 -}}
+    {{- with try ($imgObj.Resize "1280x") -}}
+      {{- with .Value -}}
+        {{- $imgMax = . -}}
+        {{- $maxWidth = 1280 -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 
-  {{- $srcset := printf "%s 800w, %s %dw" $img800.RelPermalink $imgMax.RelPermalink $maxWidth -}}
+  {{- $srcset := printf "%s %dw, %s %dw" $img800.RelPermalink $img800.Width $imgMax.RelPermalink $maxWidth -}}
 
   <img
     class="my-0 rounded-md"
@@ -42,8 +49,10 @@
     {{ with $imgObj.Width }}width="{{ . }}"{{ end }}
     {{ with $imgObj.Height }}height="{{ . }}"{{ end }}
     src="{{ $img800.RelPermalink }}"
+    {{- if ne $img800.RelPermalink $imgMax.RelPermalink }}
     srcset="{{ $srcset }}"
-    sizes="(min-width: 768px) 50vw, 65vw"
+    sizes="(min-width: 1024px) 56rem, calc(100vw - 3rem)"
+    {{- end }}
     data-zoom-src="{{ $imgObj.RelPermalink }}">
 {{- end -}}
 
@@ -74,12 +83,14 @@
     {{- end -}}
   {{- end -}}>
   {{- if and (not $isRemote) $resource -}}
-    {{- $isSVG := eq $resource.MediaType.SubType "svg" -}}
-    {{- $shouldOptimize := and (not $disableImageOptimizationMD) (not $isSVG) -}}
-    {{- if and $shouldOptimize (gt $resource.Width 800) -}}
-      {{- template "RenderImageResponsive" (dict "imgObj" $resource "alt" $altText) -}}
-    {{- else if $isSVG -}}
+    {{- if eq $resource.MediaType.SubType "svg" -}}
       {{- template "RenderImageSimple" (dict "imgObj" "" "src" $resource.RelPermalink "alt" $altText "width" $attrWidth "height" $attrHeight) -}}
+    {{- else if not $disableImageOptimizationMD -}}
+      {{- if gt $resource.Width 800 -}}
+        {{- template "RenderImageResponsive" (dict "imgObj" $resource "alt" $altText) -}}
+      {{- else -}}
+        {{- template "RenderImageSimple" (dict "imgObj" $resource "src" $resource.RelPermalink "alt" $altText "width" "" "height" "") -}}
+      {{- end -}}
     {{- else -}}
       {{- template "RenderImageSimple" (dict "imgObj" $resource "src" $resource.RelPermalink "alt" $altText "width" "" "height" "") -}}
     {{- end -}}

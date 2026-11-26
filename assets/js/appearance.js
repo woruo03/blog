@@ -85,13 +85,27 @@ var updateLogo = (targetAppearance) => {
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 
   const computePreferredDark = (userPreference) =>
-    (sitePreference === "dark" && userPreference === null) ||
     userPreference === "dark" ||
-    (autoAppearance && Boolean(colorSchemeMq?.matches) && userPreference !== "light");
+    (userPreference !== "light" &&
+      (autoAppearance && colorSchemeMq
+        ? colorSchemeMq.matches
+        : sitePreference === "dark"));
 
-  if (computePreferredDark(getSavedAppearance()) && !root.classList.contains("dark")) {
-    root.classList.add("dark");
-  }
+  const syncColorSchemeMeta = (savedPreference = getSavedAppearance()) => {
+    const csMeta = document.querySelector('meta[name="color-scheme"]');
+    if (!csMeta) return;
+    const next =
+      savedPreference === "dark" || savedPreference === "light"
+        ? savedPreference
+        : "dark light";
+    if (csMeta.getAttribute("content") !== next) {
+      csMeta.setAttribute("content", next);
+    }
+  };
+
+  const initialSaved = getSavedAppearance();
+  root.classList.toggle("dark", computePreferredDark(initialSaved));
+  syncColorSchemeMeta(initialSaved);
 
   const afterFirstPaint = (fn) => {
     requestAnimationFrame(() => setTimeout(fn, 0));
@@ -115,6 +129,14 @@ var updateLogo = (targetAppearance) => {
     });
   }
 
+  window.addEventListener("storage", (event) => {
+    if (event.key !== "appearance" && event.key !== null) return;
+    const saved = event.key === "appearance" ? event.newValue : null;
+    root.classList.toggle("dark", computePreferredDark(saved));
+    syncColorSchemeMeta(saved);
+    syncAppearanceUI();
+  });
+
   window.addEventListener("DOMContentLoaded", () => {
     const switcher = document.getElementById("appearance-switcher");
     const switcherMobile = document.getElementById("appearance-switcher-mobile");
@@ -131,31 +153,32 @@ var updateLogo = (targetAppearance) => {
     };
 
     syncAppearanceUI(false);
-
-    afterFirstPaint(() => {
-      updateMeta();
-      const scroller = document.getElementById("top-scroller");
-      const footer = document.getElementById("site-footer");
-      if (
-        scroller &&
-        footer &&
-        scroller.getBoundingClientRect().top > footer.getBoundingClientRect().top
-      ) {
-        scroller.hidden = true;
-      }
-    });
+    afterFirstPaint(updateMeta);
 
     const bindSwitcher = (btn) => {
       if (!btn) return;
       btn.addEventListener("click", () => {
-        root.classList.toggle("dark");
-        setSavedAppearance(getTargetAppearance());
+        const nextIsDark = !root.classList.contains("dark");
+        const target = nextIsDark ? "dark" : "light";
+        root.classList.toggle("dark", nextIsDark);
+        if (
+          autoAppearance &&
+          colorSchemeMq &&
+          nextIsDark === colorSchemeMq.matches
+        ) {
+          removeSavedAppearance();
+          syncColorSchemeMeta(null);
+        } else {
+          setSavedAppearance(target);
+          syncColorSchemeMeta(target);
+        }
         syncAppearanceUI();
       });
       btn.addEventListener("contextmenu", (event) => {
         event.preventDefault();
         removeSavedAppearance();
         root.classList.toggle("dark", computePreferredDark(null));
+        syncColorSchemeMeta(null);
         syncAppearanceUI();
       });
     };
