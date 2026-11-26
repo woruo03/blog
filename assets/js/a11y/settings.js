@@ -41,45 +41,52 @@ const setRootDataset = (key, value) => {
     }
 };
 
+const applyHeroBgRoot = (enabled) =>
+    setRootDataset("heroBg", enabled ? "on" : "off");
+const applyHeroOpacityRoot = (value) => {
+    const next = String(value / 100);
+    if (
+        document.documentElement.style.getPropertyValue(
+            "--bf-hero-bg-opacity",
+        ) !== next
+    ) {
+        document.documentElement.style.setProperty("--bf-hero-bg-opacity", next);
+    }
+};
+const applyHeroBannerRoot = (mode) => setRootDataset("heroBanner", mode);
+const applyDisableBlurRoot = (enabled) =>
+    setRootDataset("disableBlur", enabled ? "true" : "false");
+const applyFontSizeRoot = (size) => {
+    const next = size === "default" ? "" : size;
+    if (document.documentElement.style.fontSize !== next) {
+        document.documentElement.style.fontSize = next;
+    }
+};
+const applyUnderlineRoot = (enabled) =>
+    setRootDataset("underlineLinks", enabled ? "true" : "false");
+
 export const FEATURES = {
     heroBg: {
         default: true,
         normalize: Boolean,
-        applyRoot: (enabled) => setRootDataset("heroBg", enabled ? "on" : "off"),
+        applyRoot: applyHeroBgRoot,
         apply: (enabled) => {
-            setRootDataset("heroBg", enabled ? "on" : "off");
+            applyHeroBgRoot(enabled);
             window.dispatchEvent(new Event("bf:hero-settings-change"));
         },
     },
     heroBgOpacity: {
         default: 50,
         normalize: clampOpacity,
-        applyRoot: (value) => {
-            const next = String(value / 100);
-            if (
-                document.documentElement.style.getPropertyValue(
-                    "--bf-hero-bg-opacity",
-                ) !== next
-            ) {
-                document.documentElement.style.setProperty(
-                    "--bf-hero-bg-opacity",
-                    next,
-                );
-            }
-        },
-        apply: (value) => {
-            document.documentElement.style.setProperty(
-                "--bf-hero-bg-opacity",
-                String(value / 100),
-            );
-        },
+        applyRoot: applyHeroOpacityRoot,
+        apply: applyHeroOpacityRoot,
     },
     heroBanner: {
         default: "off",
         normalize: normalizeBanner,
-        applyRoot: (mode) => setRootDataset("heroBanner", mode),
+        applyRoot: applyHeroBannerRoot,
         apply: (mode) => {
-            setRootDataset("heroBanner", mode);
+            applyHeroBannerRoot(mode);
             if (mode !== "off") {
                 const bannerImg = document.getElementById("hero-banner-image");
                 if (bannerImg) {
@@ -92,10 +99,9 @@ export const FEATURES = {
     disableBlur: {
         default: false,
         normalize: Boolean,
-        applyRoot: (enabled) =>
-            setRootDataset("disableBlur", enabled ? "true" : "false"),
+        applyRoot: applyDisableBlurRoot,
         apply: (enabled) => {
-            setRootDataset("disableBlur", enabled ? "true" : "false");
+            applyDisableBlurRoot(enabled);
             if (typeof window.setBackgroundBlurDisabled === "function") {
                 window.setBackgroundBlurDisabled(enabled);
             }
@@ -104,25 +110,17 @@ export const FEATURES = {
     fontSize: {
         default: "default",
         normalize: normalizeFontSize,
-        applyRoot: (size) => {
-            const next = size === "default" ? "" : size;
-            if (document.documentElement.style.fontSize !== next) {
-                document.documentElement.style.fontSize = next;
-            }
-        },
+        applyRoot: applyFontSizeRoot,
         apply: (size) => {
-            document.documentElement.style.fontSize =
-                size === "default" ? "" : size;
+            applyFontSizeRoot(size);
             onFontSizeChange?.();
         },
     },
     underlineLinks: {
         default: false,
         normalize: Boolean,
-        applyRoot: (enabled) =>
-            setRootDataset("underlineLinks", enabled ? "true" : "false"),
-        apply: (enabled) =>
-            setRootDataset("underlineLinks", enabled ? "true" : "false"),
+        applyRoot: applyUnderlineRoot,
+        apply: applyUnderlineRoot,
     },
     zenMode: {
         default: false,

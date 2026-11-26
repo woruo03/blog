@@ -2,19 +2,32 @@
    全局宽屏容器、正文阅读布局、专注模式 (ZenMode) 与零重排阅读进度条
    ============================================================ */
 
+/* 0. 根级原生 UI 配色同步（保留打印样式 light only）与固定顶栏焦点防遮挡 (WCAG 2.4.11) */
+:root {
+    scroll-padding-top: 5rem;
+}
+
+@media screen {
+    :root {
+        color-scheme: light;
+    }
+
+    :root.dark {
+        color-scheme: dark;
+    }
+}
+
 /* 1. 全局容器自适应扩展：从 1280px 扩展到 1440px，精简过大内边距 */
 @media (min-width: 1024px) {
     body {
         max-width: 1440px !important;
-        padding-left: 2.5rem !important;
-        padding-right: 2.5rem !important;
+        padding-inline: 2.5rem !important;
     }
 }
 
 @media (min-width: 1440px) {
     body {
-        padding-left: 3rem !important;
-        padding-right: 3rem !important;
+        padding-inline: 3rem !important;
     }
 }
 
@@ -58,10 +71,7 @@ body:not(.zen-mode-enable) .article-content {
 }
 
 /* 3. 专注模式 (ZenMode)：折叠右侧大纲，正文、标题与底部全宽舒展 */
-body.zen-mode-enable #toc-column,
-body.zen-mode-enable .toc,
-body.zen-mode-enable .toc-right,
-body.zen-mode-enable .toc-inside {
+body.zen-mode-enable #toc-column {
     display: none !important;
 }
 

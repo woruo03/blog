@@ -52,6 +52,7 @@ export function initSingleArticle({ visitorId, isAdminBypass }) {
     let inflightController = null;
     let inflightTargetLiked = null;
     let likeRequestSeq = 0;
+    let isUnloading = false;
 
     const titleLike = likeBtn?.getAttribute("data-title-like") || "点赞";
     const titleLiked =
@@ -168,7 +169,7 @@ export function initSingleArticle({ visitorId, isAdminBypass }) {
                 }
                 inflightController = null;
                 inflightTargetLiked = null;
-                if (useKeepalive) return;
+                if (isUnloading) return;
 
                 hasLikedSettled = true;
                 isLiked = initialLiked;
@@ -244,7 +245,13 @@ export function initSingleArticle({ visitorId, isAdminBypass }) {
         const flushPendingLike = () => {
             if (debounceTimer) dispatchLikeSync(true);
         };
-        window.addEventListener("pagehide", flushPendingLike);
+        window.addEventListener("pagehide", () => {
+            isUnloading = true;
+            flushPendingLike();
+        });
+        window.addEventListener("pageshow", () => {
+            isUnloading = false;
+        });
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "hidden") flushPendingLike();
         });
@@ -266,13 +273,12 @@ export function initSingleArticle({ visitorId, isAdminBypass }) {
             likeRequestSeq++;
 
             if (remoteLiked !== isLiked) {
+                const delta = remoteLiked ? 1 : -1;
                 isLiked = remoteLiked;
                 initialLiked = remoteLiked;
+                confirmedLikes = Math.max(0, confirmedLikes + delta);
+                currentLikes = Math.max(0, currentLikes + delta);
                 renderLikeUI(isLiked);
-                currentLikes = Math.max(
-                    0,
-                    currentLikes + (remoteLiked ? 1 : -1),
-                );
                 renderLikesCount(currentLikes);
             }
         } else if (

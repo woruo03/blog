@@ -52,7 +52,7 @@
                 once: true,
             });
         }
-        updateReadingProgress();
+        requestUpdate();
     }
 
     if (document.readyState === "loading") {

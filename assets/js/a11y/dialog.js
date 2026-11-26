@@ -8,7 +8,7 @@ export const supportsAnchorPosition = Boolean(
         window.CSS.supports("position-area: block-end"),
 );
 
-const anchoredPopovers = [];
+const trackedPanels = [];
 
 function closePopover(panel) {
     if (supportsPopover) {
@@ -18,7 +18,7 @@ function closePopover(panel) {
     }
 }
 
-function positionPopoverFallback(panel, toggle) {
+function positionPopoverFallback(panel, toggle, { preOpen = false } = {}) {
     if (supportsAnchorPosition || !toggle) return;
 
     const rect = toggle.getBoundingClientRect();
@@ -27,10 +27,21 @@ function positionPopoverFallback(panel, toggle) {
         return;
     }
 
+    const gap = 8;
+    const pad = 12;
+
+    if (preOpen) {
+        const right = Math.max(pad, Math.round(window.innerWidth - rect.right));
+        panel.style.position = "fixed";
+        panel.style.margin = "0";
+        panel.style.inset = "auto";
+        panel.style.top = `${Math.round(rect.bottom + gap)}px`;
+        panel.style.right = `${right}px`;
+        return;
+    }
+
     const panelW = panel.offsetWidth || 352;
     const panelH = panel.offsetHeight || 400;
-    const gap = 12;
-    const pad = 12;
 
     const maxLeft = Math.max(pad, window.innerWidth - panelW - pad);
     const left = Math.min(maxLeft, Math.max(pad, rect.right - panelW));
@@ -54,8 +65,9 @@ function positionPopoverFallback(panel, toggle) {
 }
 
 export function repositionOpenPopovers() {
-    if (supportsAnchorPosition || anchoredPopovers.length === 0) return;
-    anchoredPopovers.forEach(({ panel, toggle }) => {
+    if (supportsAnchorPosition) return;
+    trackedPanels.forEach(({ panel, toggle, isPopover }) => {
+        if (!isPopover) return;
         const isOpen = supportsPopover
             ? panel.matches(":popover-open")
             : panel.open;
@@ -63,7 +75,18 @@ export function repositionOpenPopovers() {
     });
 }
 
-export function setupResizeRepositioner() {
+export function setupViewportSync() {
+    const desktopMq = window.matchMedia?.("(min-width: 768px)");
+    desktopMq?.addEventListener?.("change", (e) => {
+        trackedPanels.forEach(({ panel, isPopover }) => {
+            if (isPopover && !e.matches) {
+                closePopover(panel);
+            } else if (!isPopover && e.matches && panel.open) {
+                panel.close();
+            }
+        });
+    });
+
     if (supportsAnchorPosition) return;
     let resizeFrame = false;
     window.addEventListener(
@@ -87,11 +110,10 @@ export function bindPanelLifecycle({ panel, toggle, closeBtn, resetBtn, onReset 
 
     resetBtn?.addEventListener("click", onReset);
 
-    if (panel.hasAttribute("popover")) {
-        if (!supportsAnchorPosition) {
-            anchoredPopovers.push({ panel, toggle });
-        }
+    const isPopover = panel.hasAttribute("popover");
+    trackedPanels.push({ panel, toggle, isPopover });
 
+    if (isPopover) {
         if (supportsPopover) {
             let returnFocusOnClose = false;
             closeBtn?.addEventListener("click", () => {
@@ -100,6 +122,13 @@ export function bindPanelLifecycle({ panel, toggle, closeBtn, resetBtn, onReset 
             panel.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") returnFocusOnClose = true;
             });
+            if (!supportsAnchorPosition) {
+                panel.addEventListener("beforetoggle", (e) => {
+                    if (e.newState === "open") {
+                        positionPopoverFallback(panel, toggle, { preOpen: true });
+                    }
+                });
+            }
             panel.addEventListener("toggle", (e) => {
                 const open = e.newState === "open";
                 syncExpanded(open);

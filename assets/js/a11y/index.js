@@ -14,7 +14,7 @@ import {
 import {
     bindPanelLifecycle,
     repositionOpenPopovers,
-    setupResizeRepositioner,
+    setupViewportSync,
     supportsAnchorPosition,
 } from "./dialog.js";
 
@@ -59,10 +59,8 @@ function syncControls(key, value) {
         }
 
         if (key === "heroBg") {
-            const active = Boolean(value);
-            entry.opacityWrap?.classList.toggle("is-disabled", !active);
             const opacityCtrl = entry.controls.heroBgOpacity;
-            if (opacityCtrl?.input) opacityCtrl.input.disabled = !active;
+            if (opacityCtrl?.input) opacityCtrl.input.disabled = !value;
         }
     });
 }
@@ -134,11 +132,7 @@ function initPanel(panel) {
         }
     });
 
-    panels.push({
-        panel,
-        controls,
-        opacityWrap: panel.querySelector("[data-hero-bg-opacity-wrap]"),
-    });
+    panels.push({ panel, controls });
 
     bindPanelLifecycle({
         panel,
@@ -157,7 +151,7 @@ function init() {
     }
     document.querySelectorAll("dialog[id$='a11y-panel']").forEach(initPanel);
     syncAllControls();
-    setupResizeRepositioner();
+    setupViewportSync();
 }
 
 // 首帧前仅写入 <html> 状态属性，零 DOM 查询、零重排、零阻塞

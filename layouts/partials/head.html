@@ -12,9 +12,9 @@
   {{- $headCtx := dict "page" . "description" $metaDescription -}}
 
   {{ partial "head/meta.html" $headCtx }}
+  {{ partial "head/boot-script.html" . }}
   {{ partial "head/social.html" $headCtx }}
   {{ partial "head/styles.html" . }}
-  {{ partial "head/boot-script.html" . }}
   {{ partial "head/scripts.html" . }}
   {{ partial "vendor.html" . }}
 

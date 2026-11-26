@@ -25,11 +25,38 @@ export function setupViewRecorder({
     let dwellTimer = null;
     let scrollCheckTimer = null;
 
-    const getCurrentActiveDwell = () =>
-        activeDwellMs +
-        (!document.hidden && lastActiveTimestamp > 0
-            ? Date.now() - lastActiveTimestamp
-            : 0);
+    function getTimelineForegroundMs() {
+        if (
+            typeof performance === "undefined" ||
+            typeof performance.getEntriesByType !== "function"
+        ) {
+            return null;
+        }
+        const entries = performance.getEntriesByType("visibility-state");
+        if (!entries || entries.length === 0) return null;
+        let total = 0;
+        for (let i = 0; i < entries.length; i++) {
+            if (entries[i].name === "visible") {
+                const end =
+                    i + 1 < entries.length
+                        ? entries[i + 1].startTime
+                        : performance.now();
+                total += Math.max(0, end - entries[i].startTime);
+            }
+        }
+        return total;
+    }
+
+    const getCurrentActiveDwell = () => {
+        const timelineMs = getTimelineForegroundMs();
+        if (timelineMs !== null) return timelineMs;
+        return (
+            activeDwellMs +
+            (!document.hidden && lastActiveTimestamp > 0
+                ? Date.now() - lastActiveTimestamp
+                : 0)
+        );
+    };
 
     function cancel() {
         reported = true;
@@ -57,7 +84,9 @@ export function setupViewRecorder({
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
                 if (!data) return;
-                setStorage(storageKeyView, String(Date.now()));
+                if (!data.warning && !data.botIgnored) {
+                    setStorage(storageKeyView, String(Date.now()));
+                }
                 onReportData(data);
             })
             .catch(() => {});
@@ -118,6 +147,7 @@ export function setupViewRecorder({
 
     if (!document.hidden && document.visibilityState !== "prerender") {
         scheduleDwellTimer();
+        checkScrollEngagement();
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("scroll", onScroll, { passive: true });

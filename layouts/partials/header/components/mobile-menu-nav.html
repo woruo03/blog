@@ -1,4 +1,6 @@
 {{/* 移动端菜单抽屉内部导航项、副导航与底部图标工具栏 */}}
+{{- $currentPath := .RelPermalink -}}
+{{- $highlight := .Site.Params.highlightCurrentMenuArea | default false -}}
 {{- $iconLinks := slice -}}
 {{- range .Site.Menus.main -}}
   {{/* 仅有图标、无文字名称的菜单项（如 GitHub）统一收纳至底部图标工具栏 */}}
@@ -8,6 +10,7 @@
   {{- end -}}
   {{- $submenuId := printf "fullscreen-submenu-%s" (.Identifier | default .Name | anchorize) -}}
   {{- $label := or .Name .Title -}}
+  {{- $isActive := and $highlight (ne .URL "") (eq .URL $currentPath) -}}
   <div class="bf-mobile-menu-item px-2">
     <div class="flex items-center gap-4">
       <a
@@ -17,6 +20,7 @@
           target="_blank"
           rel="noopener noreferrer"
         {{ end }}
+        {{ if $isActive }}aria-current="page"{{ end }}
         class="flex grow items-center gap-4 group bf-icon-color-hover text-neutral-700 dark:text-neutral-200">
         {{ if .Pre }}
           <span class="flex items-center justify-center h-8 w-8 text-2xl">
@@ -24,7 +28,7 @@
           </span>
         {{ end }}
         {{ if $label }}
-          <span title="{{ .Title }}" class="text-2xl font-bold tracking-tight">
+          <span title="{{ .Title }}" class="text-2xl font-bold tracking-tight{{ if $isActive }} active{{ end }}">
             {{ $label | markdownify }}
           </span>
         {{ end }}
@@ -49,6 +53,7 @@
           <div class="ms-7 mt-4">
             {{ range .Children }}
               {{ $childLabel := or .Name .Title }}
+              {{- $childActive := and $highlight (ne .URL "") (eq .URL $currentPath) -}}
               <a
                 href="{{ .URL }}"
                 {{ with or .Name .Title .Pre }}aria-label="{{ . }}"{{ end }}
@@ -56,6 +61,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                 {{ end }}
+                {{ if $childActive }}aria-current="page"{{ end }}
                 class="flex items-center gap-3 p-2 group bf-icon-color-hover text-neutral-700 dark:text-neutral-200">
                 {{ if .Pre }}
                   <span class="flex items-center justify-center h-5 w-5">
@@ -63,7 +69,7 @@
                   </span>
                 {{ end }}
                 {{ if $childLabel }}
-                  <span title="{{ .Title }}" class="text-lg">
+                  <span title="{{ .Title }}" class="text-lg{{ if $childActive }} active{{ end }}">
                     {{ $childLabel | markdownify }}
                   </span>
                 {{ end }}
@@ -79,6 +85,7 @@
 {{ if .Site.Menus.subnavigation }}
   <div class="flex flex-wrap gap-4 mt-8 pt-8 border-t bf-border-color">
     {{ range .Site.Menus.subnavigation }}
+      {{- $subActive := and $highlight (ne .URL "") (eq .URL $currentPath) -}}
       <a
         href="{{ .URL }}"
         {{ with or .Name .Title .Pre }}aria-label="{{ . }}"{{ end }}
@@ -86,13 +93,14 @@
           target="_blank"
           rel="noopener noreferrer"
         {{ end }}
+        {{ if $subActive }}aria-current="page"{{ end }}
         class="inline-flex items-center gap-2 px-2 py-2 bf-icon-color-hover rounded-full text-sm">
         {{ if .Pre }}
           <span class="flex items-center justify-center h-4 w-4">
             {{ partial "icon.html" .Pre }}
           </span>
         {{ end }}
-        <span title="{{ .Title }}">{{ (or .Name .Title) | markdownify }}</span>
+        <span title="{{ .Title }}"{{ if $subActive }} class="active"{{ end }}>{{ (or .Name .Title) | markdownify }}</span>
       </a>
     {{ end }}
   </div>

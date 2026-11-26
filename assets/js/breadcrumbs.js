@@ -53,14 +53,13 @@
         const match = cleanPath.match(/^\/(tags|categories|series)\/([^/]+)\//);
         if (!match) return;
 
-        const [, tax, slug] = match;
-        const target = (taxData[tax] || []).find((t) => {
-            const tSlug = safeDecode(t.url).replace(
-                new RegExp(`^\\/${tax}\\/|\\/$`, "g"),
-                "",
-            );
-            return tSlug.toLowerCase() === slug.toLowerCase();
-        });
+        const [, tax] = match;
+        const normalizedRef = cleanPath.slice(0, -1).toLowerCase();
+        const target = (taxData[tax] || []).find(
+            (t) =>
+                safeDecode(t.url).replace(/\/+$/, "").toLowerCase() ===
+                normalizedRef,
+        );
         if (!target) return;
 
         const li = document.createElement("li");

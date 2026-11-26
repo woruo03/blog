@@ -37,14 +37,19 @@
             }
         }
 
+        let low = 0;
+        let high = validAnchors.length - 1;
         let candidateIndex = -1;
-        for (let i = validAnchors.length - 1; i >= 0; i--) {
+        while (low <= high) {
+            const mid = (low + high) >> 1;
             if (
-                validAnchors[i].el.getBoundingClientRect().top <=
+                validAnchors[mid].el.getBoundingClientRect().top <=
                 SCROLL_FOCUS_THRESHOLD
             ) {
-                candidateIndex = i;
-                break;
+                candidateIndex = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
             }
         }
         if (candidateIndex === -1) candidateIndex = 0;
@@ -194,6 +199,15 @@
             });
         });
 
+        const SCROLL_KEYS = new Set([
+            "ArrowDown",
+            "ArrowUp",
+            "PageDown",
+            "PageUp",
+            "Home",
+            "End",
+            " ",
+        ]);
         const releaseJumpLock = () => {
             if (!isJumpingToAnchor) return;
             isJumpingToAnchor = false;
@@ -204,6 +218,14 @@
         window.addEventListener("touchmove", releaseJumpLock, {
             passive: true,
         });
+        window.addEventListener("keydown", (e) => {
+            if (isJumpingToAnchor && SCROLL_KEYS.has(e.key)) releaseJumpLock();
+        });
+        if ("onscrollend" in window) {
+            window.addEventListener("scrollend", releaseJumpLock, {
+                passive: true,
+            });
+        }
 
         let rafId = null;
         const onScroll = () => {
@@ -234,14 +256,9 @@
         }
 
         const desktopMq = window.matchMedia("(min-width: 1024px)");
-        const onMediaChange = (e) => {
+        desktopMq.addEventListener("change", (e) => {
             if (e.matches) onScroll();
-        };
-        if (desktopMq.addEventListener) {
-            desktopMq.addEventListener("change", onMediaChange);
-        } else if (desktopMq.addListener) {
-            desktopMq.addListener(onMediaChange);
-        }
+        });
 
         requestAnimationFrame(() => {
             setTimeout(() => {

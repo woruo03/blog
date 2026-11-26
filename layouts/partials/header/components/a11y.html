@@ -35,11 +35,10 @@
     id="{{ $prefix }}a11y-panel"
     {{- if $isDesktopPopover }}
     popover="auto"
-    class="bf-a11y-dialog bf-settings-popover-desktop rounded-2xl border border-neutral-200/80 bg-neutral/95 p-0 text-neutral-900 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95 dark:text-neutral-100"
     {{- else }}
     closedby="any"
-    class="bf-a11y-dialog rounded-2xl border border-neutral-200/80 bg-neutral/95 p-0 text-neutral-900 shadow-2xl shadow-neutral-900/20 dark:border-neutral-700/80 dark:bg-neutral-800/95 dark:text-neutral-100"
     {{- end }}
+    class="bf-a11y-dialog{{ if $isDesktopPopover }} bf-settings-popover-desktop{{ end }} rounded-2xl border p-0 text-neutral-900 shadow-2xl shadow-neutral-900/20 dark:text-neutral-100"
     aria-labelledby="{{ $prefix }}a11y-panel-title">
     <div class="p-5">
       <div class="flex items-center justify-between mb-5">
@@ -74,7 +73,6 @@
                 "label" (i18n "a11y.hero_bg_opacity")
                 "min" 15 "max" 90 "step" 5 "value" 50
                 "displayValue" "50%"
-                "wrapAttr" "data-hero-bg-opacity-wrap"
               ) }}
               <fieldset class="bf-settings-segment-fieldset">
                 <legend class="bf-settings-legend text-sm font-medium text-neutral-700 dark:text-neutral-200">

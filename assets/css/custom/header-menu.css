@@ -4,8 +4,7 @@
 
 /* 1. 顶部占位高度与实际导航栏 (~60px) 精确匹配 */
 header .header-spacer {
-    min-height: 3.75rem !important;
-    height: 3.75rem !important;
+    height: 3.75rem;
 }
 
 /* 2. 顶栏容器内边距与最大宽度与全局 body 容器同步（--bf-header-gutter 同时供移动下拉菜单计算对称宽度） */

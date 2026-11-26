@@ -28,11 +28,11 @@
       {{ partial "badge.html" (i18n "article.draft" | emojify) }}
     </span>
   {{ end }}
-  <div class="p-4">
+  <div class="p-4 pb-6">
     <header>
       <a
         {{ with $page.Params.externalUrl }}
-          href="{{ . }}" target="_blank" rel="external"
+          href="{{ . }}" target="_blank" rel="external noopener noreferrer"
         {{ else }}
           href="{{ $page.RelPermalink }}"
         {{ end }}
@@ -57,5 +57,4 @@
       </div>
     {{ end }}
   </div>
-  <div class="px-6 pt-4 pb-2"></div>
 </article>

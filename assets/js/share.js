@@ -12,7 +12,10 @@
         const tip = button.nextElementSibling;
         clearTimeout(timers.get(button));
         const pendingRaf = rafIds.get(button);
-        if (pendingRaf) window.cancelAnimationFrame(pendingRaf);
+        if (pendingRaf) {
+            window.cancelAnimationFrame(pendingRaf.outer);
+            window.cancelAnimationFrame(pendingRaf.inner);
+        }
 
         button.removeAttribute("data-copied");
         button.removeAttribute("data-failed");
@@ -24,15 +27,16 @@
         }
         lastMessage = message;
 
-        // 下一帧写入状态与提示文本，既避免同步强制重排（offsetWidth），又能重新触发淡入过渡与读屏播报
-        rafIds.set(
-            button,
-            window.requestAnimationFrame(() => {
+        // 双 rAF 确保属性清除先提交一帧再重新触发状态过渡，无同步强制重排且连点可稳定重播动画与读屏播报
+        const handle = { outer: 0, inner: 0 };
+        handle.outer = window.requestAnimationFrame(() => {
+            handle.inner = window.requestAnimationFrame(() => {
                 rafIds.delete(button);
                 button.setAttribute(ok ? "data-copied" : "data-failed", "");
                 if (tip) tip.textContent = message;
-            }),
-        );
+            });
+        });
+        rafIds.set(button, handle);
 
         timers.set(
             button,

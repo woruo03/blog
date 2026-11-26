@@ -1,5 +1,4 @@
-{{ with .GetTerms "series" }}
-  {{ $seriesTerm := index . 0 }}
+{{ range $seriesTerm := .GetTerms "series" }}
   {{ $seriesPages := $seriesTerm.Pages }}
   {{ if gt (len $seriesPages) 1 }}
     {{ $ordered := sort (where $seriesPages "Params.series_order" "ne" nil) "Params.series_order" }}
