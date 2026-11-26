@@ -1,0 +1,70 @@
+{{/* 延迟加载脚本（保持顺序：appearance -> language-redirect -> zen-mode -> a11y -> zoom -> reading-progress -> share -> main.bundle） */}}
+{{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
+{{- $enableA11y := site.Params.enableA11y | default false -}}
+{{- $isArticle := partial "functions/is-article.html" . -}}
+
+{{- $jsAppearance := resources.Get "js/appearance.js" | resources.ExecuteAsTemplate "js/appearance.js" . | resources.Minify | resources.Fingerprint $alg -}}
+<script defer type="text/javascript" src="{{ $jsAppearance.RelPermalink }}" integrity="{{ $jsAppearance.Data.Integrity }}"></script>
+
+{{ partial "language-redirect.html" . }}
+
+{{- $showZenMode := cond (isset .Params "showzenmode") .Params.showZenMode (site.Params.article.showZenMode | default false) -}}
+{{- if and .IsPage $showZenMode -}}
+  {{- $zenBundle := slice (resources.Get "js/zen-mode.js") (resources.Get "js/zen-mode-sync.js") | resources.Concat "js/zen-mode.bundle.js" | resources.Minify | resources.Fingerprint $alg -}}
+  <script defer type="text/javascript" src="{{ $zenBundle.RelPermalink }}" integrity="{{ $zenBundle.Data.Integrity }}"></script>
+{{- end -}}
+
+{{- if $enableA11y -}}
+  {{- $jsA11y := resources.Get "js/a11y/index.js" | js.Build (dict "minify" true "format" "iife" "targetPath" "js/a11y.bundle.js") | resources.Fingerprint $alg -}}
+  <script defer src="{{ $jsA11y.RelPermalink }}" integrity="{{ $jsA11y.Data.Integrity }}"></script>
+{{- end -}}
+
+{{- if not (site.Params.disableImageZoom | default false) -}}
+  {{- $zoomBundle := slice (resources.Get "lib/zoom/zoom.min.umd.js") (resources.Get "js/medium-zoom.js") | resources.Concat "js/zoom.bundle.js" | resources.Fingerprint $alg -}}
+  <script defer src="{{ $zoomBundle.RelPermalink }}" integrity="{{ $zoomBundle.Data.Integrity }}"></script>
+{{- end -}}
+
+{{- $showReadingProgress := cond (isset .Params "showreadingprogress") .Params.showReadingProgress (and $isArticle (site.Params.article.showReadingProgress | default false)) -}}
+{{- if and .IsPage $showReadingProgress -}}
+  {{- $jsReadingProgress := resources.Get "js/reading-progress.js" | resources.Minify | resources.Fingerprint $alg -}}
+  <script defer type="text/javascript" src="{{ $jsReadingProgress.RelPermalink }}" integrity="{{ $jsReadingProgress.Data.Integrity }}"></script>
+{{- end -}}
+
+{{- $sharing := partial "functions/sharing-links.html" . -}}
+{{- if and .IsPage $sharing.enabled -}}
+  {{- with resources.Get "js/share.js" | resources.Minify | resources.Fingerprint $alg -}}
+    <script defer type="text/javascript" src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}"></script>
+  {{- end -}}
+{{- end -}}
+
+{{- $jsResources := slice -}}
+{{- if site.Params.footer.showScrollToTop | default true -}}
+  {{- $jsResources = $jsResources | append (resources.Get "js/scroll-to-top.js") -}}
+{{- end -}}
+{{- if site.Params.enableSearch | default false -}}
+  {{- $fuseRaw := resources.Get "lib/fuse/fuse.min.cjs" -}}
+  {{- $fuse := resources.FromString "lib/fuse/fuse.min.js" (replace $fuseRaw.Content "module.exports=" "window.Fuse=") -}}
+  {{- $jsResources = $jsResources | append $fuse | append (resources.Get "js/search.js") -}}
+{{- end -}}
+{{- if site.Params.enableCodeCopy | default false -}}
+  {{- $jsResources = $jsResources | append (resources.Get "js/code.js") -}}
+{{- end -}}
+{{- if site.Params.rtl | default false -}}
+  {{- $jsResources = $jsResources | append (resources.Get "js/rtl.js") -}}
+{{- end -}}
+{{- range slice "js/katex-render.js" "js/menu-a11y.js" "js/print-support.js" "js/email.js" "js/breadcrumbs.js" -}}
+  {{- with resources.Get . -}}
+    {{- $jsResources = $jsResources | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- if $jsResources -}}
+  {{- $bundleJS := $jsResources | resources.Concat "js/main.bundle.js" | resources.Minify | resources.Fingerprint $alg -}}
+  <script
+    defer
+    type="text/javascript"
+    id="script-bundle"
+    src="{{ $bundleJS.RelPermalink }}"
+    integrity="{{ $bundleJS.Data.Integrity }}"
+    data-copy="{{ i18n "code.copy" }}"
+    data-copied="{{ i18n "code.copied" }}"></script>
+{{- end -}}

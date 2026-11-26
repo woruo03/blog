@@ -1,0 +1,131 @@
+/* ============================================================
+   可组合文章封面系统：背景氛围 + 横幅/大图前景 + 浓度调控 + 滚动渐隐
+   ============================================================ */
+
+.bf-hero-banner {
+    display: none;
+}
+
+html[data-hero-bg="off"] #hero,
+html[data-hero-bg="off"] #hero-background,
+html[data-hero-bg="off"] #background-blur {
+    display: none !important;
+}
+
+html[data-hero-banner="basic"] #hero,
+html[data-hero-banner="big"] #hero {
+    display: none !important;
+}
+
+.bf-hero-bg-img {
+    opacity: var(--bf-hero-bg-opacity, 0.5);
+    transition: opacity 150ms ease-out;
+}
+
+/* 封面裁剪焦点：由 front matter imagePosition / imagePositionMobile 注入的 CSS 变量驱动 */
+.bf-hero-bg-img,
+.bf-hero-banner__img {
+    object-position: var(--bf-hero-pos, 50% 50%);
+}
+
+/* 与 Blowfish 切换移动菜单的 md 断点 (768px) 保持一致 */
+@media (width < 48rem) {
+    .bf-hero-bg-img {
+        object-position: var(--bf-hero-pos-mobile, var(--bf-hero-pos, 50% 50%));
+    }
+}
+
+.bf-hero-bg-scrim {
+    background: linear-gradient(
+        to bottom,
+        rgba(var(--color-neutral), 0.12) 0%,
+        rgba(var(--color-neutral), 0.42) 55%,
+        rgba(var(--color-neutral), 0.92) 100%
+    );
+}
+
+html.dark .bf-hero-bg-scrim {
+    background: linear-gradient(
+        to bottom,
+        rgba(var(--color-neutral-800), 0.14) 0%,
+        rgba(var(--color-neutral-800), 0.48) 55%,
+        rgba(var(--color-neutral-800), 0.94) 100%
+    );
+}
+
+/* 前景封面模式 (basic / big) */
+html[data-hero-banner="basic"] .bf-hero-banner,
+html[data-hero-banner="big"] .bf-hero-banner {
+    display: block;
+    margin: 1.25rem 0 0;
+}
+
+.bf-hero-banner__caption {
+    display: none;
+}
+
+html[data-hero-banner="basic"] .bf-hero-banner__frame {
+    height: 9rem;
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    html[data-hero-banner="basic"] .bf-hero-banner__frame {
+        height: 14rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    html[data-hero-banner="basic"] .bf-hero-banner__frame {
+        height: 18rem;
+    }
+}
+
+/* 前景完整大图模式 (big) */
+html[data-hero-banner="big"] .bf-hero-banner__frame {
+    width: 100%;
+    aspect-ratio: var(--bf-hero-aspect, 16 / 9);
+    max-height: 50vh;
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+html[data-hero-banner="big"] .bf-hero-banner__caption {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+html[data-hero-banner="big"] .bf-hero-banner__caption a:hover {
+    text-decoration: underline;
+}
+
+/* 现代原生 CSS Scroll-Driven Animation：合成层驱动背景渐隐 */
+@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
+    @keyframes bf-hero-scroll-fade {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+
+    #hero-background[data-scroll-fade="true"] {
+        animation: bf-hero-scroll-fade auto linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 500px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #hero-background[data-scroll-fade="true"] {
+            animation-range: 0px 250px;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bf-hero-bg-img {
+        transition: none;
+    }
+}

@@ -1,6 +1,6 @@
-{{/* Extend footer: 加载文章统计与点赞交互脚本 */}}
+{{/* Extend footer: 通过 Hugo js.Build 打包模块化统计与点赞交互引擎 */}}
 {{- $alg := site.Params.fingerprintAlgorithm | default "sha512" -}}
-{{- $statsJs := resources.Get "js/stats.js" | resources.Minify | resources.Fingerprint $alg -}}
+{{- $statsJs := resources.Get "js/stats/index.js" | js.Build (dict "minify" true "format" "iife" "targetPath" "js/stats.bundle.js") | resources.Fingerprint $alg -}}
 <script
   src="{{ $statsJs.RelPermalink }}"
   integrity="{{ $statsJs.Data.Integrity }}"

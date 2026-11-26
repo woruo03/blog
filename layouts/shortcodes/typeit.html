@@ -1,3 +1,4 @@
+{{/* TypeIt 短代码：仅输出声明式 data-typeit 配置，由 vendor.html 打包的 typeit.bundle.js 统一驱动 */}}
 {{- $content := slice -}}
 {{- range split (trim .Inner "\r\n") "\n" -}}
   {{- $line := trim . "\r\n " -}}
@@ -6,105 +7,26 @@
   {{- end -}}
 {{- end -}}
 
+{{- $cfg := dict
+  "strings" $content
+  "speed" (int (.Get "speed" | default 50))
+  "deleteSpeed" (int (.Get "deleteSpeed" | default 25))
+  "lifeLike" (ne (printf "%v" (.Get "lifeLike" | default true)) "false")
+  "startDelay" (int (.Get "startDelay" | default 200))
+  "breakLines" (eq (printf "%v" (.Get "breakLines" | default false)) "true")
+  "waitUntilVisible" (ne (printf "%v" (.Get "waitUntilVisible" | default true)) "false")
+  "loop" (ne (printf "%v" (.Get "loop" | default true)) "false")
+  "pause" (int (.Get "pause" | default (.Get "nextStringDelay" | default 2500)))
+  "delayBetween" (int (.Get "delayBetween" | default 200))
+  "randomLines" (eq (printf "%v" (.Get "randomLines" | default false)) "true")
+-}}
 {{- $initialString := .Get "initialString" | default "" -}}
-{{- $speed := int (.Get "speed" | default 50) -}}
-{{- $deleteSpeed := int (.Get "deleteSpeed" | default 25) -}}
-{{- $lifeLike := ne (printf "%v" (.Get "lifeLike" | default true)) "false" -}}
-{{- $startDelay := int (.Get "startDelay" | default 200) -}}
-{{- $breakLines := eq (printf "%v" (.Get "breakLines" | default false)) "true" -}}
-{{- $waitUntilVisible := ne (printf "%v" (.Get "waitUntilVisible" | default true)) "false" -}}
-{{- $loop := ne (printf "%v" (.Get "loop" | default true)) "false" -}}
-{{- $pause := int (.Get "pause" | default (.Get "nextStringDelay" | default 2500)) -}}
-{{- $delayBetween := int (.Get "delayBetween" | default 200) -}}
-{{- $randomLines := eq (printf "%v" (.Get "randomLines" | default false)) "true" -}}
 {{- $tag := .Get "tag" | default "div" -}}
 {{- $id := printf "typeit-%s" (partial "functions/uid.html" .) -}}
 {{- $attrs := printf `id="%s"` ($id | htmlEscape) -}}
 {{- with .Get "class" -}}
   {{- $attrs = printf `%s class="%s"` $attrs (. | htmlEscape) -}}
 {{- end -}}
+{{- $attrs = printf `%s data-typeit="%s"` $attrs ($cfg | jsonify | htmlEscape) -}}
 
 {{ printf `<%s %s>%s</%s>` $tag $attrs $initialString $tag | safeHTML }}
-
-<script>
-  (function () {
-    "use strict";
-
-    const strings = {{ $content }};
-    const el = document.getElementById("{{ $id }}");
-    if (!el) return;
-
-    function fillStaticFallback() {
-      if (strings.length > 0 && !el.textContent.trim()) {
-        el.textContent = strings[0];
-      }
-    }
-
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      fillStaticFallback();
-      return;
-    }
-
-    let retries = 0;
-    const MAX_RETRIES = 20;
-
-    function run() {
-      if (typeof TypeIt === "undefined") {
-        if (document.readyState === "complete") {
-          if (retries >= MAX_RETRIES) {
-            fillStaticFallback();
-            return;
-          }
-          retries++;
-          setTimeout(run, 100);
-          return;
-        }
-        window.addEventListener("load", run, { once: true });
-        return;
-      }
-      initTypeIt();
-    }
-
-    function initTypeIt() {
-      const textList = [...strings];
-      {{ if $randomLines }}
-      for (let i = textList.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [textList[i], textList[j]] = [textList[j], textList[i]];
-      }
-      {{ end }}
-      const breakLines = {{ $breakLines }};
-      const instance = new TypeIt("#{{ $id }}", {
-        speed: {{ $speed }},
-        deleteSpeed: {{ $deleteSpeed }},
-        lifeLike: {{ $lifeLike }},
-        startDelay: {{ $startDelay }},
-        breakLines,
-        waitUntilVisible: {{ $waitUntilVisible }},
-        loop: {{ $loop }},
-        loopDelay: [{{ $delayBetween }}, {{ $pause }}]
-      });
-
-      textList.forEach(function (str, idx) {
-        instance.type(str);
-        if (idx < textList.length - 1) {
-          if (breakLines) {
-            instance.break();
-          } else {
-            instance.pause({{ $pause }});
-            instance.delete([...str].length);
-            instance.pause({{ $delayBetween }});
-          }
-        }
-      });
-
-      instance.go();
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", run, { once: true });
-    } else {
-      run();
-    }
-  })();
-</script>

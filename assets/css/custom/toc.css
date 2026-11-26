@@ -1,0 +1,58 @@
+/* ============================================================
+   智能大纲 (smartTOC)：吸顶悬浮、锚点偏移、当前章高亮与折叠防抖
+   ============================================================ */
+
+/* 1. 桌面端大纲随屏吸顶悬浮与垂直滚动约束 */
+@media (min-width: 1024px) {
+    .toc {
+        position: sticky !important;
+        top: 5rem !important; /* 80px，紧随 60px 磨砂顶栏下方留白 */
+        max-height: calc(100vh - 6.5rem) !important;
+        max-height: calc(100dvh - 6.5rem) !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .toc .toc-right {
+        max-height: 100% !important;
+    }
+}
+
+/* 2. 校准标题锚点偏移量：适配 60px 磨砂顶栏 + 20px 留白 */
+.anchor {
+    top: -6.5rem !important; /* -104px */
+}
+
+/* 3. 当前阅读章节 Sky 蓝高亮强调 */
+#TableOfContents a.active,
+.toc a.active {
+    color: #0284c7 !important;
+    font-weight: 600 !important;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+html.dark #TableOfContents a.active,
+html.dark .toc a.active {
+    color: #38bdf8 !important;
+}
+
+/* 4. 未聚焦子项首帧防抖：与 smart-toc.js 初始展开首章保持一致，消除 CLS */
+@media (scripting: enabled) {
+    #TOCView[data-collapse-unfocused="true"] #TableOfContents li ul {
+        display: none;
+    }
+
+    #TOCView[data-collapse-unfocused="true"]:not(.smart-toc-ready)
+        #TableOfContents
+        > ul
+        > li:first-child
+        > ul,
+    #TOCView[data-collapse-unfocused="true"].smart-toc-ready
+        #TableOfContents
+        li
+        ul.toc-open {
+        display: block;
+    }
+}

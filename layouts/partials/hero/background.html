@@ -1,96 +1,7 @@
-{{ $page := . }}
-{{ $disableImageOptimization := site.Store.Get "disableImageOptimization" }}
-
-{{ $featured := "" }}
-{{ $featuredURL := "" }}
-{{ with partial "functions/feature-image.html" . }}
-  {{ if or (strings.HasPrefix . "http:") (strings.HasPrefix . "https:") }}
-    {{ if site.Params.hotlinkFeatureImage }}
-      {{ $featuredURL = . }}
-    {{ else }}
-      {{ $featured = resources.GetRemote . }}
-    {{ end }}
-  {{ else }}
-    {{ $featured = or ($page.Resources.Get .) (resources.Get .) }}
-  {{ end }}
-{{ end }}
-
-{{ $images := .Resources.ByType "image" }}
-
-{{/* === Background Image === */}}
-{{ $background := $images.GetMatch "*background*" }}
-{{ $backgroundURL := "" }}
-
-{{ if not $background }}
-  {{ if $featuredURL }}
-    {{ $backgroundURL = $featuredURL }}
-  {{ else if $featured }}
-    {{ $background = $featured }}
-  {{ end }}
-{{ end }}
-
-{{ if not (or $background $backgroundURL) }}
-  {{ range slice "*feature*" "*cover*" "*thumbnail*" }}
-    {{ if not $background }}{{ $background = $images.GetMatch . }}{{ end }}
-  {{ end }}
-{{ end }}
-
-{{/* When the site-wide background canvas is active it already renders the
-  default background image, so only fall back to it here when disabled. */}}
-{{ if and (not (or $background $backgroundURL)) (not (site.Params.backgroundCanvas | default false)) }}
-  {{ $default := site.Store.Get "defaultBackgroundImage" }}
-  {{ if $default.url }}
-    {{ $backgroundURL = $default.url }}
-  {{ else if $default.obj }}
-    {{ $background = $default.obj }}
-  {{ end }}
-{{ end }}
-
-{{ if not $backgroundURL }}
-  {{ with $background }}
-    {{ $backgroundURL = .RelPermalink }}
-    {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
-      {{ $size := site.Store.Get "backgroundImageWidth" }}
-      {{ $backgroundURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
-    {{ end }}
-  {{ end }}
-{{ end }}
-
-{{/* === Foreground Banner Image === */}}
-{{ $banner := $featured }}
-{{ $bannerURL := $featuredURL }}
-
-{{ if not (or $banner $bannerURL) }}
-  {{ range slice "*feature*" "*cover*" "*thumbnail*" "*background*" }}
-    {{ if not $banner }}{{ $banner = $images.GetMatch . }}{{ end }}
-  {{ end }}
-{{ end }}
-
-{{ if not (or $banner $bannerURL) }}
-  {{ $default := site.Store.Get "defaultFeaturedImage" }}
-  {{ if $default.url }}
-    {{ $bannerURL = $default.url }}
-  {{ else if $default.obj }}
-    {{ $banner = $default.obj }}
-  {{ end }}
-{{ end }}
-
-{{ if not (or $banner $bannerURL) }}
-  {{ if $backgroundURL }}
-    {{ $bannerURL = $backgroundURL }}
-    {{ $banner = $background }}
-  {{ end }}
-{{ end }}
-
-{{ if not $bannerURL }}
-  {{ with $banner }}
-    {{ $bannerURL = .RelPermalink }}
-    {{ if not (or $disableImageOptimization (eq .MediaType.SubType "svg")) }}
-      {{ $size := site.Store.Get "backgroundImageWidth" }}
-      {{ $bannerURL = (partial "functions/resize.html" (dict "resource" . "spec" $size)).RelPermalink }}
-    {{ end }}
-  {{ end }}
-{{ end }}
+{{- $heroImages := partial "functions/resolve-hero-images.html" . -}}
+{{- $backgroundURL := $heroImages.backgroundURL -}}
+{{- $bannerURL := $heroImages.bannerURL -}}
+{{- $banner := $heroImages.banner -}}
 
 {{ if or $backgroundURL $bannerURL }}
   {{ $scope := .Scratch.Get "scope" }}
@@ -105,7 +16,6 @@
   {{- $caption := .Params.featureimagecaption | default "" -}}
   {{- $alt := .Page.Params.alt | default .Page.Title -}}
   {{- $aspect := .Params.featureimageAspect -}}
-
   {{- $bgPosition := $.Params.imagePosition | default site.Params.imagePosition -}}
   {{- $bgPositionMobile := $.Params.imagePositionMobile | default site.Params.imagePositionMobile -}}
   {{- $bannerPosition := $.Params.imagePositionFeature | default $.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition -}}
@@ -126,10 +36,8 @@
         class="bf-hero-bg-img nozoom absolute inset-0 w-full h-full object-cover"
         {{ if or $bgPosition $bgPositionMobile }}style="{{ with $bgPosition }}--bf-hero-pos: {{ . | safeCSS }};{{ end }}{{ with $bgPositionMobile }}--bf-hero-pos-mobile: {{ . | safeCSS }};{{ end }}"{{ end }} />
       {{ if $isClassic }}
-        <div
-          class="absolute inset-0 bg-gradient-to-t from-neutral to-transparent mix-blend-normal dark:from-neutral-800"></div>
-        <div
-          class="absolute inset-0 bg-gradient-to-t from-neutral to-neutral-100 opacity-60 mix-blend-normal dark:from-neutral-800 dark:to-neutral-800"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-neutral to-transparent mix-blend-normal dark:from-neutral-800"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-neutral to-neutral-100 opacity-60 mix-blend-normal dark:from-neutral-800 dark:to-neutral-800"></div>
       {{ else }}
         <div class="bf-hero-bg-scrim absolute inset-0 pointer-events-none"></div>
       {{ end }}

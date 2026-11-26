@@ -1,0 +1,24 @@
+{{/* 设置面板滑块行复用组件 */}}
+<div class="bf-settings-range-row"{{ with .wrapAttr }} {{ . | safeHTMLAttr }}{{ end }}>
+  <div class="flex items-center justify-between">
+    <label for="{{ .id }}" class="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+      {{ .label }}
+    </label>
+    <output
+      id="{{ .id }}-value"
+      for="{{ .id }}"
+      class="bf-settings-range-value text-xs font-medium text-neutral-500 dark:text-neutral-400">
+      {{ .displayValue }}
+    </output>
+  </div>
+  <input
+    type="range"
+    id="{{ .id }}"
+    class="bf-settings-range"
+    min="{{ .min }}"
+    max="{{ .max }}"
+    step="{{ .step }}"
+    value="{{ .value }}"
+    {{ with .defaultLabel }}data-default-label="{{ . }}"{{ end }}
+    aria-valuetext="{{ .displayValue }}">
+</div>

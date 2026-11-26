@@ -1,3 +1,4 @@
+{{/* 动态来源面包屑：运行时匹配逻辑位于 assets/js/breadcrumbs.js（已打包进 main.bundle.js） */}}
 {{ $isSingle := eq .Kind "page" }}
 {{ $taxData := dict }}
 {{ if $isSingle }}
@@ -12,7 +13,6 @@
   {{ end }}
 {{ end }}
 
-{{/* 仅获取直接父级 (非首页) */}}
 {{ $parentCrumb := false }}
 {{ if and .Parent (not .Parent.IsHome) }}
   {{ $parentCrumb = dict "title" (.Parent.Title | default .Parent.Section) "url" .Parent.RelPermalink }}
@@ -38,85 +38,4 @@
     {{ end }}
   </ol>
 </nav>
-{{ end }}
-
-{{ if $hasDynamicTax }}
-<script>
-  (function () {
-    "use strict";
-
-    function safeDecode(str) {
-      if (!str) return "";
-      try {
-        return decodeURIComponent(str);
-      } catch (_) {
-        return str;
-      }
-    }
-
-    const trail = document.getElementById("breadcrumbs-trail");
-    if (!trail || !trail.dataset.taxonomies) return;
-
-    let referrerPath = "";
-    if (document.referrer) {
-      try {
-        const refUrl = new URL(document.referrer);
-        if (refUrl.origin === window.location.origin) {
-          referrerPath = safeDecode(refUrl.pathname);
-          try {
-            sessionStorage.setItem("blog_breadcrumb_ref", referrerPath);
-          } catch (_) {}
-        } else {
-          try {
-            sessionStorage.removeItem("blog_breadcrumb_ref");
-          } catch (_) {}
-        }
-      } catch (_) {}
-    } else {
-      try {
-        referrerPath = sessionStorage.getItem("blog_breadcrumb_ref") || "";
-      } catch (_) {}
-    }
-    if (!referrerPath) return;
-
-    let taxData = {};
-    try {
-      taxData = JSON.parse(trail.dataset.taxonomies || "{}");
-    } catch (_) {
-      return;
-    }
-
-    const cleanPath = referrerPath.replace(/\/+$/, "") + "/";
-    const match = cleanPath.match(/^\/(tags|categories|series)\/([^\/]+)\//);
-    if (!match) return;
-
-    const [, tax, slug] = match;
-    const target = (taxData[tax] || []).find((t) => {
-      const tSlug = safeDecode(t.url).replace(
-        new RegExp(`^\\/${tax}\\/|\\/$`, "g"),
-        "",
-      );
-      return tSlug.toLowerCase() === slug.toLowerCase();
-    });
-
-    if (target) {
-      const li = document.createElement("li");
-      li.className = "inline-flex items-center";
-
-      const a = document.createElement("a");
-      a.className = "hover:underline decoration-neutral-300";
-      a.href = target.url;
-      a.textContent = target.title;
-
-      const span = document.createElement("span");
-      span.className = "px-1.5 text-primary-500 select-none";
-      span.setAttribute("aria-hidden", "true");
-      span.textContent = "/";
-
-      li.append(a, span);
-      trail.replaceChildren(li);
-      trail.closest("nav")?.removeAttribute("hidden");
-    }
-  })();
-</script>
 {{ end }}

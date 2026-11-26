@@ -1,0 +1,116 @@
+/* ============================================================
+   内容扩展组件（TypeIt / Giscus / Mermaid）与全局无障碍兜底
+   ============================================================ */
+
+/* 1. 打字机组件防抖占位（消除 CLS 高度跳变） */
+.typeit-quote {
+    display: block !important;
+    min-height: 4.5rem;
+    line-height: 1.4 !important;
+}
+
+@media (width < 40rem) {
+    .typeit-quote {
+        min-height: 5.5rem;
+    }
+}
+
+/* 2. Giscus 评论区推迟离屏渲染 */
+.giscus {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
+}
+
+/* 3. Mermaid 防溢出与暗色模式连线标签对比度修复 (WCAG AA >= 4.5:1) */
+pre.mermaid {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+html.dark .mermaid .edgeLabel,
+html.dark .mermaid .edgeLabel p,
+html.dark .mermaid .edgeLabel span {
+    color: #f1f5f9 !important;
+}
+
+html.dark .mermaid .edgeLabel .labelBkg,
+html.dark .mermaid .edgeLabel rect {
+    background-color: #334155 !important;
+    fill: #334155 !important;
+}
+
+/* 4. 统一键盘焦点无障碍环（移除鼠标点击白框，保持所有交互控件亮/暗焦点色一致） */
+#button_likes:focus:not(:focus-visible),
+#zen-mode-button:focus:not(:focus-visible),
+.bf-mobile-menu-icon:focus:not(:focus-visible),
+dialog.bf-a11y-dialog button:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+#button_likes:focus-visible,
+#zen-mode-button:focus-visible,
+.bf-mobile-menu-icon:focus-visible,
+.bf-share-btn:focus-visible,
+.bf-settings-range:focus-visible,
+dialog.bf-a11y-dialog button:focus-visible,
+.ios-toggle:has(input:focus-visible),
+.bf-settings-segment-option:has(input:focus-visible) {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
+}
+
+html.dark #button_likes:focus-visible,
+html.dark #zen-mode-button:focus-visible,
+html.dark .bf-mobile-menu-icon:focus-visible,
+html.dark .bf-share-btn:focus-visible,
+html.dark .bf-settings-range:focus-visible,
+html.dark dialog.bf-a11y-dialog button:focus-visible,
+html.dark .ios-toggle:has(input:focus-visible),
+html.dark .bf-settings-segment-option:has(input:focus-visible) {
+    outline-color: rgb(var(--color-primary-400));
+}
+
+.bf-settings-range:focus-visible {
+    border-radius: 0.25rem;
+}
+
+/* 5. 高对比度强制配色模式适配 */
+@media (forced-colors: active) {
+    #button_likes:focus-visible,
+    #zen-mode-button:focus-visible,
+    .bf-mobile-menu-icon:focus-visible,
+    .bf-share-btn:focus-visible,
+    .bf-settings-range:focus-visible,
+    dialog.bf-a11y-dialog button:focus-visible,
+    .ios-toggle:has(input:focus-visible),
+    .bf-settings-segment-option:has(input:focus-visible) {
+        outline: 2px solid Highlight !important;
+        outline-offset: 2px !important;
+    }
+
+    dialog.bf-a11y-dialog,
+    .bf-settings-segment,
+    .bf-settings-reset,
+    .bf-share-tip {
+        border: 1px solid CanvasText;
+    }
+
+    .bf-settings-segment-option:has(input:checked) {
+        outline: 2px solid Highlight;
+    }
+}
+
+/* 6. 无脚本环境优雅降级 */
+@media (scripting: none) {
+    span[id^="views_"],
+    span[id^="likes_"] {
+        color: inherit !important;
+        background: transparent !important;
+        animation: none !important;
+    }
+
+    .bf-share-copy-wrap {
+        display: none;
+    }
+}
