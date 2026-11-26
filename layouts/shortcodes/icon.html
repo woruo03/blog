@@ -1,0 +1,10 @@
+{{- /* Avoid extra whitespace: https://discourse.gohugo.io/t/55399/5 */ -}}
+{{- $name := $.Get 0 -}}
+{{- $svg := partialCached "functions/icon-svg.html" $name $name -}}
+{{- if $svg -}}
+  <span class="relative inline-block align-text-bottom icon">
+    {{- strings.Replace $svg "\n" "" | safeHTML -}}
+  </span>
+{{- else -}}
+  {{- errorf `icon shortcode: resource "%s" not found. Check the path is correct or remove the shortcode: %s` (printf "icons/%s.svg" $name) .Position -}}
+{{- end -}}

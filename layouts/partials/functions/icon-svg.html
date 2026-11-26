@@ -1,0 +1,17 @@
+{{- /* 规范化内联 SVG 图标：剥离前导 XML 声明与根标签自带宽高，统一注入 width="1em" height="1em" 与缺失的 aria-hidden="true" */ -}}
+{{- $svg := "" -}}
+{{- with resources.Get (printf "icons/%s.svg" .) -}}
+  {{- $svg = replaceRE `(?s)^\s*<\?xml[^>]*\?>\s*` "" .Content -}}
+  {{- $matches := findRE `(?s)<svg\b[^>]*>` $svg 1 -}}
+  {{- if $matches -}}
+    {{- $openTag := index $matches 0 -}}
+    {{- $cleanOpen := replaceRE `(?i)\s+(?:width|height)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)` "" $openTag -}}
+    {{- $attrs := ` width="1em" height="1em"` -}}
+    {{- if not (findRE `(?i)\baria-hidden\s*=` $cleanOpen) -}}
+      {{- $attrs = printf `%s aria-hidden="true"` $attrs -}}
+    {{- end -}}
+    {{- $newOpen := replaceRE `(?s)^<svg\b` (printf "<svg%s" $attrs) $cleanOpen -}}
+    {{- $svg = strings.Replace $svg $openTag $newOpen 1 -}}
+  {{- end -}}
+{{- end -}}
+{{- return $svg -}}
