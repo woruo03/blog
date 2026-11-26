@@ -1,0 +1,5 @@
+{{- with partialCached "functions/icon-svg.html" . . -}}
+  <span class="relative block icon">
+    {{- . | safeHTML -}}
+  </span>
+{{- end -}}

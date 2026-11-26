@@ -1,0 +1,78 @@
+{{/* 共享水平文章条渲染基座，由 simple.html 与 _shortcode.html 委托调用 */}}
+{{- $page := .page -}}
+{{- $articleClass := .articleClass | default "article-link--simple" -}}
+{{- $showCards := .showCards | default false -}}
+{{- $cardPadding := .cardPadding | default "p-4" -}}
+{{- $showSummary := .showSummary | default false -}}
+{{- $compactSummary := .compactSummary | default false -}}
+{{- $constrainItemsWidth := site.Params.list.constrainItemsWidth | default false -}}
+
+{{- $cardClasses := "flex flex-col md:flex-row relative" -}}
+{{- $imgWrapperClasses := "" -}}
+{{- $cardContentClasses := "" -}}
+
+{{- if $showCards -}}
+  {{- $cardClasses = printf "%s overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-600" $cardClasses -}}
+  {{- $cardContentClasses = $cardPadding -}}
+{{- else -}}
+  {{- $imgWrapperClasses = "thumbnail-shadow md:mr-7" -}}
+  {{- $cardContentClasses = "mt-3 md:mt-0" -}}
+{{- end -}}
+
+{{- if $constrainItemsWidth -}}
+  {{- $cardClasses = printf "%s max-w-prose" $cardClasses -}}
+{{- end -}}
+
+{{- $featureImageHover := cond (isset $page.Params "featureimagehover") $page.Params.featureImageHover (site.Params.list.featureImageHover | default false) -}}
+{{- $featureImagePosition := $page.Params.imagePositionFeature | default $page.Params.imagePosition | default site.Params.imagePositionFeature | default site.Params.imagePosition -}}
+{{- $featuredURL := partial "functions/card-feature-image.html" $page -}}
+
+<article class="{{ $articleClass }} group {{ $cardClasses }}">
+  {{ with $featuredURL }}
+    <div class="flex-none relative overflow-hidden {{ $imgWrapperClasses }} thumbnail">
+      <img
+        src="{{ . }}"
+        alt="{{ $page.Title }}"
+        loading="lazy"
+        decoding="async"
+        class="nozoom not-prose absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] {{ if $featureImageHover }}group-hover:scale-[1.03]{{ end }}"
+        {{ with $featureImagePosition }}style="object-position: {{ . | safeCSS }};"{{ end }} />
+    </div>
+  {{ end }}
+  <div class="{{ $cardContentClasses }}">
+    <header class="items-center text-start text-xl font-semibold">
+      <a
+        {{ with $page.Params.externalUrl }}
+          href="{{ . }}" target="_blank" rel="external noopener noreferrer"
+        {{ else }}
+          href="{{ $page.RelPermalink }}"
+        {{ end }}
+        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
+        <h2>
+          {{ $page.Title | emojify }}
+          {{ if $page.Params.externalUrl }}
+            <span class="cursor-default align-top text-xs text-neutral-400 dark:text-neutral-500">
+              <span class="rtl:hidden">&#8599;</span>
+              <span class="ltr:hidden">&#8598;</span>
+            </span>
+          {{ end }}
+        </h2>
+      </a>
+      {{ if and $page.Draft site.Params.article.showDraftLabel }}
+        <div class="ms-2">{{ partial "badge.html" (i18n "article.draft" | emojify) }}</div>
+      {{ end }}
+      {{ if templates.Exists "partials/extend-article-link.html" }}
+        {{ partial "extend-article-link.html" $page }}
+      {{ end }}
+    </header>
+    <div class="text-sm text-neutral-500 dark:text-neutral-400">
+      {{ partial "article-meta/basic.html" $page }}
+    </div>
+    {{ if $showSummary }}
+      <div
+        class="article-link__summary prose dark:prose-invert max-w-fit mt-1{{ if $compactSummary }} line-clamp-3{{ end }}">
+        {{ $page.Summary | plainify }}
+      </div>
+    {{ end }}
+  </div>
+</article>
